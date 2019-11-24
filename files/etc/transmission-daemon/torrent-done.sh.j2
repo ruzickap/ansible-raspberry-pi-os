@@ -1,0 +1,9 @@
+#!/bin/sh
+
+cat << EOF | mailx -s "$TR_TORRENT_NAME finished" {{ notification_email }}
+Transmission finished downloading:
+
+$TR_TORRENT_NAME
+
+$TR_TIME_LOCALTIME
+EOF

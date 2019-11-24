@@ -1,0 +1,8 @@
+[raspberry_pi]
+raspi.xvx.cz
+#raspi1.xvx.cz    ansible_host=172.19.85.114
+
+[raspberry_pi:vars]
+ansible_user=pi
+ansible_python_interpreter=/usr/bin/python3
+ansible_ssh_pass=raspberry

@@ -1,0 +1,495 @@
+---
+- name: Set authorized key for backup script
+  authorized_key:
+    user: root
+    key: "{{ lookup('file', lookup('env','HOME') + '/data/backups/id_ed25519.pub') }}"
+
+- name: Add kodi group
+  group:
+    name: kodi
+
+- name: Add kodi user
+  user:
+    name: kodi
+    comment: Kodi
+    shell: /usr/bin/nologin
+    groups: audio,input,uucp,video
+    group: kodi
+
+- name: Mount USB disk
+  mount:
+    path: /mnt/usb
+    src: /dev/sda1
+    fstype: ext4
+    opts: noatime,nodiratime
+    state: mounted
+
+- name: Install the hd-idle .deb package from the internet
+  apt:
+    deb: https://sourceforge.net/p/hd-idle/feature-requests/3/attachment/hd-idle_1.05_armhf.deb
+
+- name: Enable hd-idle
+  ini_file:
+    path: /etc/default/hd-idle
+    no_extra_spaces: yes
+    section: null
+    option: START_HD_IDLE
+    value: "true"
+  notify: restart hd-idle
+
+###############################
+# Samba
+###############################
+
+- name: Configure Samba (smb.conf)
+  template:
+    dest: /etc/samba/smb.conf
+    src: files/etc/samba/smb.conf.j2
+  notify: restart samba
+
+- name: Create local credential file for smaba
+  delegate_to: localhost
+  copy:
+    dest: "{{ lookup('env','HOME') }}/data/{{ inventory_hostname }}-cifs-credentials"
+    content: |
+      username=pi
+      password={{ samba_pi_password }}
+    mode: 0600
+    owner: "{{ lookup('env','USER') }}"
+    group: "{{ lookup('env','USER') }}"
+
+- name: Set SMB password for pi
+  shell: ( echo {{ samba_pi_password }} ; echo {{ samba_pi_password }} ) | smbpasswd -a -s pi
+  changed_when: false
+
+###############################
+# Transmission (http://raspi.xvx.cz:9091/web/)
+###############################
+
+- name: Create "torrent" directories in /mnt/
+  file:
+    path: "{{ item }}"
+    recurse: yes
+    state: directory
+    owner: debian-transmission
+    group: debian-transmission
+    mode: 0775
+  loop:
+    - /mnt/usb/torrents/torrents-completed
+    - /mnt/usb/torrents/torrents-incomplete
+
+- name: Configure Transmission
+  template:
+    dest: /etc/transmission-daemon/settings.json
+    src: files/etc/transmission-daemon/settings.json.j2
+  notify: reload transmission
+
+- name: Install blacklist file for transmission
+  unarchive:
+    src: "{{ transmission_blocklist_url }}&archiveformat=zip"
+    dest: /var/lib/transmission-daemon/info/blocklists/
+    owner: debian-transmission
+    group: debian-transmission
+    remote_src: yes
+
+- name: Install Transmission torrent done script
+  template:
+    dest: /etc/transmission-daemon/torrent-done.sh
+    src: files/etc/transmission-daemon/torrent-done.sh.j2
+    mode: 0755
+
+- name: Add user 'pi' to debian-transmission group
+  user:
+    name: pi
+    append: yes
+    groups: debian-transmission
+
+###############################
+# InfluxDB
+###############################
+
+- name: Add an Apt signing keys
+  apt_key:
+    url: "{{ item }}"
+  loop:
+    - https://repos.influxdata.com/influxdb.key
+  register: result
+
+- name: Add InfluxDB repository
+  apt_repository:
+    repo: deb https://repos.influxdata.com/debian buster stable
+    filename: influxdata
+
+- name: Install additional packages
+  apt:
+    name: "{{ influxdb_packages }}"
+    install_recommends: no
+  vars:
+    influxdb_packages:
+      - influxdb
+      - python3-influxdb
+
+- name: Disable collectd defaults in InfluxDB
+  replace:
+    path: /etc/influxdb/influxdb.conf
+    regexp: "^\\[\\[collectd\\]\\]$"
+    replace: "#[[collectd]]"
+
+- name: Configure InfluxDB
+  blockinfile:
+    dest: /etc/influxdb/influxdb.conf
+    block: |
+      [[collectd]]               # My CollectD configuration
+        enabled = true
+        bind-address = ":25826"
+        database = "collectd"
+        retention-policy = ""
+        batch-size = 5000
+        batch-pending = 10
+        batch-timeout = "10s"
+        read-buffer = 0
+        typesdb = "/usr/share/collectd/types.db"
+        security-level = "none"
+        parse-multivalue-plugin = "split"
+  notify: restart influxdb
+
+- name: Disable InfluxDB logging to syslog
+  replace:
+    path: /etc/influxdb/influxdb.conf
+    regexp: "{{ item.regexp }}"
+    replace: "{{ item.replace }}"
+  loop:
+    - regexp: "# query-log-enabled = true"
+      replace: "query-log-enabled = false"
+    - regexp: "# log-enabled = true"
+      replace: "log-enabled = false"
+  notify: restart influxdb
+
+- name: Start InfluxDB
+  systemd:
+    name: influxdb
+    state: started
+    enabled: yes
+
+- name: Wait for InfluxDB to start
+  wait_for:
+    host: 127.0.0.1
+    port: 8086
+
+- name: Change admin password for InfluxDB
+  influxdb_user:
+    user_name: root
+    user_password: "{{ influxdb_root_password }}"
+
+- name: Create databases in InfluxDB
+  influxdb_database:
+    username: root
+    password: "{{ influxdb_root_password }}"
+    database_name: "{{ item }}"
+  loop:
+    - collectd
+    - telegraf
+    - temperature
+
+- name: Create 'raspi' user on InfluxDB localhost using default login credentials
+  influxdb_user:
+    username: root
+    password: "{{ influxdb_root_password }}"
+    user_name: "{{ influxdb_user }}"
+    user_password: "{{ influxdb_user_password }}"
+    grants:
+      - database: 'telegraf'
+        privilege: 'WRITE'
+      - database: 'temperature'
+        privilege: 'WRITE'
+
+- name: Create 'raspi' user on InfluxDB localhost using default login credentials
+  influxdb_user:
+    username: root
+    password: "{{ influxdb_root_password }}"
+    user_name: "{{ influxdb_user }}"
+    user_password: "{{ influxdb_user_password }}"
+
+- name: Create 5 years retention policy for 'temperature' database
+  influxdb_retention_policy:
+    username: root
+    password: "{{ influxdb_root_password }}"
+    database_name: temperature
+    policy_name: temperature-policy
+    duration: 250w
+    replication: 1
+
+- name: Create 1 month retention policy for 'rpi' database
+  influxdb_retention_policy:
+    username: root
+    password: "{{ influxdb_root_password }}"
+    database_name: telegraf
+    policy_name: telegraf-policy
+    duration: 3w
+    replication: 1
+
+###############################
+# CollectD
+###############################
+
+- name: Disable collectd defaults
+  replace:
+    path: /etc/collectd/collectd.conf
+    regexp: "{{ item.regexp }}"
+    replace: "{{ item.replace }}"
+  loop:
+    - regexp: '^LoadPlugin rrdtool'
+      replace: '#LoadPlugin rrdtool'
+    - regexp: '^FQDNLookup'
+      replace: '#FQDNLookup'
+  notify: restart collectd
+
+- name: Configure collectd
+  copy:
+    dest: /etc/collectd/collectd.conf.d/my_collectd.conf
+    content: |
+      Hostname "{{ inventory_hostname }}"
+
+      Interval 30
+      ReadThreads 1
+
+      LoadPlugin curl
+      LoadPlugin match_regex
+      LoadPlugin network
+      LoadPlugin target_scale
+      LoadPlugin uptime
+
+      <Plugin curl>
+        <Page "CPUTemp">
+          URL "file:///sys/class/thermal/thermal_zone0/temp"
+          <Match>
+            Regex "([0-9]*)"
+            DSType "GaugeLast"
+            Type "temperature"
+            Instance "CPUTemp"
+          </Match>
+        </Page>
+      </Plugin>
+
+      <Chain "PreCache">
+          <Rule>
+              <Match "regex">
+                  Plugin "^curl$"
+                  PluginInstance "^temp$"
+                  Invert false
+              </Match>
+              <Target "scale">
+                  Factor 0.001
+              </Target>
+          </Rule>
+      </Chain>
+
+      <Plugin "network">
+          Server "127.0.0.1" "25826"
+      </Plugin>
+  notify: restart collectd
+
+###############################
+# Telegraf
+###############################
+
+- name: Install telegraf
+  apt:
+    name: telegraf
+    install_recommends: no
+
+- name: Add telegraf to utmp and video group
+  user:
+    name: telegraf
+    groups: utmp,video
+  notify: restart telegraf
+
+- name: Disable Telegraf defaults
+  replace:
+    path: /etc/telegraf/telegraf.conf
+    regexp: '^\[\[outputs.influxdb\]\]'
+    replace: '#[[outputs.influxdb]]'
+  notify: restart telegraf
+
+- name: Configure Telegraf
+  copy:
+    dest: /etc/telegraf/telegraf.d/telegraf.conf
+    content: |
+      [[inputs.conntrack]]
+        files = ["nf_conntrack_count","nf_conntrack_max"]
+        dirs = ["/proc/sys/net/netfilter"]
+
+      [[inputs.influxdb]]
+        urls = [
+          "http://localhost:8086/debug/vars"
+        ]
+
+      [[inputs.interrupts]]
+
+      [[inputs.internal]]
+
+      [[inputs.linux_sysctl_fs]]
+
+      [[inputs.net]]
+
+      [[inputs.netstat]]
+
+      [[inputs.nstat]]
+        proc_net_netstat = "/proc/net/netstat"
+        dump_zeros       = true
+
+      [[inputs.exec]]
+        commands = [ "/opt/vc/bin/vcgencmd measure_temp" ]
+        name_override = "gpu_temperature"
+        data_format = "grok"
+        grok_patterns = ["%{NUMBER:value:float}"]
+
+      [[inputs.file]]
+        files = ["/sys/class/thermal/thermal_zone0/temp"]
+        name_override = "cpu_temperature"
+        data_format = "value"
+        data_type = "integer"
+
+      [[inputs.procstat]]
+        pattern = "sshd|grafana-server|influxd|telegraf"
+        user = "daemon|root|telegraf"
+
+      [[outputs.influxdb]]
+        urls = ["http://127.0.0.1:8086"]
+        database = "telegraf"
+        username = "{{ influxdb_user }}"
+        password = "{{ influxdb_user_password }}"
+  notify: restart telegraf
+
+- name: Create InfluxDB datasource for Grafana (influxdb-telegraf)
+  grafana_datasource:
+    name: "datasource-influxdb-telegraf"
+    grafana_url: "http://localhost:3000"
+    grafana_user: "admin"
+    grafana_password: "{{ grafana_admin_password }}"
+    ds_type: "influxdb"
+    ds_url: "http://localhost:8086"
+    database: "telegraf"
+    is_default: yes
+    time_interval: ">10s"
+
+- name: Create InfluxDB datasource for Grafana (influxdb-collectd)
+  grafana_datasource:
+    name: "datasource-influxdb-collectd"
+    grafana_url: "http://localhost:3000"
+    grafana_user: "admin"
+    grafana_password: "{{ grafana_admin_password }}"
+    ds_type: "influxdb"
+    ds_url: "http://localhost:8086"
+    database: "collectd"
+    time_interval: ">10s"
+
+- name: Create InfluxDB datasource for Grafana (influxdb-temperature)
+  grafana_datasource:
+    name: "datasource-influxdb-temperature"
+    grafana_url: "http://localhost:3000"
+    grafana_user: "admin"
+    grafana_password: "{{ grafana_admin_password }}"
+    ds_type: "influxdb"
+    ds_url: "http://localhost:8086"
+    database: "temperature"
+    time_interval: ">5m"
+
+###############################
+# Kodi
+###############################
+
+- name: Add an Apt signing keys
+  apt_key:
+    url: "{{ item }}"
+  loop:
+    - http://pipplware.pplware.pt/pipplware/key.asc
+
+- name: Add Kodi 18 repository
+  apt_repository:
+    repo: deb http://pipplware.pplware.pt/pipplware/dists/{{ ansible_distribution_release }}/main/binary /
+    filename: pipplware
+
+- name: Install Kodi packages
+  apt:
+    name: "{{ kodi_packages }}"
+    install_recommends: no
+  register: result
+  until: result is succeeded
+
+- name: Create startup script for Kodi
+  copy:
+    src: lib/systemd/system/kodi.service
+    dest: /lib/systemd/system/kodi.service
+  register: kodi_service
+
+- name: Reload systemd
+  systemd:
+    daemon_reload: yes
+  when: kodi_service.changed
+
+- name: Create Kodi addon directory (/home/kodi/.kodi/addons)
+  file:
+    path: /home/kodi/.kodi/addons
+    state: directory
+    recurse: yes
+    owner: kodi
+    group: kodi
+
+- name: Install Kodi addons
+  unarchive:
+    src: "{{ item }}"
+    dest: /home/kodi/.kodi/addons/
+    remote_src: yes
+    owner: kodi
+    group: kodi
+  loop: "{{ kodi_addons }}"
+
+- name: Copy Kodi configuration files
+  synchronize:
+    src: home/kodi/.kodi
+    dest: /home/kodi/
+  notify: restart kodi
+
+- name: Additional Kodi configuration
+  template:
+    dest: "{{ item.dest }}"
+    src: "{{ item.src }}"
+    mode: 0600
+  loop:
+    - dest: /home/kodi/.kodi/userdata/guisettings.xml
+      src: files/home/kodi/.kodi/userdata/guisettings.xml.j2
+
+- name: Chown "/home/kodi"
+  file:
+    path: /home/kodi
+    owner: kodi
+    group: kodi
+    recurse: yes
+
+- name: Start Kodi
+  systemd:
+    name: kodi
+    state: restarted
+    enabled: yes
+
+- name: Wait for Kodi to be started
+  wait_for:
+    port: 8080
+
+- name: Wait 10 seconds to unlock Kodi SQLite db
+  pause:
+    seconds: 10
+
+- name: Enable Kodi addon in database
+  command: sqlite3 /home/kodi/.kodi/userdata/Database/Addons27.db "UPDATE installed SET enabled = 1 WHERE addonID = '{{ item | regex_replace('.*/([^-]*).*', '\1') }}'"
+  loop: "{{ kodi_addons }}"
+  changed_when: false
+
+- name: Enable Kodi Visualization addon spectrum
+  command: sqlite3 /home/kodi/.kodi/userdata/Database/Addons27.db "UPDATE installed SET enabled = 1 WHERE addonID = '{{ item }}'"
+  loop:
+    - imagedecoder.raw
+    - visualization.goom
+    - visualization.spectrum
+  changed_when: false

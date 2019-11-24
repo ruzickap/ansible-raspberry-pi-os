@@ -1,0 +1,86 @@
+---
+- hosts: all
+  become: yes
+  force_handlers: True
+
+  tasks:
+    - name: Include tasks
+      include_tasks: playbooks/common.yml
+
+    - name: Include specific tasks
+      include_tasks: playbooks/tasks_{{ inventory_hostname }}.yml
+
+  handlers:
+    - name: restart collectd
+      systemd:
+        name: collectd
+        state: restarted
+
+    - name: restart getty@tty1
+      systemd:
+        name: getty@tty1
+        state: restarted
+
+    - name: restart grafana
+      systemd:
+        name: grafana-server
+        state: restarted
+
+    - name: restart hd-idle
+      systemd:
+        name: hd-idle
+        state: restarted
+
+    - name: restart influxdb
+      systemd:
+        name: influxdb
+        state: restarted
+
+    - name: restart kodi
+      systemd:
+        name: kodi
+        state: restarted
+        enabled: yes
+
+    - name: restart prometheus-node-exporter
+      systemd:
+        name: prometheus-node-exporter
+        state: restarted
+
+    - name: restart prometheus
+      systemd:
+        name: prometheus
+        state: restarted
+
+    - name: restart rpi_exporter
+      systemd:
+        name: rpi_exporter
+        state: restarted
+        enabled: yes
+
+    - name: restart samba
+      systemd:
+        name: smbd
+        state: restarted
+
+    - name: restart sshd
+      systemd:
+        name: sshd
+        state: restarted
+
+    - name: reload systemd
+      systemd:
+        daemon_reload: yes
+
+    - name: restart telegraf
+      systemd:
+        name: telegraf
+        state: restarted
+
+    - name: reload transmission
+      systemd:
+        name: transmission-daemon
+        state: reloaded
+
+    - name: reboot
+      reboot:

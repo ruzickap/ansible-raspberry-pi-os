@@ -1,0 +1,18 @@
+- name: Disable sound by setting audio=off in /boot/config.txt
+  replace:
+    path: /boot/config.txt
+    regexp: 'dtparam=audio=on'
+    replace: 'dtparam=audio=off'
+
+- name: Configure service for tty1 console
+  copy:
+    dest: /etc/systemd/system/getty@tty1.service.d/override.conf
+    content: |
+      [Service]
+      ExecStart=
+      ExecStart=-tmux new-session "NMON=tl nmon -s 3" \; split-window "NMON=cmndkDUt5 nmon -s 3" \; select-layout even-horizontal \; set-option status off
+      StandardInput=tty
+      StandardOutput=tty
+  notify:
+    - reload systemd
+    - restart getty@tty1
