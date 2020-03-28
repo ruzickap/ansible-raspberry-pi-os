@@ -79,13 +79,13 @@
       grafana_dashboards:
         - dashboard_id: '1860'
           revision_id: '12'
-          datasource: 'Prometheus'
+          datasource: '{{ grafana_datasources.0.name }}'
         - dashboard_id: '3662'
           revision_id: '2'
-          datasource: 'Prometheus'
+          datasource: '{{ grafana_datasources.0.name }}'
         - dashboard_id: '9852'
           revision_id: '1'
-          datasource: 'Prometheus'
+          datasource: '{{ grafana_datasources.0.name }}'
 
   pre_tasks:
     - name: Set authorized key for pi and root
