@@ -225,7 +225,8 @@
 - name: Configure /etc/aliases
   copy:
     dest: /etc/aliases
-    content: "root:           petr.ruzicka@gmail.com"
+    content: |
+      root:           {{ notification_email }}
 
 - name: Configure email notification after reboot
   template:
