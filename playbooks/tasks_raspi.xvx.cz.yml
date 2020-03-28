@@ -1,4 +1,3 @@
----
 - name: Set authorized key for backup script
   authorized_key:
     user: root
@@ -24,7 +23,7 @@
     opts: noatime,nodiratime
     state: mounted
 
-- name: Install the hd-idle .deb package from the internet
+- name: Install the hd-idle .deb package from the SourceForge
   apt:
     deb: https://sourceforge.net/p/hd-idle/feature-requests/3/attachment/hd-idle_1.05_armhf.deb
 
@@ -37,9 +36,9 @@
     value: "true"
   notify: restart hd-idle
 
-###############################
+#################################################
 # Samba
-###############################
+#################################################
 
 - name: Configure Samba (smb.conf)
   template:
@@ -62,9 +61,9 @@
   shell: ( echo {{ samba_pi_password }} ; echo {{ samba_pi_password }} ) | smbpasswd -a -s pi
   changed_when: false
 
-###############################
+#################################################
 # Transmission (http://raspi.xvx.cz:9091/web/)
-###############################
+#################################################
 
 - name: Create "torrent" directories in /mnt/
   file:
@@ -104,300 +103,9 @@
     append: yes
     groups: debian-transmission
 
-###############################
-# InfluxDB
-###############################
-
-- name: Add an Apt signing keys
-  apt_key:
-    url: "{{ item }}"
-  loop:
-    - https://repos.influxdata.com/influxdb.key
-  register: result
-
-- name: Add InfluxDB repository
-  apt_repository:
-    repo: deb https://repos.influxdata.com/debian buster stable
-    filename: influxdata
-
-- name: Install additional packages
-  apt:
-    name: "{{ influxdb_packages }}"
-    install_recommends: no
-  vars:
-    influxdb_packages:
-      - influxdb
-      - python3-influxdb
-
-- name: Disable collectd defaults in InfluxDB
-  replace:
-    path: /etc/influxdb/influxdb.conf
-    regexp: "^\\[\\[collectd\\]\\]$"
-    replace: "#[[collectd]]"
-
-- name: Configure InfluxDB
-  blockinfile:
-    dest: /etc/influxdb/influxdb.conf
-    block: |
-      [[collectd]]               # My CollectD configuration
-        enabled = true
-        bind-address = ":25826"
-        database = "collectd"
-        retention-policy = ""
-        batch-size = 5000
-        batch-pending = 10
-        batch-timeout = "10s"
-        read-buffer = 0
-        typesdb = "/usr/share/collectd/types.db"
-        security-level = "none"
-        parse-multivalue-plugin = "split"
-  notify: restart influxdb
-
-- name: Disable InfluxDB logging to syslog
-  replace:
-    path: /etc/influxdb/influxdb.conf
-    regexp: "{{ item.regexp }}"
-    replace: "{{ item.replace }}"
-  loop:
-    - regexp: "# query-log-enabled = true"
-      replace: "query-log-enabled = false"
-    - regexp: "# log-enabled = true"
-      replace: "log-enabled = false"
-  notify: restart influxdb
-
-- name: Start InfluxDB
-  systemd:
-    name: influxdb
-    state: started
-    enabled: yes
-
-- name: Wait for InfluxDB to start
-  wait_for:
-    host: 127.0.0.1
-    port: 8086
-
-- name: Change admin password for InfluxDB
-  influxdb_user:
-    user_name: root
-    user_password: "{{ influxdb_root_password }}"
-
-- name: Create databases in InfluxDB
-  influxdb_database:
-    username: root
-    password: "{{ influxdb_root_password }}"
-    database_name: "{{ item }}"
-  loop:
-    - collectd
-    - telegraf
-    - temperature
-
-- name: Create 'raspi' user on InfluxDB localhost using default login credentials
-  influxdb_user:
-    username: root
-    password: "{{ influxdb_root_password }}"
-    user_name: "{{ influxdb_user }}"
-    user_password: "{{ influxdb_user_password }}"
-    grants:
-      - database: 'telegraf'
-        privilege: 'WRITE'
-      - database: 'temperature'
-        privilege: 'WRITE'
-
-- name: Create 'raspi' user on InfluxDB localhost using default login credentials
-  influxdb_user:
-    username: root
-    password: "{{ influxdb_root_password }}"
-    user_name: "{{ influxdb_user }}"
-    user_password: "{{ influxdb_user_password }}"
-
-- name: Create 5 years retention policy for 'temperature' database
-  influxdb_retention_policy:
-    username: root
-    password: "{{ influxdb_root_password }}"
-    database_name: temperature
-    policy_name: temperature-policy
-    duration: 250w
-    replication: 1
-
-- name: Create 1 month retention policy for 'rpi' database
-  influxdb_retention_policy:
-    username: root
-    password: "{{ influxdb_root_password }}"
-    database_name: telegraf
-    policy_name: telegraf-policy
-    duration: 3w
-    replication: 1
-
-###############################
-# CollectD
-###############################
-
-- name: Disable collectd defaults
-  replace:
-    path: /etc/collectd/collectd.conf
-    regexp: "{{ item.regexp }}"
-    replace: "{{ item.replace }}"
-  loop:
-    - regexp: '^LoadPlugin rrdtool'
-      replace: '#LoadPlugin rrdtool'
-    - regexp: '^FQDNLookup'
-      replace: '#FQDNLookup'
-  notify: restart collectd
-
-- name: Configure collectd
-  copy:
-    dest: /etc/collectd/collectd.conf.d/my_collectd.conf
-    content: |
-      Hostname "{{ inventory_hostname }}"
-
-      Interval 30
-      ReadThreads 1
-
-      LoadPlugin curl
-      LoadPlugin match_regex
-      LoadPlugin network
-      LoadPlugin target_scale
-      LoadPlugin uptime
-
-      <Plugin curl>
-        <Page "CPUTemp">
-          URL "file:///sys/class/thermal/thermal_zone0/temp"
-          <Match>
-            Regex "([0-9]*)"
-            DSType "GaugeLast"
-            Type "temperature"
-            Instance "CPUTemp"
-          </Match>
-        </Page>
-      </Plugin>
-
-      <Chain "PreCache">
-          <Rule>
-              <Match "regex">
-                  Plugin "^curl$"
-                  PluginInstance "^temp$"
-                  Invert false
-              </Match>
-              <Target "scale">
-                  Factor 0.001
-              </Target>
-          </Rule>
-      </Chain>
-
-      <Plugin "network">
-          Server "127.0.0.1" "25826"
-      </Plugin>
-  notify: restart collectd
-
-###############################
-# Telegraf
-###############################
-
-- name: Install telegraf
-  apt:
-    name: telegraf
-    install_recommends: no
-
-- name: Add telegraf to utmp and video group
-  user:
-    name: telegraf
-    groups: utmp,video
-  notify: restart telegraf
-
-- name: Disable Telegraf defaults
-  replace:
-    path: /etc/telegraf/telegraf.conf
-    regexp: '^\[\[outputs.influxdb\]\]'
-    replace: '#[[outputs.influxdb]]'
-  notify: restart telegraf
-
-- name: Configure Telegraf
-  copy:
-    dest: /etc/telegraf/telegraf.d/telegraf.conf
-    content: |
-      [[inputs.conntrack]]
-        files = ["nf_conntrack_count","nf_conntrack_max"]
-        dirs = ["/proc/sys/net/netfilter"]
-
-      [[inputs.influxdb]]
-        urls = [
-          "http://localhost:8086/debug/vars"
-        ]
-
-      [[inputs.interrupts]]
-
-      [[inputs.internal]]
-
-      [[inputs.linux_sysctl_fs]]
-
-      [[inputs.net]]
-
-      [[inputs.netstat]]
-
-      [[inputs.nstat]]
-        proc_net_netstat = "/proc/net/netstat"
-        dump_zeros       = true
-
-      [[inputs.exec]]
-        commands = [ "/opt/vc/bin/vcgencmd measure_temp" ]
-        name_override = "gpu_temperature"
-        data_format = "grok"
-        grok_patterns = ["%{NUMBER:value:float}"]
-
-      [[inputs.file]]
-        files = ["/sys/class/thermal/thermal_zone0/temp"]
-        name_override = "cpu_temperature"
-        data_format = "value"
-        data_type = "integer"
-
-      [[inputs.procstat]]
-        pattern = "sshd|grafana-server|influxd|telegraf"
-        user = "daemon|root|telegraf"
-
-      [[outputs.influxdb]]
-        urls = ["http://127.0.0.1:8086"]
-        database = "telegraf"
-        username = "{{ influxdb_user }}"
-        password = "{{ influxdb_user_password }}"
-  notify: restart telegraf
-
-- name: Create InfluxDB datasource for Grafana (influxdb-telegraf)
-  grafana_datasource:
-    name: "datasource-influxdb-telegraf"
-    grafana_url: "http://localhost:3000"
-    grafana_user: "admin"
-    grafana_password: "{{ grafana_admin_password }}"
-    ds_type: "influxdb"
-    ds_url: "http://localhost:8086"
-    database: "telegraf"
-    is_default: yes
-    time_interval: ">10s"
-
-- name: Create InfluxDB datasource for Grafana (influxdb-collectd)
-  grafana_datasource:
-    name: "datasource-influxdb-collectd"
-    grafana_url: "http://localhost:3000"
-    grafana_user: "admin"
-    grafana_password: "{{ grafana_admin_password }}"
-    ds_type: "influxdb"
-    ds_url: "http://localhost:8086"
-    database: "collectd"
-    time_interval: ">10s"
-
-- name: Create InfluxDB datasource for Grafana (influxdb-temperature)
-  grafana_datasource:
-    name: "datasource-influxdb-temperature"
-    grafana_url: "http://localhost:3000"
-    grafana_user: "admin"
-    grafana_password: "{{ grafana_admin_password }}"
-    ds_type: "influxdb"
-    ds_url: "http://localhost:8086"
-    database: "temperature"
-    time_interval: ">5m"
-
-###############################
+#################################################
 # Kodi
-###############################
+#################################################
 
 - name: Add an Apt signing keys
   apt_key:
@@ -436,14 +144,17 @@
     owner: kodi
     group: kodi
 
-- name: Install Kodi addons
+- name: Get the latest version of YouTube Kodi plugin
+  uri:
+    url: https://api.github.com/repos/jdf76/plugin.video.youtube/releases/latest
+  register: github_api_youtube_kodi_plugin
+
+- name: Download and unpack the YouTube Kodi plugin
   unarchive:
-    src: "{{ item }}"
+    src: https://github.com/jdf76/plugin.video.youtube/releases/download/{{ github_api_youtube_kodi_plugin.json.tag_name }}/plugin.video.youtube-{{ github_api_youtube_kodi_plugin.json.tag_name }}.zip
     dest: /home/kodi/.kodi/addons/
     remote_src: yes
-    owner: kodi
-    group: kodi
-  loop: "{{ kodi_addons }}"
+    creates: /home/kodi/.kodi/addons/plugin.video.youtube
 
 - name: Copy Kodi configuration files
   synchronize:
@@ -466,24 +177,25 @@
     owner: kodi
     group: kodi
     recurse: yes
+  changed_when: false
 
+# It happens sometimes, that the Kodi don't start for the first time - SubState": "dead"
 - name: Start Kodi
   systemd:
     name: kodi
-    state: restarted
+    state: started
     enabled: yes
+  register: result
+  until: result.status.SubState == "running"
 
 - name: Wait for Kodi to be started
   wait_for:
     port: 8080
 
-- name: Wait 10 seconds to unlock Kodi SQLite db
-  pause:
-    seconds: 10
-
-- name: Enable Kodi addon in database
-  command: sqlite3 /home/kodi/.kodi/userdata/Database/Addons27.db "UPDATE installed SET enabled = 1 WHERE addonID = '{{ item | regex_replace('.*/([^-]*).*', '\1') }}'"
-  loop: "{{ kodi_addons }}"
+- name: Enable YouTube Kodi plugin in database
+  command: sqlite3 /home/kodi/.kodi/userdata/Database/Addons27.db "UPDATE installed SET enabled = 1 WHERE addonID = 'plugin.video.youtube'"
+  register: result
+  until: '"Error: database is locked" not in result.stderr'
   changed_when: false
 
 - name: Enable Kodi Visualization addon spectrum

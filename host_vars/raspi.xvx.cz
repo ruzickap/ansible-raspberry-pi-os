@@ -8,23 +8,6 @@ smtp_gmail_auth_password: !vault |
           6663653162636639340a376334323466356265306337313934313939363062333863666435336138
           62663233633834343533303066366434383165636565633365346435313536343530
 
-influxdb_root_password: !vault |
-          $ANSIBLE_VAULT;1.1;AES256
-          32663538333232643662646433313036656330633538643932313763326330353532316262373633
-          6436373139636364363036396434666237626436333835640a663832323562616138653162363730
-          35646431346662646464336330373061386336653237346461313532326662373262626338353238
-          3833306466396161370a613039663738376438333634646630333664323038343531393065663635
-          3537
-
-influxdb_user: raspi
-influxdb_user_password: !vault |
-          $ANSIBLE_VAULT;1.1;AES256
-          39343137323466383935623862373535366564343266383939363936323637623930633639626436
-          3533346537643638306230666630303732663733646535300a613139393262346333326439326132
-          30313963353666663361643437383964383830323961626434656231333034333263313665623533
-          6264636130373930640a353331336663303564623038343766633666663666336530643238653831
-          3130
-
 samba_pi_password: !vault |
           $ANSIBLE_VAULT;1.1;AES256
           38393532396336313439313266636563663763663966663236353331326233373336363036316536
@@ -43,28 +26,28 @@ transmission_rpc_password: !vault |
 
 transmission_blocklist_url: http://list.iblocklist.com/?list=ydxerpxkpcfqjaybcssw&fileformat=p2p
 
-### Collectd + Influxdb
-## Server - Operating System Metrics (https://grafana.com/grafana/dashboards/6642)
-#- https://grafana.com/api/dashboards/6642/revisions/1/download
+fw_allowed_tcp_ports:
+  - 22          # SSH
+  - 139         # CIFS / Samba
+  - 445         # CIFS / Samba
+  - 2222        # Honeypot as a Service
+  - 3000        # Grafana
+  - 8080        # Kodi - Web Gui
+  - 9090        # Kodi - JSON RPC
+  - 22222       # SSH redirectoin to 22
+  - 49152:65535 # Transmission - torrent - peer port peer-port-random-low:peer-port-random-high
+  - 51413       # Transmission - torrent
 
-### Telegraf + InfluxDB
-## InfluxDB (https://grafana.com/dashboards/1138)
-#- https://grafana.com/api/dashboards/1138/revisions/3/download
-## Process "Top" (https://grafana.com/dashboards/3387)
-#- https://grafana.com/api/dashboards/3387/revisions/2/download
-## RaspiBolt System Overview (https://grafana.com/dashboards/9653)
-#- https://grafana.com/api/dashboards/9653/revisions/6/download
-## Telegraf Host Metrics (https://grafana.com/dashboards/1443)
-#- https://grafana.com/api/dashboards/1443/revisions/4/download
-## Telegraf: system dashboard (https://grafana.com/dashboards/928) ***
-#- https://grafana.com/api/dashboards/928/revisions/3/download
+fw_allowed_udp_ports:
+  - 137         # CIFS / Samba
+  - 1714:1764   # KDE Connect
+  - 5353        # mDNS - avahi-daemon
+  - 21027       # Syncthing
+  - 51413       # Transmission - torrent
 
 rpi_packages_additional:
-  - collectd
-  - grafana
   - hdparm
   - libcec4
-  - libcurl3-gnutls                  # Needed for curl plugin in collectd
   - samba
   - sqlite3
   - transmission-daemon
@@ -76,9 +59,6 @@ kodi_packages:
   - kodi-visualization-spectrum
   - python-six                     # Needed for YouTube addon
   - python-requests                # Needed for YouTube addon
-
-kodi_addons:
-  - https://github.com/jdf76/plugin.video.youtube/releases/download/6.5.0/plugin.video.youtube-6.5.0.zip
 
 kodi_guisettings_services_webserverpassword: !vault |
           $ANSIBLE_VAULT;1.1;AES256
@@ -92,14 +72,10 @@ rpi_disable_boot_services:
   - bluetooth
   - hciuart
   - nmbd
-  - wpa_supplicant
 
 boot_config_parameters: |
   gpu_mem=256
-  dtparam=i2c_arm=on
   hdmi_ignore_cec_init=1
-  dtoverlay=sdhost,overclock_50=100
-  dtoverlay=disable-wifi
   dtoverlay=disable-bt
   # Use vc4-fkms-v3d by default
   dtoverlay=vc4-fkms-v3d

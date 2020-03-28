@@ -1,7 +1,6 @@
 ntp_server: ntp.nic.cz
 notification_email: petr.ruzicka@gmail.com
-
-rpi_explorer_version: 0.6.0
+timezone: Europe/Prague
 
 rpi_password: !vault |
           $ANSIBLE_VAULT;1.1;AES256
@@ -19,34 +18,14 @@ grafana_admin_password: !vault |
           3739646666636465300a623333363133383634363465666161323765333961666461316465616433
           3832
 
-grafana_user: grafana
-grafana_user_password: !vault |
-          $ANSIBLE_VAULT;1.1;AES256
-          39316366353064656466623337346663383861353736636131663165303265616639326638646432
-          6631643731616530356339666538306666356232663738650a613531363037373332626364326135
-          31303462623564303237343461626138343930613639303663323661346637663632366162336131
-          3539326437363561310a313336633130633762623139623363383338353662376463386437303865
-          66313832306136613634323537353837316532646531323765333933616533343231
-
-rpi_grafana_dasboards:
-  # https://grafana.com/dashboards/1860
-  - name: Node Exporter Full
-    download_url: https://grafana.com/api/dashboards/1860/revisions/14/download
-
 enable_kernel_modules:
-  - i2c-dev
   - nf_conntrack
 
 rpi_packages:
   - bsd-mailx
   - dma
   - htop
-  - i2c-tools
   - mc
-  - nmon
-  - prometheus
-  - prometheus-node-exporter
-  - python-smbus
-  - tmux
+  - python3-gi                   # Needed for unattended-upgrades
   - unattended-upgrades
   - vim

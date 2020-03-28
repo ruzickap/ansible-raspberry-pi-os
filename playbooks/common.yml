@@ -1,7 +1,7 @@
 ---
 - name: Set timezone to Europe/Prague
   timezone:
-    name: Europe/Prague
+    name: "{{ timezone }}"
 
 - name: Set hostname
   hostname:
@@ -28,23 +28,6 @@
     dest: /etc/ssh/
     mode: 0600
   notify: restart sshd
-
-- name: Chnage pi and root user password
-  user:
-    name: "{{ item }}"
-    password: "{{ rpi_password | string | password_hash('sha512') }}"
-  changed_when: false
-  loop:
-    - pi
-    - root
-
-- name: Set authorized key for pi and root
-  authorized_key:
-    user: "{{ item }}"
-    key: "{{ lookup('file', lookup('env','HOME') + '/.ssh/id_ed25519.pub') }}"
-  loop:
-    - pi
-    - root
 
 - name: Create /etc/systemd/journald.conf.d directory
   file:
@@ -127,17 +110,6 @@
   register: result
   until: result is succeeded
 
-- name: Add an Apt signing keys
-  apt_key:
-    url: "{{ item }}"
-  loop:
-    - https://packages.grafana.com/gpg.key
-
-- name: Add Grafana repository
-  apt_repository:
-    repo: deb https://packages.grafana.com/oss/deb stable main
-    filename: grafana
-
 - name: Install packages
   apt:
     name: "{{ rpi_packages }}"
@@ -156,15 +128,6 @@
     state: stopped
     enabled: no
   loop: "{{ rpi_disable_boot_services }}"
-
-- name: Start Grafana
-  systemd:
-    name: grafana-server
-    state: started
-    enabled: yes
-
-- name: Run all hanlers
-  meta: flush_handlers
 
 - name: Create directory for mc inside /etc/skel
   file:
@@ -259,6 +222,11 @@
       STARTTLS
       INSECURE
 
+- name: Configure /etc/aliases
+  copy:
+    dest: /etc/aliases
+    content: "root:           petr.ruzicka@gmail.com"
+
 - name: Configure email notification after reboot
   template:
     dest: /etc/rc.local
@@ -270,8 +238,19 @@
     regexp: "{{ item.regexp }}"
     replace: "{{ item.replace }}"
   loop:
-    - { regexp: '^//Unattended-Upgrade::Mail "root";', replace: 'Unattended-Upgrade::Mail "root";' }
+    - { regexp: '^(\s*"origin=Debian,codename=.*)', replace: '//\1' }
+    - { regexp: '^//Unattended-Upgrade::Mail "";', replace: 'Unattended-Upgrade::Mail "root";' }
     - { regexp: '^//Unattended-Upgrade::Remove-Unused-Dependencies "false";', replace: 'Unattended-Upgrade::Remove-Unused-Dependencies "true";' }
+
+- name: Add Raspbian to /etc/apt/apt.conf.d/50unattended-upgrades
+  blockinfile:
+    path: /etc/apt/apt.conf.d/50unattended-upgrades
+    marker: "// {mark} ANSIBLE MANAGED BLOCK"
+    insertafter: "^Unattended-Upgrade::Origins-Pattern"
+    block: |2
+              "origin=*";
+              "origin=Raspbian,codename=${distro_codename},label=Raspbian";
+              "origin=Raspberry Pi Foundation,codename=${distro_codename},label=Raspberry Pi Foundation";
 
 - name: Install bcmstat.sh script
   get_url:
@@ -283,152 +262,5 @@
   apt:
     autoremove: yes
 
-###############################
-# Prometheus Node Exporter
-###############################
-
-- name: Add user 'prometheus' to video group to be able to get GPU temperature
-  user:
-    name: prometheus
-    append: yes
-    groups: video
-
-- name: Configure prometheus-node-exporter
-  blockinfile:
-    dest: /etc/default/prometheus-node-exporter
-    block: |
-      ARGS="\
-        --collector.diskstats.ignored-devices=^(ram|loop|fd)\d+$ \
-        --collector.filesystem.ignored-mount-points=^/(dev|proc|run|sys)($|/) \
-        --collector.interrupts \
-        --collector.meminfo_numa \
-        --collector.mountstats \
-        --collector.netstat.fields=(.*) \
-        --collector.tcpstat \
-        --collector.vmstat.fields=(.*) \
-      "
-  notify: restart prometheus-node-exporter
-
-- name: Download RPi exporter
-  unarchive:
-    src: https://github.com/lukasmalkmus/rpi_exporter/releases/download/v{{ rpi_explorer_version }}/rpi_exporter-{{ rpi_explorer_version }}.linux-{{ ansible_architecture | regex_replace('l$', '')}}.tar.gz
-    dest: /tmp
-    remote_src: yes
-    creates: /usr/local/bin/rpi_exporter
-  register: rpi_exporter_unarchive
-
-- name: Move rpi_exporter binary to /usr/local/bin
-  copy:
-    src: /tmp/rpi_exporter-{{ rpi_explorer_version }}.linux-{{ ansible_architecture | regex_replace('l$', '')}}/rpi_exporter
-    remote_src: yes
-    mode: 0755
-    dest: /usr/local/bin/rpi_exporter
-  when: rpi_exporter_unarchive.changed
-
-- name: Add RPi exporter target to Prometheus
-  blockinfile:
-    dest: /etc/prometheus/prometheus.yml
-    block: |2
-        - job_name: rpi
-          static_configs:
-          - targets: ['localhost:9243']
-  notify: restart prometheus
-
-- name: Add rpi_exporter to systemd
-  get_url:
-    url: https://raw.githubusercontent.com/lukasmalkmus/rpi_exporter/master/systemd/rpi_exporter.service
-    dest: /etc/systemd/system/rpi_exporter.service
-  notify:
-    - reload systemd
-    - restart rpi_exporter
-
-###############################
-# Grafana
-###############################
-
-- name: Grafana configuration
-  ini_file:
-    path: /etc/grafana/grafana.ini
-    section: auth.anonymous
-    option: enabled
-    value: 'true'
-  notify: restart grafana
-
-- name: Update grafana user password
-  uri:
-    url: "http://localhost:3000/api/user/password"
-    user: "admin"
-    password: "admin"
-    force_basic_auth: true
-    method: PUT
-    body_format: json
-    body:
-      oldPassword: admin
-      newPassword: "{{ grafana_admin_password }}"
-      confirmNew: "{{ grafana_admin_password }}"
-  ignore_errors: yes
-
-- name: Check if the grafana user is already present in Grafana
-  uri:
-    url: "http://localhost:3000/api/org/users"
-    user: "admin"
-    password: "{{ grafana_admin_password }}"
-    force_basic_auth: true
-  register: uri_grafana_user
-
-- name: Create grafana user
-  uri:
-    url: "http://localhost:3000/api/admin/users"
-    user: "admin"
-    password: "{{ grafana_admin_password }}"
-    force_basic_auth: true
-    method: POST
-    body_format: json
-    body:
-      email: "{{ grafana_user }}@{{ inventory_hostname }}"
-      login: "{{ grafana_user }}"
-      password: "{{ grafana_user_password }}"
-  when: uri_grafana_user.json[1] is not defined
-
-- name: Create Prometheus datasource for Grafana (prometheus-node_exporter)
-  grafana_datasource:
-    name: "datasource-prometheus-node_exporter"
-    grafana_url: "http://localhost:3000"
-    grafana_user: "admin"
-    grafana_password: "{{ grafana_admin_password }}"
-    ds_type: "prometheus"
-    ds_url: "http://localhost:9090"
-    is_default: yes
-
-- name: Download grafana dashboards
-  get_url:
-    url: "{{ item.download_url }}"
-    dest: /var/tmp/{{ item.download_url.split('/')[5] }}.json
-  loop: "{{ rpi_grafana_dasboards }}"
-
-- name: Replace variables inside dahboard json files
-  replace:
-    path: /var/tmp/{{ item.download_url.split('/')[5] }}.json
-    regexp: '"datasource": "\$\{.*\}",'
-    replace: '"datasource": "datasource-prometheus-node_exporter",'
-  loop: "{{ rpi_grafana_dasboards }}"
-
-- name: Check if the dashboard already exists
-  uri:
-    url: "http://localhost:3000/api/search"
-    user: "admin"
-    password: "{{ grafana_admin_password }}"
-    force_basic_auth: true
-  register: grafana_dashboards_list
-
-- name: Import Grafana dashboard
-  grafana_dashboard:
-    grafana_url: "http://localhost:3000"
-    grafana_user: "admin"
-    grafana_password: "{{ grafana_admin_password }}"
-    org_id: "1"
-    message: Updated by ansible
-    overwrite: yes
-    path: /var/tmp/{{ item.download_url.split('/')[5] }}.json
-  when: item.name not in grafana_dashboards_list | json_query('json[*].title')
-  loop: "{{ rpi_grafana_dasboards }}"
+- name: Run all hanlers
+  meta: flush_handlers

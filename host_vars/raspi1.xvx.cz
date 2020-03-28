@@ -8,15 +8,26 @@ smtp_gmail_auth_password: !vault |
           3565383532656633650a346265343038313635333839323330393633356465326565366336656362
           32623134313063373062346236303163626333343837666566363532313932333935
 
+
+firewall_allowed_tcp_ports:
+  - 22          # SSH
+  - 2222        # Honeypot as a Service
+  - 22222       # SSH redirectoin to 22
+  - 3000        # Grafana
+
+firewall_allowed_udp_ports:
+  - 5353        # mDNS - avahi-daemon
+
 boot_config_parameters: |
   gpu_mem=16
-  dtparam=i2c_arm=on
   hdmi_ignore_cec_init=1
-  dtoverlay=i2c-sensor,bmp280
 
 rpi_packages_additional:
-  - grafana-rpi
+  - nmon
+  - tmux
 
 rpi_disable_boot_services:
   - avahi-daemon
+  - bluetooth
+  - hciuart
   - wpa_supplicant
