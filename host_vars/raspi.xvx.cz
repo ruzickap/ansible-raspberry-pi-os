@@ -34,6 +34,7 @@ fw_allowed_tcp_ports:
   - 3000        # Grafana
   - 8080        # Kodi - Web Gui
   - 9090        # Kodi - JSON RPC
+  - 9091        # Transmission web interface
   - 22222       # SSH redirectoin to 22
   - 49152:65535 # Transmission - torrent - peer port peer-port-random-low:peer-port-random-high
   - 51413       # Transmission - torrent
