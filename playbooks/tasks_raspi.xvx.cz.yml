@@ -195,7 +195,7 @@
 - name: Enable YouTube Kodi plugin in database
   command: sqlite3 /home/kodi/.kodi/userdata/Database/Addons27.db "UPDATE installed SET enabled = 1 WHERE addonID = 'plugin.video.youtube'"
   register: result
-  until: '"Error: database is locked" not in result.stderr'
+  until: result is succeeded
   changed_when: false
 
 - name: Enable Kodi Visualization addon spectrum
@@ -204,4 +204,6 @@
     - imagedecoder.raw
     - visualization.goom
     - visualization.spectrum
+  register: result
+  until: result is succeeded
   changed_when: false
