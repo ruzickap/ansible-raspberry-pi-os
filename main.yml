@@ -11,6 +11,23 @@
       register: output
       changed_when: output.stdout is search("update-alternatives:")
 
+    - name: Set authorized key for pi and root
+      authorized_key:
+        user: "{{ item }}"
+        key: "{{ lookup('file', lookup('env','HOME') + '/.ssh/id_ed25519.pub') }}"
+      loop:
+        - pi
+        - root
+
+    - name: Chnage pi and root user password
+      user:
+        name: "{{ item }}"
+        password: "{{ rpi_password | string | password_hash('sha512') }}"
+      changed_when: false
+      loop:
+        - pi
+        - root
+
   roles:
     - role: oefenweb.fail2ban
 
@@ -86,24 +103,6 @@
         - dashboard_id: '9852'
           revision_id: '1'
           datasource: '{{ grafana_datasources.0.name }}'
-
-  pre_tasks:
-    - name: Set authorized key for pi and root
-      authorized_key:
-        user: "{{ item }}"
-        key: "{{ lookup('file', lookup('env','HOME') + '/.ssh/id_ed25519.pub') }}"
-      loop:
-        - pi
-        - root
-
-    - name: Chnage pi and root user password
-      user:
-        name: "{{ item }}"
-        password: "{{ rpi_password | string | password_hash('sha512') }}"
-      changed_when: false
-      loop:
-        - pi
-        - root
 
   tasks:
     - name: Include tasks
