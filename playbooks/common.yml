@@ -239,9 +239,12 @@
     regexp: "{{ item.regexp }}"
     replace: "{{ item.replace }}"
   loop:
-    - { regexp: '^(\s*"origin=Debian,codename=.*)', replace: '//\1' }
-    - { regexp: '^//Unattended-Upgrade::Mail "";', replace: 'Unattended-Upgrade::Mail "root";' }
-    - { regexp: '^//Unattended-Upgrade::Remove-Unused-Dependencies "false";', replace: 'Unattended-Upgrade::Remove-Unused-Dependencies "true";' }
+    - regexp: '^(\s*"origin=Debian,codename=.*)'
+      replace: '//\1'
+    - regexp: '^//Unattended-Upgrade::Mail "";'
+      replace: 'Unattended-Upgrade::Mail "root";'
+    - regexp: '^//Unattended-Upgrade::Remove-Unused-Dependencies "false";'
+      replace: 'Unattended-Upgrade::Remove-Unused-Dependencies "true";'
 
 - name: Add Raspbian to /etc/apt/apt.conf.d/50unattended-upgrades
   blockinfile:
