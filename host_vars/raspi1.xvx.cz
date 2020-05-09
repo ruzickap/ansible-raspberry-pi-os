@@ -30,3 +30,12 @@ rpi_disable_boot_services:
   - bluetooth
   - hciuart
   - wpa_supplicant
+
+fw_allowed_tcp_ports:
+  - 22          # SSH
+  - 2222        # Honeypot as a Service
+  - 3000        # Grafana
+  - 22222       # SSH redirectoin to 22
+
+fw_allowed_udp_ports:
+  - 5353        # mDNS - avahi-daemon
