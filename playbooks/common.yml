@@ -245,6 +245,8 @@
       replace: 'Unattended-Upgrade::Mail "root";'
     - regexp: '^//Unattended-Upgrade::Remove-Unused-Dependencies "false";'
       replace: 'Unattended-Upgrade::Remove-Unused-Dependencies "true";'
+    - regexp: '^//Unattended-Upgrade::Automatic-Reboot "false";'
+      replace: 'Unattended-Upgrade::Automatic-Reboot "true";'
 
 - name: Add Raspbian to /etc/apt/apt.conf.d/50unattended-upgrades
   blockinfile:
