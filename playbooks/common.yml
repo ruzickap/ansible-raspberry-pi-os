@@ -63,6 +63,7 @@
     dest: /root/.bashrc
     block: |
       PS1='\[\033[01;31m\]\h\[\033[01;34m\] \w #\[\033[00m\] '
+      source /usr/share/doc/fzf/examples/key-bindings.bash
       alias ll='ls -l --color=auto'
       alias mynmon='tmux new-session "NMON=tl nmon -s 3" \; split-window "NMON=ndcDt5 nmon -s 3" \; select-layout even-horizontal \; set-option status off'
 
@@ -193,6 +194,7 @@
       set laststatus=2
       set statusline=%F%m%r%h%w\ (%{&ff}){\%Y}[%l,%v][%p%%]\ %{strftime(\"%d/%m/%y\ -\ %H:%M\")}
       set ttymouse=
+      source /usr/share/doc/fzf/examples/fzf.vim
 
 - name: Tweak logrotate (/etc/logrotate.conf)
   blockinfile:
