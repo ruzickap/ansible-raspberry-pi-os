@@ -24,6 +24,7 @@ enable_kernel_modules:
 rpi_packages:
   - bsd-mailx
   - dma
+  - fzf
   - htop
   - mc
   - python3-gi                   # Needed for unattended-upgrades
