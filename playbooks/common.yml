@@ -245,6 +245,8 @@
       replace: '//\1'
     - regexp: '^//Unattended-Upgrade::Mail "";'
       replace: 'Unattended-Upgrade::Mail "root";'
+    - regexp: '^//Unattended-Upgrade::MailOnlyOnError "false";'
+      replace: 'Unattended-Upgrade::MailOnlyOnError "true";'
     - regexp: '^//Unattended-Upgrade::Remove-Unused-Dependencies "false";'
       replace: 'Unattended-Upgrade::Remove-Unused-Dependencies "true";'
     - regexp: '^//Unattended-Upgrade::Automatic-Reboot "false";'
