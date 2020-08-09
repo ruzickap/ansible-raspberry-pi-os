@@ -40,7 +40,7 @@ fw_allowed_tcp_ports:
   - 51413       # Transmission - torrent
 
 fw_allowed_udp_ports:
-  - 137         # CIFS / Samba
+  - 137:138     # CIFS / Samba
   - 1714:1764   # KDE Connect
   - 5353        # mDNS - avahi-daemon
   - 21027       # Syncthing

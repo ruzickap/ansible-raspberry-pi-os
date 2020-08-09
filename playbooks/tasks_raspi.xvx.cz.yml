@@ -1,7 +1,7 @@
 - name: Set authorized key for backup script
   authorized_key:
     user: root
-    key: "{{ lookup('file', lookup('env','HOME') + '/data/backups/id_ed25519.pub') }}"
+    key: "{{ lookup('file', lookup('env','HOME') + '/Documents/backups/id_ed25519.pub') }}"
 
 - name: Add kodi group
   group:
@@ -49,8 +49,9 @@
 - name: Create local credential file for smaba
   delegate_to: localhost
   copy:
-    dest: "{{ lookup('env','HOME') }}/data/{{ inventory_hostname }}-cifs-credentials"
+    dest: "{{ lookup('env','HOME') }}/Documents/secrets/{{ inventory_hostname }}-cifs-credentials"
     content: |
+      [{{ inventory_hostname }}]
       username=pi
       password={{ samba_pi_password }}
     mode: 0600

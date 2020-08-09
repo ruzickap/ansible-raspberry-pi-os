@@ -29,7 +29,7 @@
         <default pathversion="1"></default>
         <source>
             <name>Photos</name>
-            <path pathversion="1">/mnt/usb/backups/peru-nb-work/home/pruzicka/data/_Photos_</path>
+            <path pathversion="1">/mnt/usb/backups/peru-nb-work/home/pruzicka/Pictures</path>
             <allowsharing>false</allowsharing>
         </source>
     </pictures>
