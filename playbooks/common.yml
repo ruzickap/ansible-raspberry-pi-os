@@ -12,6 +12,7 @@
     dest: /etc/hosts
     regexp: '.*{{ inventory_hostname }}.*'
     line: "{{ ansible_default_ipv4.address }} {{ inventory_hostname }}"
+    mode: u=rw,g=r,o=r
   when: ansible_default_ipv4.address is defined
 
 - name: Configure NTP
@@ -21,6 +22,7 @@
     section: Time
     option: NTP
     value: "{{ ntp_server }}"
+    mode: u=rw,g=r,o=r
 
 - name: Copy sshd keys to /etc/ssh/
   copy:
@@ -33,6 +35,7 @@
   file:
     path: /etc/systemd/journald.conf.d
     state: directory
+    mode: u=rwx,g=rx,o=rx
 
 - name: Forward journald to /dev/tty12
   ini_file:
@@ -41,6 +44,7 @@
     section: Journal
     option: "{{ item.option }}"
     value: "{{ item.value }}"
+    mode: u=rw,g=r,o=r
   loop:
     - option: ForwardToConsole
       value: "yes"
@@ -56,6 +60,7 @@
     section: Journal
     option: SystemMaxUse
     value: 1M
+    mode: u=rw,g=r,o=r
   notify: reload systemd
 
 - name: Configure .bashrc for root
@@ -74,6 +79,7 @@
     no_extra_spaces: yes
     option: XKBLAYOUT
     value: us
+    mode: u=rw,g=r,o=r
 
 - name: Add the modules module
   modprobe:
@@ -85,6 +91,7 @@
     dest: /etc/modules-load.d/{{ item }}.conf
     content: |
       {{ item }}
+    mode: u=rw,g=r,o=r
   loop: "{{ enable_kernel_modules }}"
 
 - name: Change params in /boot/config.txt
@@ -100,6 +107,7 @@
     section: "Manager"
     option: "RuntimeWatchdogSec"
     value: "10"
+    mode: u=rw,g=r,o=r
   notify: reload systemd
 
 - name: Update all packages
@@ -143,6 +151,7 @@
     section: "{{ item.section }}"
     option: "{{ item.option }}"
     value: "{{ item.value }}"
+    mode: u=rw,g=r,o=r
   loop:
     - section: Midnight-Commander
       option: auto_save_setup
@@ -171,6 +180,7 @@
     src: /etc/skel/.config
     dest: /root/
     remote_src: yes
+    mode: preserve
 
 - name: Copy mc configuration to pi home direcotry
   copy:
@@ -179,6 +189,7 @@
     owner: pi
     group: pi
     remote_src: yes
+    mode: preserve
 
 - name: Put "mc" alias into /etc/profile.d/my-mc.sh
   copy:
@@ -186,6 +197,7 @@
     content: |
       [ -n "${BASH_VERSION}${KSH_VERSION}${ZSH_VERSION}" ] || return 0
       alias mc='. /usr/lib/mc/mc-wrapper.sh --nomouse'
+    mode: u=rw,g=r,o=r
 
 - name: Tweak vim
   copy:
@@ -195,6 +207,7 @@
       set statusline=%F%m%r%h%w\ (%{&ff}){\%Y}[%l,%v][%p%%]\ %{strftime(\"%d/%m/%y\ -\ %H:%M\")}
       set ttymouse=
       source /usr/share/doc/fzf/examples/fzf.vim
+    mode: u=rw,g=r,o=r
 
 - name: Tweak logrotate (/etc/logrotate.conf)
   blockinfile:
@@ -212,6 +225,7 @@
     path: /etc/dma/auth.conf
     regexp: ".*|smtp.gmail.com:.*"
     line: "{{ smtp_gmail_auth_user }}|smtp.gmail.com:{{ smtp_gmail_auth_password }}"
+    mode: u=rw,g=r
 
 - name: Configure dma dma.conf
   blockinfile:
@@ -229,17 +243,20 @@
     dest: /etc/aliases
     content: |
       root:           {{ notification_email }}
+    mode: u=rw,g=r,o=r
 
 - name: Configure email notification after reboot
   template:
     dest: /etc/rc.local
     src: files/etc/rc.local.j2
+    mode: u=rwx,g=rx,o=rx
 
 - name: Modify Unattended upgrade settings
   replace:
     dest: /etc/apt/apt.conf.d/50unattended-upgrades
     regexp: "{{ item.regexp }}"
     replace: "{{ item.replace }}"
+    mode: u=rw,g=r,o=r
   loop:
     - regexp: '^(\s*"origin=Debian,codename=.*)'
       replace: '//\1'

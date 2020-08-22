@@ -197,6 +197,7 @@
   command: sqlite3 /home/kodi/.kodi/userdata/Database/Addons27.db "UPDATE installed SET enabled = 1 WHERE addonID = 'plugin.video.youtube'"
   register: result
   until: result is succeeded
+  delay: 10
   changed_when: false
 
 - name: Enable Kodi Visualization addon spectrum
@@ -207,4 +208,5 @@
     - visualization.spectrum
   register: result
   until: result is succeeded
+  delay: 10
   changed_when: false
