@@ -20,10 +20,10 @@ fi
 (
 # Wait for network to be fully initialized
 sleep 10
-cat << EOF | mailx -s "Reboot {{ ansible_fqdn }}" {{ notification_email }}
+cat << EOF | mailx -s "Reboot {{ ansible_fqdn }}" "{{ notification_email }}"
 RPi ({{ ansible_fqdn }}) rebooted:
 
-`date`
+$(date)
 EOF
 ) &
 

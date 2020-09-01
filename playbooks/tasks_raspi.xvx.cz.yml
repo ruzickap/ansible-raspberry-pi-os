@@ -56,7 +56,6 @@
       password={{ samba_pi_password }}
     mode: 0600
     owner: "{{ lookup('env','USER') }}"
-    group: "{{ lookup('env','USER') }}"
 
 - name: Set SMB password for pi
   shell: ( echo {{ samba_pi_password }} ; echo {{ samba_pi_password }} ) | smbpasswd -a -s pi
