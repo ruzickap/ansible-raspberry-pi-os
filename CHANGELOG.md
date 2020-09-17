@@ -1,10 +1,27 @@
 # Changelog
 
+## [v0.1.0](https://github.com/ruzickap/ansible-raspbian/compare/v0.0.1...v0.1.0) (2020-09-17)
+
+- Add veto files to smb.conf to prevent MacOS to write garbage [`#53`](https://github.com/ruzickap/ansible-raspbian/pull/53)
+- Add mode and delays [`#51`](https://github.com/ruzickap/ansible-raspbian/pull/51)
+- Change SMB params, change file locations (Documents, Pictures) [`#47`](https://github.com/ruzickap/ansible-raspbian/pull/47)
+- Send emails from unattended-upgrades only in case of errors [`#45`](https://github.com/ruzickap/ansible-raspbian/pull/45)
+- Use latest container version of super-linter [`#44`](https://github.com/ruzickap/ansible-raspbian/pull/44)
+- Add fzf [`#42`](https://github.com/ruzickap/ansible-raspbian/pull/42)
+- Add super-linter + fix related issues [`#35`](https://github.com/ruzickap/ansible-raspbian/pull/35)
+- Add Automatic-Reboot to unattended-upgrade [`#27`](https://github.com/ruzickap/ansible-raspbian/pull/27)
+- Move to GitHub's Dependabot [`#26`](https://github.com/ruzickap/ansible-raspbian/pull/26)
+- Use shell-linter in latest version [`#18`](https://github.com/ruzickap/ansible-raspbian/pull/18)
+- Bump roles/cloudalchemy.prometheus from `4bf158b` to `a36ffcc` [`#14`](https://github.com/ruzickap/ansible-raspbian/pull/14)
+- CHANGELOG file update [`#15`](https://github.com/ruzickap/ansible-raspbian/pull/15)
+- Add ansible-lint config file .ansible-lint [`19d27e3`](https://github.com/ruzickap/ansible-raspbian/commit/19d27e39ce99faeac0eef1b2ce9f9c78fb7819f1)
+- Change yaml files to pass yamllint [`f73438b`](https://github.com/ruzickap/ansible-raspbian/commit/f73438b60ee7e57a7fab631f67eebdb35aa5c8a6)
+- Add GH Action checks [`24c59ed`](https://github.com/ruzickap/ansible-raspbian/commit/24c59ed678a00b0b61207a62f9c99f6fc714b422)
+
 ## v0.0.1 (2020-05-09)
 
 - Bump roles/cloudalchemy.prometheus from `c67a3e3` to `4bf158b` [`#13`](https://github.com/ruzickap/ansible-raspbian/pull/13)
 - Bump roles/cloudalchemy.node-exporter from `bde46a6` to `042e068` [`#12`](https://github.com/ruzickap/ansible-raspbian/pull/12)
-- Bump roles/cloudalchemy.grafana from `a5dcecb` to `1f578c1` [`#1`](https://github.com/ruzickap/ansible-raspbian/pull/1)
 - Fix yaml in main.yml to pass yamllint [`8ca4383`](https://github.com/ruzickap/ansible-raspbian/commit/8ca4383599d98b3e92af23ec89baf6eb7b9f256c)
 - Add .release-it.yml to .gitignore [`5b433d0`](https://github.com/ruzickap/ansible-raspbian/commit/5b433d047c0fb144320af6123f5ac26a6fb07bf9)
 - Add firewall ports for raspi1 [`1d64d2d`](https://github.com/ruzickap/ansible-raspbian/commit/1d64d2d07d6e3291ae1c251a4e2f6603d35287bf)
@@ -14,7 +31,6 @@
 - Add Transmission web interface to firewall rules [`6a7039b`](https://github.com/ruzickap/ansible-raspbian/commit/6a7039ba546230092fda6a9d5dce65d7084756d2)
 - Change SMTP password [`f59d66f`](https://github.com/ruzickap/ansible-raspbian/commit/f59d66f7c4c684df60908fd8ecfb89e81ccae741)
 - Improve datasource parameter definition [`4f3d415`](https://github.com/ruzickap/ansible-raspbian/commit/4f3d415b420f536c5a3db4c0ec9e6d5dc02bc8a0)
-- Add dependabot [`2aed477`](https://github.com/ruzickap/ansible-raspbian/commit/2aed47715f24019f013841cc4636073d6149463a)
 - Add roles, remove InfluxDB, collectd, Telegraf [`a0b2bb6`](https://github.com/ruzickap/ansible-raspbian/commit/a0b2bb6e2b7650132b550973328d3a34b7142717)
 - Add comments to .gitignore + .pre-commit-config.yaml [`0ec4b4a`](https://github.com/ruzickap/ansible-raspbian/commit/0ec4b4abec926f4a4c13742d9fe63cb65c376b6f)
 - Many changes / rewrites [`7d6c312`](https://github.com/ruzickap/ansible-raspbian/commit/7d6c31241d01a674b86b793dd622f0eb2f392a77)
