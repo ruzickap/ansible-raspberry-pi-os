@@ -104,6 +104,28 @@
     groups: debian-transmission
 
 #################################################
+# Plex
+#################################################
+
+- name: Add an Apt signing keys
+  apt_key:
+    url: "{{ item }}"
+  loop:
+    - https://downloads.plex.tv/plex-keys/PlexSign.key
+
+- name: Add Plex repository
+  apt_repository:
+    repo: deb https://downloads.plex.tv/repo/deb public main
+    filename: plexmediaserver
+
+- name: Install Plex
+  apt:
+    name: plexmediaserver
+    install_recommends: no
+  register: result
+  until: result is succeeded
+
+#################################################
 # Kodi
 #################################################
 

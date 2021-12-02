@@ -37,6 +37,8 @@
       firewall_forwarded_tcp_ports:
         - src: 22222
           dest: 22
+        - src: 42400
+          dest: 32400
       firewall_additional_rules:
         - "iptables -A INPUT -m pkttype --pkt-type multicast -j ACCEPT"
 

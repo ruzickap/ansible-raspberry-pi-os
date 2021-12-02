@@ -28,6 +28,8 @@ transmission_blocklist_url: http://list.iblocklist.com/?list=ydxerpxkpcfqjaybcss
 
 fw_allowed_tcp_ports:
   - 22          # SSH
+  - 53          # DNS
+  - 80          # HTTP pi-hole
   - 139         # CIFS / Samba
   - 445         # CIFS / Samba
   - 2222        # Honeypot as a Service
@@ -35,11 +37,14 @@ fw_allowed_tcp_ports:
   - 8080        # Kodi - Web Gui
   - 9090        # Kodi - JSON RPC
   - 9091        # Transmission web interface
+  - 32400       # Plex Web Server local netwrok
+  - 42400       # Plex Web Server external
   - 22222       # SSH redirection to 22
   - 49152:65535 # Transmission - torrent - peer port peer-port-random-low:peer-port-random-high
   - 51413       # Transmission - torrent
 
 fw_allowed_udp_ports:
+  - 53          # DNS
   - 137:138     # CIFS / Samba
   - 1714:1764   # KDE Connect
   - 5353        # mDNS - avahi-daemon
