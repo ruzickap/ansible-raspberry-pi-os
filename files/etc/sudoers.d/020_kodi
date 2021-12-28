@@ -1,0 +1,3 @@
+Cmnd_Alias KODI_VT = /usr/bin/openvt *
+
+%video ALL = (root) NOPASSWD: KODI_VT

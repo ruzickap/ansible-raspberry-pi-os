@@ -29,6 +29,7 @@ rpi_disable_boot_services:
   - avahi-daemon
   - bluetooth
   - hciuart
+  - triggerhappy
   - wpa_supplicant
 
 fw_allowed_tcp_ports:
