@@ -4,5 +4,4 @@ raspi.xvx.cz      # ansible_host=172.19.85.120
 
 [raspberry_pi:vars]
 ansible_user=pi
-ansible_python_interpreter=/usr/bin/python3
 ansible_ssh_pass=raspberry

@@ -28,5 +28,6 @@ rpi_packages:
   - htop
   - mc
   - python3-gi                   # Needed for unattended-upgrades
+  - rsync
   - unattended-upgrades
   - vim

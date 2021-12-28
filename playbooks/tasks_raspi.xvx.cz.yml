@@ -3,6 +3,10 @@
     user: root
     key: "{{ lookup('file', lookup('env','HOME') + '/Documents/backups/id_ed25519.pub') }}"
 
+- name: Disable swap
+  command: dphys-swapfile swapoff
+  changed_when: false
+
 - name: Add kodi group
   group:
     name: kodi
@@ -11,7 +15,7 @@
   user:
     name: kodi
     comment: Kodi
-    shell: /usr/bin/nologin
+    shell: /usr/bin/sh
     groups: audio,input,uucp,video
     group: kodi
 
@@ -23,18 +27,36 @@
     opts: noatime,nodiratime
     state: mounted
 
-- name: Install the hd-idle .deb package from the SourceForge
-  apt:
-    deb: https://sourceforge.net/p/hd-idle/feature-requests/3/attachment/hd-idle_1.05_armhf.deb
-
 - name: Enable hd-idle
   ini_file:
     path: /etc/default/hd-idle
     no_extra_spaces: yes
     section: null
-    option: START_HD_IDLE
-    value: "true"
+    option: HD_IDLE_OPTS
+    value: '"-i 600 -a /dev/sda"'
   notify: restart hd-idle
+
+#################################################
+# log2ram
+#################################################
+
+- name: Add an Apt signing keys
+  apt_key:
+    url: "{{ item }}"
+  loop:
+    - https://azlux.fr/repo.gpg.key
+
+- name: Add log2ram repository
+  apt_repository:
+    repo: deb http://packages.azlux.fr/debian/ bullseye main
+    filename: azlux
+
+- name: Install log2ram
+  apt:
+    name: log2ram
+    install_recommends: no
+  register: result
+  until: result is succeeded
 
 #################################################
 # Samba
@@ -129,23 +151,11 @@
 # Kodi
 #################################################
 
-- name: Add an Apt signing keys
-  apt_key:
-    url: "{{ item }}"
-  loop:
-    - http://pipplware.pplware.pt/pipplware/key.asc
-
-- name: Add Kodi 18 repository
-  apt_repository:
-    repo: deb http://pipplware.pplware.pt/pipplware/dists/{{ ansible_distribution_release }}/main/binary /
-    filename: pipplware
-
-- name: Install Kodi packages
-  apt:
-    name: "{{ kodi_packages }}"
-    install_recommends: no
-  register: result
-  until: result is succeeded
+- name: Create sudoers file for Kodi
+  copy:
+    src: etc/sudoers.d/020_kodi
+    dest: /etc/sudoers.d/020_kodi
+  register: kodi_service
 
 - name: Create startup script for Kodi
   copy:
@@ -168,12 +178,12 @@
 
 - name: Get the latest version of YouTube Kodi plugin
   uri:
-    url: https://api.github.com/repos/jdf76/plugin.video.youtube/releases/latest
+    url: https://api.github.com/repos/anxdpanic/plugin.video.youtube/releases/latest
   register: github_api_youtube_kodi_plugin
 
 - name: Download and unpack the YouTube Kodi plugin
   unarchive:
-    src: https://github.com/jdf76/plugin.video.youtube/releases/download/{{ github_api_youtube_kodi_plugin.json.tag_name }}/plugin.video.youtube-{{ github_api_youtube_kodi_plugin.json.tag_name }}.zip
+    src: "{{ github_api_youtube_kodi_plugin.json.assets[0].browser_download_url }}"
     dest: /home/kodi/.kodi/addons/
     remote_src: yes
     creates: /home/kodi/.kodi/addons/plugin.video.youtube
@@ -215,18 +225,23 @@
     port: 8080
 
 - name: Enable YouTube Kodi plugin in database
-  command: sqlite3 /home/kodi/.kodi/userdata/Database/Addons27.db "UPDATE installed SET enabled = 1 WHERE addonID = 'plugin.video.youtube'"
+  command: sqlite3 /home/kodi/.kodi/userdata/Database/Addons33.db "UPDATE installed SET enabled = 1 WHERE addonID = 'plugin.video.youtube'"
   register: result
   until: result is succeeded
   delay: 10
   changed_when: false
 
 - name: Enable Kodi Visualization addon spectrum
-  command: sqlite3 /home/kodi/.kodi/userdata/Database/Addons27.db "UPDATE installed SET enabled = 1 WHERE addonID = '{{ item }}'"
+  command: sqlite3 /home/kodi/.kodi/userdata/Database/Addons33.db "UPDATE installed SET enabled = 1 WHERE addonID = '{{ item }}'"
   loop:
-    - imagedecoder.raw
-    - visualization.goom
     - visualization.spectrum
+  register: result
+  until: result is succeeded
+  delay: 10
+  changed_when: false
+
+- name: Set content for Music
+  command: sqlite3 /home/kodi/.kodi/userdata/Database/MyMusic82.db "INSERT OR IGNORE INTO path VALUES(1,'/mnt/usb/music/','12aa680d4b25256c69b20c0591b57e72');"
   register: result
   until: result is succeeded
   delay: 10

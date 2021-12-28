@@ -4,12 +4,6 @@
   force_handlers: True
 
   pre_tasks:
-    - name: Make Python 3 default python
-      shell: |
-        update-alternatives --install /usr/bin/python python /usr/bin/python2.7 1
-        update-alternatives --install /usr/bin/python python /usr/bin/python3.7 2
-      register: output
-      changed_when: output.stdout is search("update-alternatives:")
 
     - name: Set authorized key for pi and root
       authorized_key:
@@ -41,71 +35,6 @@
           dest: 32400
       firewall_additional_rules:
         - "iptables -A INPUT -m pkttype --pkt-type multicast -j ACCEPT"
-
-    - role: cloudalchemy.node-exporter
-      node_exporter_enabled_collectors:
-        - diskstats:
-            ignored-devices: "^(ram|loop|fd)\\d+$"
-        - filesystem:
-            ignored-mount-points: "^/(dev|proc|run|sys)($|/)"
-            ignored-fs-types: "^(sys|proc|auto)fs$"
-        - interrupts
-        - meminfo_numa
-        - mountstats
-        - netstat:
-            fields: "(.*)"
-        - systemd
-        - tcpstat
-        - vmstat:
-            fields: "(.*)"
-
-    - role: cloudalchemy.prometheus
-      prometheus_targets:
-        node:
-          - targets:
-              - localhost:9100
-        grafana:
-          - targets:
-              - "localhost:3000"
-      prometheus_scrape_configs:
-        - job_name: "prometheus"
-          metrics_path: "/metrics"
-          static_configs:
-            - targets:
-                - "localhost:9090"
-        - job_name: "node"
-          file_sd_configs:
-            - files:
-                - "/etc/prometheus/file_sd/node.yml"
-        - job_name: "grafana"
-          file_sd_configs:
-            - files:
-                - "/etc/prometheus/file_sd/grafana.yml"
-
-    - role: cloudalchemy.grafana
-      grafana_security:
-        admin_user: admin
-        admin_password: "{{ grafana_admin_password }}"
-      grafana_auth:
-        anonymous:
-          org_name: "Main Org."
-          org_role: Viewer
-      grafana_datasources:
-        - name: "Prometheus"
-          type: "prometheus"
-          access: "proxy"
-          url: "http://127.0.0.1:9090"
-          isDefault: true
-      grafana_dashboards:
-        - dashboard_id: '1860'
-          revision_id: '12'
-          datasource: '{{ grafana_datasources.0.name }}'
-        - dashboard_id: '3662'
-          revision_id: '2'
-          datasource: '{{ grafana_datasources.0.name }}'
-        - dashboard_id: '9852'
-          revision_id: '1'
-          datasource: '{{ grafana_datasources.0.name }}'
 
   tasks:
     - name: Include tasks
