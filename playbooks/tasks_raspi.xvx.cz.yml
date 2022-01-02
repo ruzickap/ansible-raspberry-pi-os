@@ -3,10 +3,6 @@
     user: root
     key: "{{ lookup('file', lookup('env','HOME') + '/Documents/backups/id_ed25519.pub') }}"
 
-- name: Disable swap
-  command: dphys-swapfile swapoff
-  changed_when: false
-
 - name: Add kodi group
   group:
     name: kodi
@@ -37,28 +33,6 @@
   notify: restart hd-idle
 
 #################################################
-# log2ram
-#################################################
-
-- name: Add an Apt signing keys
-  apt_key:
-    url: "{{ item }}"
-  loop:
-    - https://azlux.fr/repo.gpg.key
-
-- name: Add log2ram repository
-  apt_repository:
-    repo: deb http://packages.azlux.fr/debian/ bullseye main
-    filename: azlux
-
-- name: Install log2ram
-  apt:
-    name: log2ram
-    install_recommends: no
-  register: result
-  until: result is succeeded
-
-#################################################
 # Samba
 #################################################
 
@@ -82,6 +56,128 @@
 - name: Set SMB password for pi
   shell: ( echo {{ samba_pi_password }} ; echo {{ samba_pi_password }} ) | smbpasswd -a -s pi
   changed_when: false
+
+#################################################
+# Pi-hole + hostapd = Wi-Fi AP
+#################################################
+
+# https://discourse.pi-hole.net/t/mobile-pi-hole-on-usb-ethernet-gadget-pi-4-wifi-access-point/47226/2
+# https://gist.github.com/acoomans/ee909ea00b4b83c5767d0674156b4775
+
+- name: Check if the wlan0 / phy0 is "blocked"
+  command: rfkill --json
+  register: rfkill
+  changed_when: false
+
+- name: Enable wlan0 / phy0 if needed
+  command: rfkill unblock 0
+  when: rfkill.stdout | from_json | json_query('""[?id==`0`].soft') == ["blocked"]
+
+- name: Configure static IP for wlan0
+  blockinfile:
+    dest: /etc/dhcpcd.conf
+    block: |
+      interface wlan0
+        static ip_address={{ wifi_api_ip_subnet }}.1/24
+        nohook wpa_supplicant
+  notify: restart dhcpcd
+
+- name: Install hostapd
+  apt:
+    name: hostapd
+    install_recommends: no
+  register: result
+  until: result is succeeded
+
+- name: Additional hostapd configuration
+  template:
+    dest: /etc/hostapd/hostapd.conf
+    src: files/etc/hostapd/hostapd.conf.j2
+    mode: 0600
+  notify: restart hostapd
+
+- name: Add DAEMON_CONF to /etc/default/hostapd
+  ini_file:
+    path: /etc/default/hostapd
+    section: null
+    no_extra_spaces: yes
+    option: DAEMON_CONF
+    value: "/etc/hostapd/hostapd.conf"
+  notify: restart hostapd
+
+- name: Enable IPv4 Forwarding
+  sysctl:
+    name: net.ipv4.ip_forward
+    value: '1'
+
+- name: Create /etc/pihole directory
+  file:
+    path: /etc/pihole
+    state: directory
+    mode: u=rwx,g=rwx,o=rx
+
+- name: Prepare Pi-hole unattended installation file
+  template:
+    dest: /etc/pihole/setupVars.conf
+    src: files/etc/pihole/setupVars.conf.j2
+
+- name: Install Pi-hole
+  shell: curl -L https://install.pi-hole.net | bash /dev/stdin --unattended
+  args:
+    warn: no
+    creates: /usr/bin/pihole-FTL
+
+- name: Configure Pi-hole dnsmasq
+  template:
+    dest: /etc/dnsmasq.d/00-dnsmasq.conf
+    src: files/etc/dnsmasq.d/00-dnsmasq.conf.j2
+  notify: restart pihole-FTL
+
+- name: Add Adlists to Pi-hole
+  command: sqlite3 /etc/pihole/gravity.db "INSERT INTO adlist (address, enabled, comment) VALUES ('{{ item.url }}', 1, '{{ item.comment }}');"
+  args:
+    creates: "/etc/pihole/{{ item.creates }}"
+  loop:
+    - url: https://raw.githubusercontent.com/PolishFiltersTeam/KADhosts/master/KADhosts.txt
+      comment: firebog.net - Suspicious Lists
+      creates: list.2.raw.githubusercontent.com.domains
+    - url: https://raw.githubusercontent.com/FadeMind/hosts.extras/master/add.Spam/hosts
+      comment: firebog.net - Suspicious Lists
+      creates: list.3.raw.githubusercontent.com.domains
+    - url: https://v.firebog.net/hosts/static/w3kbl.txt
+      comment: firebog.net - Suspicious Lists
+      creates: list.4.v.firebog.net.domains
+    - url: https://adaway.org/hosts.txt
+      comment: firebog.net - Advertising Lists
+      creates: list.5.adaway.org.domains
+    - url: https://v.firebog.net/hosts/AdguardDNS.txt
+      comment: firebog.net - Advertising Lists
+      creates: list.6.v.firebog.net.domains
+    - url: https://v.firebog.net/hosts/Admiral.txt
+      comment: firebog.net - Advertising Lists
+      creates: list.7.v.firebog.net.domains
+    - url: https://v.firebog.net/hosts/Easyprivacy.txt
+      comment: firebog.net - Tracking & Telemetry Lists
+      creates: list.8.v.firebog.net.domains
+    - url: https://v.firebog.net/hosts/Prigent-Ads.txt
+      comment: firebog.net - Tracking & Telemetry Lists
+      creates: list.9.v.firebog.net.domains
+    - url: https://raw.githubusercontent.com/FadeMind/hosts.extras/master/add.2o7Net/hosts
+      comment: firebog.net - Tracking & Telemetry Lists
+      creates: list.10.raw.githubusercontent.com.domains
+    - url: https://raw.githubusercontent.com/DandelionSprout/adfilt/master/Alternate%20versions%20Anti-Malware%20List/AntiMalwareHosts.txt
+      comment: firebog.net - Malicious Lists
+      creates: list.11.raw.githubusercontent.com.domains
+    - url: https://osint.digitalside.it/Threat-Intel/lists/latestdomains.txt
+      comment: firebog.net - Malicious Lists
+      creates: list.12.osint.digitalside.it.domains
+    - url: https://s3.amazonaws.com/lists.disconnect.me/simple_malvertising.txt
+      comment: firebog.net - Malicious Lists
+      creates: list.13.s3.amazonaws.com.domains
+    - url: https://gitlab.com/quidsup/notrack-blocklists/raw/master/notrack-malware.txt
+      comment: firebog.net - Malicious Lists
+      creates: list.14.gitlab.com.domains
+  notify: refresh pihole ad list
 
 #################################################
 # Transmission (http://raspi.xvx.cz:9091/web/)
@@ -146,6 +242,58 @@
     install_recommends: no
   register: result
   until: result is succeeded
+
+- name: Copy systemd configuration (log to syslog)
+  copy:
+    src: files/etc/systemd/system/plexmediaserver.service.d
+    dest: /etc/systemd/system/
+  notify:
+    - reload systemd
+    - restart plexmediaserver
+
+- name: Configure Plex
+  template:
+    dest: /var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Preferences.xml
+    src: files/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Preferences.xml.j2
+  notify: restart plexmediaserver
+
+- name: Flush handlers
+  meta: flush_handlers
+
+# I can not use environment: because of seg faults
+- name: Add libraries to Plex
+  shell: |
+    LD_LIBRARY_PATH="/usr/lib/plexmediaserver:/usr/lib/plexmediaserver/lib"
+    PLEX_MEDIA_SERVER_APPLICATION_SUPPORT_DIR="/var/lib/plexmediaserver/Library/Application Support"
+    {{ item }}
+  args:
+    creates: "/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Metadata"
+  loop:
+    - /usr/lib/plexmediaserver/Plex\ Media\ Scanner --add-section PetrR-Movies --type 1 --location /mnt/usb/movies
+    - /usr/lib/plexmediaserver/Plex\ Media\ Scanner --add-section PetrR-Music --type 8 --location /mnt/usb/music
+  notify: refresh plexmediaserver library
+
+#################################################
+# grafana-agent
+#################################################
+
+- name: Install grafana-agent
+  apt:
+    deb: https://github.com/grafana/agent/releases/download/v{{ grafana_agent_version }}/grafana-agent-{{ grafana_agent_version }}-1.armv7.deb
+  register: result
+  until: result is succeeded
+
+- name: Configure grafana-agent
+  template:
+    dest: /etc/grafana-agent.yaml
+    src: files/etc/grafana-agent.yaml.j2
+  notify: restart grafana-agent
+
+- name: Configure prometheus-blackbox-exporter
+  copy:
+    dest: /etc/prometheus/blackbox.yml
+    src: files/etc/prometheus/blackbox.yml
+  notify: restart prometheus-blackbox-exporter
 
 #################################################
 # Kodi
@@ -246,3 +394,21 @@
   until: result is succeeded
   delay: 10
   changed_when: false
+
+- name: Flush handlers
+  meta: flush_handlers
+
+- name: Wait for Kodi to be started
+  wait_for:
+    port: 8080
+
+- name: Refresh Music Library
+  no_log: true
+  uri:
+    url: http://{{ ansible_host }}:8080/jsonrpc
+    user: kodi
+    password: "{{ kodi_guisettings_services_webserverpassword }}"
+    method: POST
+    body: '{ "jsonrpc": "2.0", "method": "AudioLibrary.Scan", "id": "ansible" }'
+    force_basic_auth: yes
+    body_format: json

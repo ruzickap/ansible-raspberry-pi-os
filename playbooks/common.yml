@@ -15,6 +15,18 @@
     mode: u=rw,g=r,o=r
   when: ansible_default_ipv4.address is defined
 
+- name: Disable swap
+  command: dphys-swapfile swapoff
+  changed_when: false
+
+- name: Configure /tmp as tmpfs
+  mount:
+    path: /tmp
+    src: tmpfs
+    fstype: tmpfs
+    opts: defaults,noatime,nodiratime,nosuid,size=128m
+    state: mounted
+
 - name: Configure NTP
   ini_file:
     path: /etc/systemd/timesyncd.conf
@@ -81,6 +93,31 @@
     value: us
     mode: u=rw,g=r,o=r
 
+- name: Configure locale (/etc/default/locale)
+  ini_file:
+    path: /etc/default/locale
+    no_extra_spaces: yes
+    section: null
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  loop:
+    - option: LANG
+      value: en_US.UTF-8
+    - option: LC_ALL
+      value: en_US.UTF-8
+    - option: LANGUAGE
+      value: en_US.UTF-8
+
+- name: Replace before the expression till the begin of the file (requires Ansible >= 2.4)
+  replace:
+    path: /etc/locale.gen
+    regexp: '^# en_US.UTF-8 UTF-8$'
+    replace: 'en_US.UTF-8 UTF-8'
+
+- name: Generate locale for en_US.UTF-8
+  locale_gen:
+    name: en_US.UTF-8
+
 - name: Add the modules module
   modprobe:
     name: "{{ item }}"
@@ -99,6 +136,22 @@
     path: /boot/config.txt
     block: "{{ boot_config_parameters }}"
   notify: reboot
+
+- name: Add an Apt signing keys
+  apt_key:
+    url: https://azlux.fr/repo.gpg.key
+
+- name: Add log2ram repository
+  apt_repository:
+    repo: deb http://packages.azlux.fr/debian/ bullseye main
+    filename: azlux
+
+- name: Install log2ram
+  apt:
+    name: log2ram
+    install_recommends: no
+  register: result
+  until: result is succeeded
 
 - name: Enable watchdog
   ini_file:
@@ -130,6 +183,8 @@
   apt:
     name: "{{ rpi_packages_additional }}"
     install_recommends: no
+  register: result
+  until: result is succeeded
 
 - name: Stop services and disable them
   systemd:
@@ -175,14 +230,14 @@
       option: navigate_with_arrows
       value: 'true'
 
-- name: Copy mc configuration to root direcotry
+- name: Copy mc configuration to root directory
   copy:
     src: /etc/skel/.config
     dest: /root/
     remote_src: yes
     mode: preserve
 
-- name: Copy mc configuration to pi home direcotry
+- name: Copy mc configuration to pi home directory
   copy:
     src: /etc/skel/.config
     dest: /home/pi/

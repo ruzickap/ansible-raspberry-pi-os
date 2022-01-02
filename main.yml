@@ -13,7 +13,7 @@
         - pi
         - root
 
-    - name: Chnage pi and root user password
+    - name: Change pi and root user password
       user:
         name: "{{ item }}"
         password: "{{ rpi_password | string | password_hash('sha512') }}"
@@ -35,6 +35,7 @@
           dest: 32400
       firewall_additional_rules:
         - "iptables -A INPUT -m pkttype --pkt-type multicast -j ACCEPT"
+        - "iptables -t nat -A POSTROUTING -o {{ ansible_default_ipv4.interface }} -j MASQUERADE"
 
   tasks:
     - name: Include tasks
@@ -44,6 +45,17 @@
       include_tasks: playbooks/tasks_{{ inventory_hostname }}.yml
 
   handlers:
+    - name: restart dhcpcd
+      systemd:
+        name: dhcpcd
+        state: restarted
+
+    - name: restart grafana-agent
+      systemd:
+        name: grafana-agent
+        state: restarted
+        enabled: yes
+
     - name: restart getty@tty1
       systemd:
         name: getty@tty1
@@ -54,11 +66,46 @@
         name: hd-idle
         state: restarted
 
+    - name: restart hostapd
+      systemd:
+        masked: no
+        name: hostapd
+        state: restarted
+        enabled: yes
+
     - name: restart kodi
       systemd:
         name: kodi
         state: restarted
         enabled: yes
+
+    - name: restart pihole-FTL
+      systemd:
+        name: pihole-FTL
+        state: restarted
+        enabled: yes
+
+    - name: refresh pihole ad list
+      command: pihole -g
+
+    - name: restart plexmediaserver
+      systemd:
+        name: plexmediaserver
+        state: restarted
+
+    - name: refresh plexmediaserver library
+      shell: |
+        LD_LIBRARY_PATH="/usr/lib/plexmediaserver:/usr/lib/plexmediaserver/lib"
+        PLEX_MEDIA_SERVER_APPLICATION_SUPPORT_DIR="/var/lib/plexmediaserver/Library/Application Support"
+        {{ item }}
+      loop:
+        - /usr/lib/plexmediaserver/Plex\ Media\ Scanner --scan --refresh --section 1 --directory /mnt/usb/movies/
+        - /usr/lib/plexmediaserver/Plex\ Media\ Scanner --scan --refresh --section 2 --directory /mnt/usb/music/
+
+    - name: restart prometheus-blackbox-exporter
+      systemd:
+        name: prometheus-blackbox-exporter
+        state: restarted
 
     - name: restart samba
       systemd:

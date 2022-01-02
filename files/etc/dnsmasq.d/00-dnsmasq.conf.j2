@@ -1,0 +1,3 @@
+no-dhcp-interface=eth0
+dhcp-range=set:wlan0,{{ wifi_api_ip_subnet }}.100,{{ wifi_api_ip_subnet }}.200,24h
+dhcp-option=wlan0,3,{{ wifi_api_ip_subnet }}.1
