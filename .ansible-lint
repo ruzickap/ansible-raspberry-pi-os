@@ -1,3 +1,5 @@
+warn_list:
+  - internal-error
 skip_list:
   # Role name oefenweb.fail2ban does not match ``^[a-z][a-z0-9_]+$`` pattern
   - 106
