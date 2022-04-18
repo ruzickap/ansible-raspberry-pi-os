@@ -1,0 +1,33 @@
+# Loads default set of integrations. Do not remove.
+default_config:
+
+# Text to speech
+tts:
+  - platform: google_translate
+
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+homeassistant:
+  external_url: {{ hass_url }}
+  internal_url: {{ hass_url }}
+  name: Home
+  latitude: 50.1029808
+  longitude: 14.5016728
+  unit_system: metric
+  time_zone: {{ timezone }}
+
+http:
+  use_x_forwarded_for: true
+  trusted_proxies:
+    - 172.30.33.3
+    - 127.0.0.1
+    - ::1
+
+onboarding:
+  done:
+    - user
+    - core_config
+    - analytics
+    - integration

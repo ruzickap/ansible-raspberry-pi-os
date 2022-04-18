@@ -1,4 +1,3 @@
----
 - hosts: all
   become: yes
   force_handlers: True
@@ -24,6 +23,7 @@
 
   roles:
     - role: oefenweb.fail2ban
+      fail2ban_bantime: 86400
 
     - role: geerlingguy.firewall
       firewall_log_dropped_packets: false
@@ -46,21 +46,31 @@
       include_tasks: playbooks/tasks_{{ inventory_hostname }}.yml
 
   handlers:
+    - name: reload systemd
+      systemd:
+        daemon_reload: yes
+
+    - name: restart cloudflared
+      service:
+        name: cloudflared
+        state: restarted
+        enabled: yes
+
     - name: restart dhcpcd
       systemd:
         name: dhcpcd
         state: restarted
 
-    - name: restart grafana-agent
-      systemd:
-        name: grafana-agent
-        state: restarted
-        enabled: yes
-
     - name: restart getty@tty1
       systemd:
         name: getty@tty1
         state: restarted
+
+    - name: restart haas_proxy
+      service:
+        name: haas_proxy
+        state: restarted
+        enabled: yes
 
     - name: restart hd-idle
       systemd:
@@ -86,23 +96,6 @@
         state: restarted
         enabled: yes
 
-    - name: refresh pihole ad list
-      command: pihole -g
-
-    - name: restart plexmediaserver
-      systemd:
-        name: plexmediaserver
-        state: restarted
-
-    - name: refresh plexmediaserver library
-      shell: |
-        LD_LIBRARY_PATH="/usr/lib/plexmediaserver:/usr/lib/plexmediaserver/lib"
-        PLEX_MEDIA_SERVER_APPLICATION_SUPPORT_DIR="/var/lib/plexmediaserver/Library/Application Support"
-        {{ item }}
-      loop:
-        - /usr/lib/plexmediaserver/Plex\ Media\ Scanner --scan --refresh --section 1 --directory /mnt/usb/movies/
-        - /usr/lib/plexmediaserver/Plex\ Media\ Scanner --scan --refresh --section 2 --directory /mnt/usb/music/
-
     - name: restart prometheus-blackbox-exporter
       systemd:
         name: prometheus-blackbox-exporter
@@ -118,14 +111,19 @@
         name: sshd
         state: restarted
 
-    - name: reload systemd
-      systemd:
-        daemon_reload: yes
-
     - name: reload transmission
       systemd:
         name: transmission-daemon
         state: reloaded
+
+    - name: refresh pihole ad list
+      command: pihole -g
+
+    - name: restart grafana-agent
+      systemd:
+        name: grafana-agent
+        state: restarted
+        enabled: yes
 
     - name: reboot
       reboot:
