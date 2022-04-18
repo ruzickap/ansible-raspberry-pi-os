@@ -1,4 +1,3 @@
----
 - name: Set timezone to Europe/Prague
   timezone:
     name: "{{ timezone }}"
@@ -38,7 +37,7 @@
 
 - name: Copy sshd keys to /etc/ssh/
   copy:
-    src: files/etc/ssh/{{ inventory_hostname }}/
+    src: files/etc/ssh/
     dest: /etc/ssh/
     mode: 0600
   notify: restart sshd

@@ -3,18 +3,6 @@
     user: root
     key: "{{ lookup('file', lookup('env','HOME') + '/Documents/backups/id_ed25519.pub') }}"
 
-- name: Add kodi group
-  group:
-    name: kodi
-
-- name: Add kodi user
-  user:
-    name: kodi
-    comment: Kodi
-    shell: /usr/bin/sh
-    groups: audio,input,uucp,video
-    group: kodi
-
 - name: Mount USB disk
   mount:
     path: /mnt/usb
@@ -31,6 +19,111 @@
     option: HD_IDLE_OPTS
     value: '"-i 600 -a /dev/sda"'
   notify: restart hd-idle
+
+#################################################
+# Cloudflared
+#################################################
+
+- name: Install cloudflared
+  apt:
+    deb: "{{ cloudflared_deb_url }}"
+  register: result
+  until: result is succeeded
+
+- name: Copy cloudflared systemd unit file into place
+  template:
+    src: files/etc/systemd/system/cloudflared.service
+    dest: /etc/systemd/system/cloudflared.service
+    owner: root
+    group: root
+    mode: 0644
+  notify: reload systemd
+
+- name: Configure cloudflared
+  copy:
+    dest: /etc/default/cloudflared
+    content: |
+      CLOUDFLARED_TOKEN={{ cloudflared_token }}
+  notify: restart cloudflared
+
+#################################################
+# Home Assistant
+#################################################
+
+- name: Create hass config directory (/var/lib/hass_config)
+  file:
+    path: /var/lib/hass_config/.storage
+    state: directory
+    recurse: yes
+
+- name: Copy configuration.yaml for Home Assistand to /var/lib/hass_config/
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: 0644
+  loop:
+    - dest: /var/lib/hass_config/automations.yaml
+      src: files/var/lib/hass_config/automations.yaml.j2
+    - dest: /var/lib/hass_config/configuration.yaml
+      src: files/var/lib/hass_config/configuration.yaml.j2
+    - dest: /var/lib/hass_config/scenes.yaml
+      src: files/var/lib/hass_config/scenes.yaml.j2
+    - dest: /var/lib/hass_config/scripts.yaml
+      src: files/var/lib/hass_config/scripts.yaml.j2
+    - dest: /var/lib/hass_config/.storage/auth_provider.homeassistant
+      src: files/var/lib/hass_config/.storage/auth_provider.homeassistant.j2
+    - dest: /var/lib/hass_config/.storage/onboarding
+      src: files/var/lib/hass_config/.storage/onboarding.j2
+    - dest: /var/lib/hass_config/.storage/person
+      src: files/var/lib/hass_config/.storage/person.j2
+
+- name: Home Assistant container
+  containers.podman.podman_container:
+    name: homeassistant
+    image: ghcr.io/home-assistant/home-assistant:stable
+    volume:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/lib/hass_config:/config:Z
+    network: host
+    privileged: yes
+    label:
+      io.containers.autoupdate: registry
+    generate_systemd:
+      path: /etc/systemd/system
+    hostname: "{{ inventory_hostname }}"
+
+- name: Enable Home Assistant container via systemd
+  systemd:
+    daemon_reload: yes
+    name: container-homeassistant
+    enabled: yes
+    state: started
+
+#################################################
+# HaaS
+#################################################
+
+- name: Install haas_proxy
+  apt:
+    deb: "{{ haas_proxy_deb_url }}"
+  register: result
+  until: result is succeeded
+
+- name: Copy haas_proxy systemd unit file into place
+  template:
+    src: files/etc/systemd/system/haas_proxy.service
+    dest: /etc/systemd/system/haas_proxy.service
+    owner: root
+    group: root
+    mode: 0644
+  notify: reload systemd
+
+- name: Configure haas_proxy
+  copy:
+    dest: /etc/default/python3-haas_proxy
+    content: |
+      DEVICE_TOKEN={{ haas_proxy_device_token }}
+  notify: restart haas_proxy
 
 #################################################
 # Samba
@@ -120,6 +213,8 @@
   template:
     dest: /etc/pihole/setupVars.conf
     src: files/etc/pihole/setupVars.conf.j2
+  # This file is often modified by pi-hole
+  changed_when: false
 
 - name: Install Pi-hole
   shell: curl -L https://install.pi-hole.net | bash /dev/stdin --unattended
@@ -180,7 +275,7 @@
   notify: refresh pihole ad list
 
 #################################################
-# Transmission (http://raspi.xvx.cz:9091/web/)
+# Transmission (http://raspi.xvx.cz:9991/web/)
 #################################################
 
 - name: Create "torrent" directories in /mnt/
@@ -199,6 +294,8 @@
   template:
     dest: /etc/transmission-daemon/settings.json
     src: files/etc/transmission-daemon/settings.json.j2
+  # These files are frequently updated by Transmission
+  changed_when: false
   notify: reload transmission
 
 - name: Install blacklist file for transmission
@@ -222,64 +319,12 @@
     groups: debian-transmission
 
 #################################################
-# Plex
-#################################################
-
-- name: Add an Apt signing keys
-  apt_key:
-    url: "{{ item }}"
-  loop:
-    - https://downloads.plex.tv/plex-keys/PlexSign.key
-
-- name: Add Plex repository
-  apt_repository:
-    repo: deb https://downloads.plex.tv/repo/deb public main
-    filename: plexmediaserver
-
-- name: Install Plex
-  apt:
-    name: plexmediaserver
-    install_recommends: no
-  register: result
-  until: result is succeeded
-
-- name: Copy systemd configuration (log to syslog)
-  copy:
-    src: files/etc/systemd/system/plexmediaserver.service.d
-    dest: /etc/systemd/system/
-  notify:
-    - reload systemd
-    - restart plexmediaserver
-
-- name: Configure Plex
-  template:
-    dest: /var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Preferences.xml
-    src: files/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Preferences.xml.j2
-  notify: restart plexmediaserver
-
-- name: Flush handlers
-  meta: flush_handlers
-
-# I can not use environment: because of seg faults
-- name: Add libraries to Plex
-  shell: |
-    LD_LIBRARY_PATH="/usr/lib/plexmediaserver:/usr/lib/plexmediaserver/lib"
-    PLEX_MEDIA_SERVER_APPLICATION_SUPPORT_DIR="/var/lib/plexmediaserver/Library/Application Support"
-    {{ item }}
-  args:
-    creates: "/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Metadata"
-  loop:
-    - /usr/lib/plexmediaserver/Plex\ Media\ Scanner --add-section PetrR-Movies --type 1 --location /mnt/usb/movies
-    - /usr/lib/plexmediaserver/Plex\ Media\ Scanner --add-section PetrR-Music --type 8 --location /mnt/usb/music
-  notify: refresh plexmediaserver library
-
-#################################################
 # grafana-agent
 #################################################
 
 - name: Install grafana-agent
   apt:
-    deb: https://github.com/grafana/agent/releases/download/v{{ grafana_agent_version }}/grafana-agent-{{ grafana_agent_version }}-1.armv7.deb
+    deb: "{{ grafana_agent_deb_url }}"
   register: result
   until: result is succeeded
 
@@ -298,6 +343,18 @@
 #################################################
 # Kodi
 #################################################
+
+- name: Add kodi group
+  group:
+    name: kodi
+
+- name: Add kodi user
+  user:
+    name: kodi
+    comment: Kodi
+    shell: /usr/bin/sh
+    groups: audio,input,uucp,video
+    group: kodi
 
 - name: Create sudoers file for Kodi
   copy:
@@ -340,6 +397,8 @@
   synchronize:
     src: home/kodi/.kodi
     dest: /home/kodi/
+  # These files are frequently updated by Kodi
+  changed_when: false
   notify: restart kodi
 
 - name: Additional Kodi configuration
@@ -350,6 +409,8 @@
   loop:
     - dest: /home/kodi/.kodi/userdata/guisettings.xml
       src: files/home/kodi/.kodi/userdata/guisettings.xml.j2
+  # These files are frequently updated by Kodi
+  changed_when: false
 
 - name: Chown "/home/kodi"
   file:
