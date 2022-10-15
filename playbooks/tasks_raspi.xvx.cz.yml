@@ -322,11 +322,31 @@
 # grafana-agent
 #################################################
 
+- name: Add an Apt signing keys
+  apt_key:
+    url: https://apt.grafana.com/gpg.key
+
+- name: Add Grafana repository
+  apt_repository:
+    repo: deb https://apt.grafana.com stable main
+    filename: grafana
+
 - name: Install grafana-agent
   apt:
-    deb: "{{ grafana_agent_deb_url }}"
+    name: grafana-agent
+    install_recommends: no
   register: result
   until: result is succeeded
+
+- name: Change grafana-agent ports
+  # Collision with Transmission
+  ini_file:
+    path: /etc/default/grafana-agent
+    no_extra_spaces: yes
+    section: null
+    option: CUSTOM_ARGS
+    value: '"-server.http.address=127.0.0.1:7090 -server.grpc.address=127.0.0.1:7091"'
+  notify: restart grafana-agent
 
 - name: Configure grafana-agent
   template:
@@ -367,6 +387,12 @@
     src: lib/systemd/system/kodi.service
     dest: /lib/systemd/system/kodi.service
   register: kodi_service
+
+- name: Change default target to graphical.target
+  file:
+    src: /usr/lib/systemd/system/graphical.target
+    dest: /etc/systemd/system/default.target
+    state: link
 
 - name: Reload systemd
   systemd:
