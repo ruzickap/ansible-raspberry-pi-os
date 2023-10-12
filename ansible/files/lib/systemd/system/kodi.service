@@ -1,0 +1,23 @@
+# https://github.com/graysky2/kodi-standalone-service
+
+[Unit]
+Description=Kodi standalone (GBM)
+After=remote-fs.target network-online.target
+Wants=network-online.target
+Conflicts=getty@tty1.service
+
+[Service]
+User=kodi
+Group=kodi
+EnvironmentFile=-/etc/conf.d/kodi-standalone
+SupplementaryGroups=input
+PAMName=login
+TTYPath=/dev/tty1
+ExecStart=/usr/bin/kodi-standalone
+ExecStop=/usr/bin/killall --user kodi --exact --wait kodi.bin
+Restart=on-abort
+StandardInput=tty
+StandardOutput=journal
+
+[Install]
+WantedBy = graphical.target

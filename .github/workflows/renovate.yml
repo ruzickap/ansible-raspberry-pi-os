@@ -1,0 +1,61 @@
+---
+name: Renovate
+
+on:
+  workflow_dispatch:
+    inputs:
+      dryRun:
+        type: boolean
+        description: "Dry-Run"
+      logLevel:
+        type: choice
+        description: "Log-Level"
+        default: debug
+        options:
+          - info
+          - debug
+          - trace
+  push:
+    paths:
+      - .github/workflows/renovate.yml
+      - .github/renovate.json5
+  schedule:
+    - cron: "0 0,2,4 * * *"
+
+env:
+  # https://docs.renovatebot.com/self-hosted-configuration/#repositories
+  RENOVATE_REPOSITORIES: ${{ github.repository }}
+  # https://docs.renovatebot.com/self-hosted-configuration/#username
+  RENOVATE_USERNAME: ${{ github.repository_owner }}
+  # https://docs.renovatebot.com/configuration-options/#gitauthor
+  RENOVATE_GIT_AUTHOR: "Renovate Bot <bot@renovateapp.com>"
+  # https://docs.renovatebot.com/configuration-options/#platformcommit
+  RENOVATE_PLATFORM_COMMIT: "true"
+  # https://docs.renovatebot.com/troubleshooting/#log-debug-levels
+  LOG_LEVEL: "${{ inputs.logLevel || 'debug' }}"
+  # https://docs.renovatebot.com/self-hosted-configuration/#dryrun
+  # Run renovate in dry-run mode if executed in branches other than main - prevents versions in PRs/branches from being updated
+  RENOVATE_DRY_RUN: "${{ inputs.dryRun || ( github.head_ref || github.ref_name ) != 'main' || false }}"
+
+permissions: read-all
+
+jobs:
+  renovate:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: renovate
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate Token
+        uses: tibdex/github-app-token@v2
+        id: generate-token
+        with:
+          app_id: ${{ secrets.MY_RENOVATE_GITHUB_APP_ID }}
+          private_key: "${{ secrets.MY_RENOVATE_GITHUB_PRIVATE_KEY }}"
+
+      - name: Self-hosted Renovate
+        uses: renovatebot/github-action@v39.0.5
+        with:
+          token: "x-access-token:${{ steps.generate-token.outputs.token }}"
