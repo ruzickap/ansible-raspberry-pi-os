@@ -1,3 +1,0 @@
-Cmnd_Alias KODI_VT = /bin/fgconsole, /bin/chvt *
-
-%video ALL = (root) NOPASSWD: KODI_VT

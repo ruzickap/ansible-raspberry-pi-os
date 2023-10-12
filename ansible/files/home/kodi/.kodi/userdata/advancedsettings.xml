@@ -1,0 +1,4 @@
+<advancedsettings version="1.0">
+	<cputempcommand>sed -e 's/\([0-9]*\)[0-9]\{3\}.*/\1 C/' /sys/class/thermal/thermal_zone0/temp</cputempcommand>
+	<gputempcommand>/usr/bin/vcgencmd measure_temp | sed "s/temp=\([0-9]*\)\.[0-9]'C/\1 C/"</gputempcommand>
+</advancedsettings>

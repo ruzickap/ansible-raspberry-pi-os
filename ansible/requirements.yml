@@ -1,0 +1,15 @@
+---
+collections:
+  - name: ansible.posix
+    version: 1.5.4
+  - name: community.general
+    version: 7.5.0
+  - name: containers.podman
+    version: 1.10.3
+roles:
+  - name: geerlingguy.firewall
+    src: https://github.com/geerlingguy/ansible-role-firewall.git
+    version: master
+  - name: oefenweb.fail2ban
+    src: https://github.com/Oefenweb/ansible-fail2ban.git
+    version: master

@@ -1,0 +1,832 @@
+---
+- name: Run all
+  hosts: all
+  become: true
+  force_handlers: true
+
+  pre_tasks:
+    - name: Set authorized key for pi and root
+      ansible.posix.authorized_key:
+        user: "{{ item }}"
+        key: "{{ lookup('file', lookup('env', 'HOME') + '/.ssh/id_ed25519.pub') }}"
+      loop:
+        - pi
+        - root
+
+    - name: Change pi and root user password
+      ansible.builtin.user:
+        name: "{{ item }}"
+        password: "{{ rpi_password | string | password_hash('sha512') }}"
+      changed_when: false
+      loop:
+        - pi
+        - root
+
+  roles:
+    - role: oefenweb.fail2ban
+      fail2ban_bantime: 86400
+      fail2ban_backend: systemd
+
+    - role: geerlingguy.firewall
+      firewall_log_dropped_packets: false
+      firewall_allowed_tcp_ports: "{{ fw_allowed_tcp_ports }}"
+      firewall_allowed_udp_ports: "{{ fw_allowed_udp_ports }}"
+      firewall_forwarded_tcp_ports:
+        - src: 22222
+          dest: 22
+        - src: 42400
+          dest: 32400
+      firewall_additional_rules:
+        - "iptables -A INPUT -m pkttype --pkt-type multicast -j ACCEPT"
+        - "iptables -t nat -A POSTROUTING -o {{ ansible_default_ipv4.interface }} -j MASQUERADE"
+
+  tasks:
+    - name: Set timezone to Europe/Prague
+      community.general.timezone:
+        name: "{{ timezone }}"
+
+    - name: Set hostname
+      ansible.builtin.hostname:
+        name: "{{ inventory_hostname }}"
+
+    - name: Add hostname to '/etc/hosts'
+      ansible.builtin.lineinfile:
+        dest: /etc/hosts
+        regexp: ".*{{ inventory_hostname }}.*"
+        line: "{{ ansible_default_ipv4.address }} {{ inventory_hostname }}"
+        mode: u=rw,g=r,o=r
+      when: ansible_default_ipv4.address is defined
+
+    - name: Disable swap
+      ansible.builtin.command: dphys-swapfile uninstall
+      changed_when: false
+
+    - name: Configure /tmp as tmpfs
+      ansible.posix.mount:
+        path: /tmp
+        src: tmpfs
+        fstype: tmpfs
+        opts: defaults,noatime,nodiratime,nosuid,size=128m
+        state: mounted
+
+    - name: Configure NTP
+      community.general.ini_file:
+        path: /etc/systemd/timesyncd.conf
+        no_extra_spaces: true
+        section: Time
+        option: NTP
+        value: "{{ ntp_server }}"
+        mode: u=rw,g=r,o=r
+
+    - name: Copy sshd keys to /etc/ssh/
+      ansible.builtin.copy:
+        src: files/etc/ssh/
+        dest: /etc/ssh/
+        mode: u=rw,g=,o=
+      notify: Restart sshd
+
+    - name: Create /etc/systemd/journald.conf.d directory
+      ansible.builtin.file:
+        path: /etc/systemd/journald.conf.d
+        state: directory
+        mode: u=rwx,g=rx,o=rx
+
+    - name: Forward journald to /dev/tty12
+      community.general.ini_file:
+        path: /etc/systemd/journald.conf.d/fw-tty12.conf
+        no_extra_spaces: true
+        section: Journal
+        option: "{{ item.option }}"
+        value: "{{ item.value }}"
+        mode: u=rw,g=r,o=r
+      loop:
+        - option: ForwardToConsole
+          value: "yes"
+        - option: TTYPath
+          value: /dev/tty12
+        - option: MaxLevelConsole
+          value: info
+      notify: Reload systemd
+
+    - name: Configure journald
+      community.general.ini_file:
+        path: /etc/systemd/journald.conf.d/journal-size.conf
+        section: Journal
+        option: SystemMaxUse
+        value: 1M
+        mode: u=rw,g=r,o=r
+      notify: Reload systemd
+
+    - name: Configure .bashrc for root
+      ansible.builtin.blockinfile:
+        dest: /root/.bashrc
+        block: |
+          PS1='\[\033[01;31m\]\h\[\033[01;34m\] \w #\[\033[00m\] '
+          source /usr/share/doc/fzf/examples/key-bindings.bash
+          alias ll='ls -l --color=auto'
+
+    - name: Switch keyboard layout to US
+      community.general.ini_file:
+        path: /etc/default/keyboard
+        section: null
+        no_extra_spaces: true
+        option: XKBLAYOUT
+        value: us
+        mode: u=rw,g=r,o=r
+
+    - name: Configure locale (/etc/default/locale)
+      community.general.ini_file:
+        path: /etc/default/locale
+        no_extra_spaces: true
+        section: null
+        option: "{{ item.option }}"
+        value: "{{ item.value }}"
+        mode: u=rw,g=r,o=r
+      loop:
+        - option: LANG
+          value: en_US.UTF-8
+        - option: LC_ALL
+          value: en_US.UTF-8
+        - option: LANGUAGE
+          value: en_US.UTF-8
+
+    - name: Replace before the expression till the begin of the file
+      ansible.builtin.replace:
+        path: /etc/locale.gen
+        regexp: "^# en_US.UTF-8 UTF-8$"
+        replace: "en_US.UTF-8 UTF-8"
+
+    - name: Generate locale for en_US.UTF-8
+      community.general.locale_gen:
+        name: en_US.UTF-8
+
+    - name: Add the modules module
+      community.general.modprobe:
+        name: "{{ item }}"
+      loop: "{{ enable_kernel_modules }}"
+
+    - name: Load modules during boot
+      ansible.builtin.copy:
+        dest: /etc/modules-load.d/{{ item }}.conf
+        content: |
+          {{ item }}
+        mode: u=rw,g=r,o=r
+      loop: "{{ enable_kernel_modules }}"
+
+    - name: Change params in /boot/config.txt
+      ansible.builtin.blockinfile:
+        path: /boot/config.txt
+        block: "{{ boot_config_parameters }}"
+      notify: Reboot
+
+    - name: Add an Apt signing keys
+      ansible.builtin.get_url:
+        url: https://azlux.fr/repo.gpg.key
+        dest: /etc/apt/trusted.gpg.d/azlux.asc
+        mode: u=rw,g=r,o=r
+
+    - name: Add log2ram repository
+      ansible.builtin.apt_repository:
+        repo: deb http://packages.azlux.fr/debian/ {{ ansible_distribution_release }} main
+        filename: azlux
+
+    - name: Install log2ram
+      ansible.builtin.apt:
+        name: log2ram
+        install_recommends: false
+      register: result
+      until: result is succeeded
+
+    - name: Enable watchdog
+      community.general.ini_file:
+        path: /etc/systemd/system.conf
+        no_extra_spaces: true
+        section: "Manager"
+        option: "RuntimeWatchdogSec"
+        value: "10"
+        mode: u=rw,g=r,o=r
+      notify: Reload systemd
+
+    - name: Update all packages
+      ansible.builtin.apt:
+        name: "*"
+        state: latest
+        install_recommends: false
+        update_cache: true
+      register: result
+      until: result is succeeded
+
+    - name: Install packages
+      ansible.builtin.apt:
+        name: "{{ rpi_packages }}"
+        install_recommends: false
+      register: result
+      until: result is succeeded
+
+    - name: Install additional packages
+      ansible.builtin.apt:
+        name: "{{ rpi_packages_additional }}"
+        install_recommends: false
+      register: result
+      until: result is succeeded
+
+    - name: Stop services and disable them
+      ansible.builtin.systemd_service:
+        name: "{{ item }}"
+        state: stopped
+        enabled: false
+      loop: "{{ rpi_disable_boot_services }}"
+
+    - name: Create directory for mc inside /etc/skel
+      ansible.builtin.file:
+        path: /etc/skel/.config/mc/
+        state: directory
+        mode: u=rwx,g=,o=
+
+    - name: Create /etc/skel/.config/mc/ini file
+      community.general.ini_file:
+        path: /etc/skel/.config/mc/ini
+        no_extra_spaces: true
+        section: "{{ item.section }}"
+        option: "{{ item.option }}"
+        value: "{{ item.value }}"
+        mode: u=rw,g=r,o=r
+      loop:
+        - section: Midnight-Commander
+          option: auto_save_setup
+          value: "false"
+        - section: Midnight-Commander
+          option: drop_menus
+          value: "true"
+        - section: Midnight-Commander
+          option: editor_return_does_auto_indent
+          value: "false"
+        - section: Layout
+          option: keybar_visible
+          value: "false"
+        - section: Layout
+          option: menubar_visible
+          value: "false"
+        - section: Layout
+          option: message_visible
+          value: "false"
+        - section: Panels
+          option: navigate_with_arrows
+          value: "true"
+
+    - name: Copy mc configuration to root directory
+      ansible.builtin.copy:
+        src: /etc/skel/.config
+        dest: /root/
+        remote_src: true
+        mode: preserve
+
+    - name: Copy mc configuration to pi home directory
+      ansible.builtin.copy:
+        src: /etc/skel/.config
+        dest: /home/pi/
+        owner: pi
+        group: pi
+        remote_src: true
+        mode: preserve
+
+    - name: Put "mc" alias into /etc/profile.d/my-mc.sh
+      ansible.builtin.copy:
+        dest: /etc/profile.d/my-mc.sh
+        content: |
+          [ -n "${BASH_VERSION}${KSH_VERSION}${ZSH_VERSION}" ] || return 0
+          alias mc='. /usr/lib/mc/mc-wrapper.sh --nomouse'
+        mode: u=rw,g=r,o=r
+
+    - name: Tweak vim
+      ansible.builtin.copy:
+        dest: /etc/vim/vimrc.local
+        content: |
+          set laststatus=2
+          set statusline=%F%m%r%h%w\ (%{&ff}){\%Y}[%l,%v][%p%%]\ %{strftime(\"%d/%m/%y\ -\ %H:%M\")}
+          set ttymouse=
+          source /usr/share/doc/fzf/examples/fzf.vim
+        mode: u=rw,g=r,o=r
+
+    - name: Tweak logrotate (/etc/logrotate.conf)
+      ansible.builtin.blockinfile:
+        dest: /etc/logrotate.conf
+        insertafter: "^create"
+        block: |
+          compress
+          compresscmd /usr/bin/xz
+          compressoptions -9
+          uncompresscmd /usr/bin/unxz
+          compressext .xz
+
+    - name: Configure dma auth.conf
+      ansible.builtin.lineinfile:
+        path: /etc/dma/auth.conf
+        regexp: ".*|smtp.gmail.com:.*"
+        line: "{{ smtp_gmail_auth_user }}|smtp.gmail.com:{{ smtp_gmail_auth_password }}"
+        mode: u=rw,g=r
+      no_log: true
+
+    - name: Configure dma dma.conf
+      ansible.builtin.blockinfile:
+        dest: /etc/dma/dma.conf
+        block: |
+          SMARTHOST smtp.gmail.com
+          PORT 587
+          AUTHPATH /etc/dma/auth.conf
+          SECURETRANSFER
+          STARTTLS
+          INSECURE
+
+    - name: Configure /etc/aliases
+      ansible.builtin.copy:
+        dest: /etc/aliases
+        content: |
+          root:           {{ notification_email }}
+        mode: u=rw,g=r,o=r
+
+    - name: Configure email notification after reboot
+      ansible.builtin.template:
+        dest: /etc/rc.local
+        src: files/etc/rc.local.j2
+        mode: u=rwx,g=rx,o=rx
+
+    - name: Modify Unattended upgrade settings
+      ansible.builtin.replace:
+        dest: /etc/apt/apt.conf.d/50unattended-upgrades
+        regexp: "{{ item.regexp }}"
+        replace: "{{ item.replace }}"
+        mode: u=rw,g=r,o=r
+      loop:
+        - regexp: '^//Unattended-Upgrade::Mail "";'
+          replace: 'Unattended-Upgrade::Mail "root";'
+        - regexp: '^//Unattended-Upgrade::MailOnlyOnError "false";'
+          replace: 'Unattended-Upgrade::MailOnlyOnError "true";'
+        - regexp: '^//Unattended-Upgrade::Remove-Unused-Dependencies "false";'
+          replace: 'Unattended-Upgrade::Remove-Unused-Dependencies "true";'
+        - regexp: '^//Unattended-Upgrade::Automatic-Reboot "false";'
+          replace: 'Unattended-Upgrade::Automatic-Reboot "true";'
+
+    - name: Add Raspbian to /etc/apt/apt.conf.d/50unattended-upgrades
+      ansible.builtin.blockinfile:
+        path: /etc/apt/apt.conf.d/50unattended-upgrades
+        marker: "// {mark} ANSIBLE MANAGED BLOCK"
+        insertafter: "^Unattended-Upgrade::Origins-Pattern"
+        block: |2
+                  "origin=*";
+
+    - name: Install bcmstat.sh script
+      ansible.builtin.get_url:
+        dest: /usr/local/bin/
+        url: https://raw.githubusercontent.com/MilhouseVH/bcmstat/master/bcmstat.sh
+        mode: u=rwx,g=rx,o=rx
+
+    - name: Autoremove unused packages
+      ansible.builtin.apt:
+        autoremove: true
+
+    - name: Run all hanlers
+      ansible.builtin.meta: flush_handlers
+
+    - name: Set authorized key for backup script
+      ansible.posix.authorized_key:
+        user: root
+        key: "{{ lookup('file', lookup('env', 'HOME') + '/Documents/backups/id_ed25519.pub') }}"
+
+    - name: Mount USB disk
+      ansible.posix.mount:
+        path: /mnt/usb
+        src: LABEL=My_Disk_2_TB
+        fstype: btrfs
+        opts: noatime,nodiratime
+        state: mounted
+
+    - name: Enable hd-idle
+      community.general.ini_file:
+        path: /etc/default/hd-idle
+        no_extra_spaces: true
+        section: null
+        option: HD_IDLE_OPTS
+        value: '"-i 600 -a /dev/sda"'
+        mode: u=rw,g=r,o=r
+      notify: Restart hd-idle
+
+    #################################################
+    # Cloudflared
+    #################################################
+
+    - name: Add an Apt signing keys
+      ansible.builtin.get_url:
+        url: https://pkg.cloudflare.com/cloudflare-main.gpg
+        dest: /etc/apt/trusted.gpg.d/cloudflare.gpg
+        mode: u=rw,g=r,o=r
+
+    - name: Add Cloudflare repository
+      ansible.builtin.apt_repository:
+        repo: deb https://pkg.cloudflare.com/cloudflared {{ ansible_distribution_release }} main
+        filename: cloudflared
+
+    - name: Install cloudflared
+      ansible.builtin.apt:
+        name: cloudflared
+        install_recommends: false
+      register: result
+      until: result is succeeded
+
+    - name: Copy cloudflared systemd unit file into place
+      ansible.builtin.template:
+        src: files/etc/systemd/system/cloudflared.service
+        dest: /etc/systemd/system/cloudflared.service
+        owner: root
+        group: root
+        mode: u=rw,g=r,o=r
+      notify: Reload systemd
+
+    - name: Configure cloudflared
+      ansible.builtin.copy:
+        dest: /etc/default/cloudflared
+        content: |
+          CLOUDFLARED_TOKEN={{ cloudflared_tunnel_token }}
+        mode: u=rw,g=,o=
+      no_log: true
+      notify: Restart cloudflared
+
+    #################################################
+    # Home Assistant
+    #################################################
+
+    - name: Create hass config directory (/var/lib/hass_config)
+      ansible.builtin.file:
+        path: /var/lib/hass_config/.storage
+        state: directory
+        recurse: true
+
+    - name: Copy configuration.yaml for Home Assistand to /var/lib/hass_config/
+      ansible.builtin.template:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        mode: u=rw,g=r,o=r
+      no_log: true
+      loop:
+        - dest: /var/lib/hass_config/automations.yaml
+          src: files/var/lib/hass_config/automations.yaml.j2
+        - dest: /var/lib/hass_config/configuration.yaml
+          src: files/var/lib/hass_config/configuration.yaml.j2
+        - dest: /var/lib/hass_config/scenes.yaml
+          src: files/var/lib/hass_config/scenes.yaml.j2
+        - dest: /var/lib/hass_config/scripts.yaml
+          src: files/var/lib/hass_config/scripts.yaml.j2
+        - dest: /var/lib/hass_config/.storage/auth_provider.homeassistant
+          src: files/var/lib/hass_config/.storage/auth_provider.homeassistant.j2
+        - dest: /var/lib/hass_config/.storage/onboarding
+          src: files/var/lib/hass_config/.storage/onboarding.j2
+        - dest: /var/lib/hass_config/.storage/person
+          src: files/var/lib/hass_config/.storage/person.j2
+
+    - name: Home Assistant container
+      containers.podman.podman_container:
+        name: homeassistant
+        image: ghcr.io/home-assistant/home-assistant:stable
+        volume:
+          - /etc/localtime:/etc/localtime:ro
+          - /var/lib/hass_config:/config:Z
+        network: host
+        privileged: true
+        label:
+          io.containers.autoupdate: registry
+        generate_systemd:
+          path: /etc/systemd/system
+        hostname: "{{ inventory_hostname }}"
+
+    - name: Enable Home Assistant container via systemd
+      ansible.builtin.systemd_service:
+        daemon_reload: true
+        name: container-homeassistant
+        enabled: true
+        state: started
+
+    #################################################
+    # Samba
+    #################################################
+
+    - name: Configure Samba (smb.conf)
+      ansible.builtin.template:
+        dest: /etc/samba/smb.conf
+        src: files/etc/samba/smb.conf.j2
+        mode: u=rw,g=r,o=r
+      notify: Restart samba
+
+    - name: Create local credential file for smaba
+      delegate_to: localhost
+      ansible.builtin.copy:
+        dest: "{{ lookup('env', 'HOME') }}/Documents/secrets/{{ inventory_hostname }}-cifs-credentials"
+        content: |
+          [{{ inventory_hostname }}]
+          username=pi
+          password={{ samba_pi_password }}
+        mode: u=rw,g=,o=
+        owner: "{{ lookup('env', 'USER') }}"
+
+    - name: Set SMB password for pi
+      ansible.builtin.shell: set -o pipefail && ( echo {{ samba_pi_password }} ; echo {{ samba_pi_password }} ) | smbpasswd -a -s pi
+      args:
+        executable: /bin/bash
+      changed_when: false
+
+    #################################################
+    # Transmission (http://raspi.xvx.cz:9991/web/)
+    #################################################
+
+    - name: Create "torrent" directories in /mnt/
+      ansible.builtin.file:
+        path: "{{ item }}"
+        recurse: true
+        state: directory
+        owner: debian-transmission
+        group: debian-transmission
+        mode: u=rwx,g=rwx,o=rx
+      loop:
+        - /mnt/usb/torrents/torrents-completed
+        - /mnt/usb/torrents/torrents-incomplete
+
+    - name: Configure Transmission
+      ansible.builtin.template:
+        dest: /etc/transmission-daemon/settings.json
+        src: files/etc/transmission-daemon/settings.json.j2
+        owner: debian-transmission
+        group: debian-transmission
+        mode: u=rw,g=,o=
+      # This file are frequently updated by Transmission - changed_when: false
+      changed_when: false
+      notify: Reload transmission
+
+    - name: Install blacklist file for transmission
+      ansible.builtin.unarchive:
+        src: "{{ transmission_blocklist_url }}&archiveformat=zip"
+        dest: /var/lib/transmission-daemon/info/blocklists/
+        owner: debian-transmission
+        group: debian-transmission
+        remote_src: true
+
+    - name: Install Transmission torrent done script
+      ansible.builtin.template:
+        dest: /etc/transmission-daemon/torrent-done.sh
+        src: files/etc/transmission-daemon/torrent-done.sh.j2
+        mode: u=rwx,g=rx,o=rx
+        owner: debian-transmission
+        group: debian-transmission
+
+    - name: Add user 'pi' to debian-transmission group
+      ansible.builtin.user:
+        name: pi
+        append: true
+        groups: debian-transmission
+
+    #################################################
+    # grafana-agent
+    #################################################
+
+    - name: Add an Apt signing keys
+      ansible.builtin.get_url:
+        url: https://apt.grafana.com/gpg.key
+        dest: /etc/apt/trusted.gpg.d/grafana.asc
+        mode: u=rw,g=r,o=r
+
+    - name: Add Grafana repository
+      ansible.builtin.apt_repository:
+        repo: deb https://apt.grafana.com stable main
+        filename: grafana
+
+    - name: Install grafana-agent
+      ansible.builtin.apt:
+        name: grafana-agent
+        install_recommends: false
+      register: result
+      until: result is succeeded
+
+    - name: Change grafana-agent ports
+      # Collision with Transmission
+      community.general.ini_file:
+        path: /etc/default/grafana-agent
+        no_extra_spaces: true
+        section: null
+        option: CUSTOM_ARGS
+        value: '"-server.http.address=127.0.0.1:7090 -server.grpc.address=127.0.0.1:7091"'
+        mode: u=rw,g=r,o=r
+      notify: Restart grafana-agent
+
+    - name: Configure grafana-agent
+      ansible.builtin.template:
+        dest: /etc/grafana-agent.yaml
+        src: files/etc/grafana-agent.yaml.j2
+        mode: u=rw,g=,o=
+        owner: grafana-agent
+        group: grafana-agent
+      notify: Restart grafana-agent
+
+    - name: Configure prometheus-blackbox-exporter
+      ansible.builtin.copy:
+        dest: /etc/prometheus/blackbox.yml
+        src: files/etc/prometheus/blackbox.yml
+        mode: u=rw,g=r,o=r
+      notify: Restart prometheus-blackbox-exporter
+
+    #################################################
+    # Kodi
+    #################################################
+
+    - name: Add kodi group
+      ansible.builtin.group:
+        name: kodi
+
+    - name: Add kodi user
+      ansible.builtin.user:
+        name: kodi
+        comment: Kodi
+        shell: /usr/bin/sh
+        groups: audio,input,uucp,video
+        group: kodi
+
+    - name: Create sudoers file for Kodi
+      ansible.builtin.copy:
+        src: etc/sudoers.d/020_kodi
+        dest: /etc/sudoers.d/020_kodi
+        mode: u=rw,g=r,o=r
+      notify: kodi_service
+
+    - name: Create startup script for Kodi
+      ansible.builtin.copy:
+        src: lib/systemd/system/kodi.service
+        dest: /lib/systemd/system/kodi.service
+        mode: u=rw,g=r,o=r
+      notify: kodi_service
+
+    - name: Change default target to graphical.target
+      ansible.builtin.file:
+        src: /usr/lib/systemd/system/graphical.target
+        dest: /etc/systemd/system/default.target
+        state: link
+
+    - name: Flush handlers
+      ansible.builtin.meta: flush_handlers
+
+    - name: Create Kodi addon directory (/home/kodi/.kodi/addons)
+      ansible.builtin.file:
+        path: /home/kodi/.kodi/addons
+        state: directory
+        recurse: true
+        owner: kodi
+        group: kodi
+
+    - name: Get the latest version of YouTube Kodi plugin
+      ansible.builtin.uri:
+        url: https://api.github.com/repos/anxdpanic/plugin.video.youtube/releases/latest
+      register: github_api_youtube_kodi_plugin
+
+    - name: Download and unpack the YouTube Kodi plugin
+      ansible.builtin.unarchive:
+        src: "{{ github_api_youtube_kodi_plugin.json.assets[0].browser_download_url }}"
+        dest: /home/kodi/.kodi/addons/
+        remote_src: true
+        creates: /home/kodi/.kodi/addons/plugin.video.youtube
+
+    - name: Copy Kodi configuration files
+      ansible.posix.synchronize:
+        src: home/kodi/.kodi
+        dest: /home/kodi/
+      # These files are frequently updated by Kodi
+      changed_when: false
+      notify: Restart kodi
+
+    - name: Additional Kodi configuration
+      ansible.builtin.template:
+        dest: "{{ item.dest }}"
+        src: "{{ item.src }}"
+        mode: u=rw,g=,o=
+      loop:
+        - dest: /home/kodi/.kodi/userdata/guisettings.xml
+          src: files/home/kodi/.kodi/userdata/guisettings.xml.j2
+      # This file is frequently updated by Kodi
+      changed_when: false
+
+    - name: Chown "/home/kodi"
+      ansible.builtin.file:
+        path: /home/kodi
+        owner: kodi
+        group: kodi
+        recurse: true
+      changed_when: false
+
+    # It happens sometimes, that the Kodi don't start for the first time - SubState": "dead"
+    - name: Start Kodi
+      ansible.builtin.systemd_service:
+        name: kodi
+        state: started
+        enabled: true
+      register: result
+      until: result.status.SubState == "running"
+
+    - name: Wait for Kodi to be started
+      ansible.builtin.wait_for:
+        port: 8080
+
+    - name: Enable YouTube Kodi plugin in database
+      ansible.builtin.command: sqlite3 /home/kodi/.kodi/userdata/Database/Addons33.db "UPDATE installed SET enabled = 1 WHERE addonID = 'plugin.video.youtube'"
+      register: result
+      until: result is succeeded
+      delay: 10
+      changed_when: false
+
+    - name: Enable Kodi Visualization addon spectrum
+      ansible.builtin.command: sqlite3 /home/kodi/.kodi/userdata/Database/Addons33.db "UPDATE installed SET enabled = 1 WHERE addonID = '{{ item }}'"
+      loop:
+        - visualization.spectrum
+      register: result
+      until: result is succeeded
+      delay: 10
+      changed_when: false
+
+    - name: Set content for Music
+      ansible.builtin.command: |
+        sqlite3 /home/kodi/.kodi/userdata/Database/MyMusic82.db \
+          "INSERT OR IGNORE INTO path VALUES(1,'/mnt/usb/music/','12aa680d4b25256c69b20c0591b57e72');"
+      register: result
+      until: result is succeeded
+      delay: 10
+      changed_when: false
+
+    - name: Flush handlers
+      ansible.builtin.meta: flush_handlers
+
+    - name: Wait for Kodi to be started
+      ansible.builtin.wait_for:
+        port: 8080
+
+    - name: Refresh Music Library
+      no_log: true
+      # checkov:skip=CKV2_ANSIBLE_1
+      ansible.builtin.uri:
+        url: http://{{ ansible_host }}:8080/jsonrpc
+        user: kodi
+        password: "{{ kodi_guisettings_services_webserverpassword }}"
+        method: POST
+        body: '{ "jsonrpc": "2.0", "method": "AudioLibrary.Scan", "id": "ansible" }'
+        force_basic_auth: true
+        body_format: json
+
+  handlers:
+    - name: Reload systemd
+      ansible.builtin.systemd_service:
+        daemon_reload: true
+
+    - name: Restart cloudflared
+      ansible.builtin.service:
+        name: cloudflared
+        state: restarted
+        enabled: true
+
+    - name: Restart hd-idle
+      ansible.builtin.systemd_service:
+        name: hd-idle
+        state: restarted
+
+    - name: Restart kodi
+      ansible.builtin.systemd_service:
+        name: kodi
+        state: restarted
+        enabled: true
+
+    - name: Restart prometheus-blackbox-exporter
+      ansible.builtin.systemd_service:
+        name: prometheus-blackbox-exporter
+        state: restarted
+
+    - name: Restart samba
+      ansible.builtin.systemd_service:
+        name: smbd
+        state: restarted
+
+    - name: Reload systemd
+      ansible.builtin.systemd_service:
+        daemon_reload: true
+      when: kodi_service.changed
+
+    - name: Restart sshd
+      ansible.builtin.systemd_service:
+        name: sshd
+        state: restarted
+
+    - name: Reload transmission
+      ansible.builtin.systemd_service:
+        name: transmission-daemon
+        daemon_reload: true
+        state: reloaded
+
+    - name: Restart grafana-agent
+      ansible.builtin.systemd_service:
+        name: grafana-agent
+        state: restarted
+        enabled: true
+
+    - name: Reboot
+      ansible.builtin.reboot:
