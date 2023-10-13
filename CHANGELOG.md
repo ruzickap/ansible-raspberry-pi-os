@@ -1,5 +1,19 @@
 # Changelog
 
+## [v0.1.1](https://github.com/ruzickap/ansible-raspbian/compare/v0.1.0...v0.1.1)
+
+- feat(gh-actions): add lint-pr-title [`#143`](https://github.com/ruzickap/ansible-raspbian/pull/143)
+- feat(grafana-agent): Improve grafana-agent installation [`#137`](https://github.com/ruzickap/ansible-raspbian/pull/137)
+- Add Home Assistant, haas_proxy, cloudflared; Remove Plex [`#127`](https://github.com/ruzickap/ansible-raspbian/pull/127)
+- Update GH Actions, disable firewall logs [`#125`](https://github.com/ruzickap/ansible-raspbian/pull/125)
+- Remove raspi1, improve Plex, add grafana-agent, pihole, hostapd [`#124`](https://github.com/ruzickap/ansible-raspbian/pull/124)
+- Remove old roles [`#123`](https://github.com/ruzickap/ansible-raspbian/pull/123)
+- Move to Raspberry Pi OS and Kodi 19 [`#122`](https://github.com/ruzickap/ansible-raspbian/pull/122)
+- Move from master to main [`#117`](https://github.com/ruzickap/ansible-raspbian/pull/117)
+- Add plex [`#116`](https://github.com/ruzickap/ansible-raspbian/pull/116)
+- Use super-linter:slim [`#110`](https://github.com/ruzickap/ansible-raspbian/pull/110)
+- Upgrade GH Actions versions [`#106`](https://github.com/ruzickap/ansible-raspbian/pull/106)
+
 ## [v0.1.0](https://github.com/ruzickap/ansible-raspbian/compare/v0.0.1...v0.1.0) (2020-09-17)
 
 - Add veto files to smb.conf to prevent MacOS to write garbage [`#53`](https://github.com/ruzickap/ansible-raspbian/pull/53)
@@ -13,7 +27,6 @@
 - Move to GitHub's Dependabot [`#26`](https://github.com/ruzickap/ansible-raspbian/pull/26)
 - Use shell-linter in latest version [`#18`](https://github.com/ruzickap/ansible-raspbian/pull/18)
 - Bump roles/cloudalchemy.prometheus from `4bf158b` to `a36ffcc` [`#14`](https://github.com/ruzickap/ansible-raspbian/pull/14)
-- CHANGELOG file update [`#15`](https://github.com/ruzickap/ansible-raspbian/pull/15)
 - Add ansible-lint config file .ansible-lint [`19d27e3`](https://github.com/ruzickap/ansible-raspbian/commit/19d27e39ce99faeac0eef1b2ce9f9c78fb7819f1)
 - Change yaml files to pass yamllint [`f73438b`](https://github.com/ruzickap/ansible-raspbian/commit/f73438b60ee7e57a7fab631f67eebdb35aa5c8a6)
 - Add GH Action checks [`24c59ed`](https://github.com/ruzickap/ansible-raspbian/commit/24c59ed678a00b0b61207a62f9c99f6fc714b422)
