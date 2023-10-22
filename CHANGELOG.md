@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.0 (2023-10-22)
+
+## What's Changed
+* feat(rpi): upgrade to debian bookworm by @ruzickap in https://github.com/ruzickap/ansible-raspbian/pull/146
+* fix(renovate): add renovate config file by @ruzickap in https://github.com/ruzickap/ansible-raspbian/pull/154
+
+
+**Full Changelog**: https://github.com/ruzickap/ansible-raspbian/compare/v0.1.1...v0.2.0
+
 ## [v0.1.1](https://github.com/ruzickap/ansible-raspbian/compare/v0.1.0...v0.1.1)
 
 - feat(gh-actions): add lint-pr-title [`#143`](https://github.com/ruzickap/ansible-raspbian/pull/143)
