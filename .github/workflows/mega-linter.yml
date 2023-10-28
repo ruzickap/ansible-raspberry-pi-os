@@ -43,6 +43,7 @@ jobs:
           ANSIBLE_ANSIBLE_LINT_CONFIG_FILE: ansible/.ansible-lint
           BASH_SHFMT_ARGUMENTS: --indent 2 --space-redirects
           DISABLE_LINTERS: REPOSITORY_DEVSKIM,REPOSITORY_KICS,SPELL_CSPELL
+          FILTER_REGEX_EXCLUDE: CHANGELOG.md
           FORMATTERS_DISABLE_ERRORS: false
           GITHUB_COMMENT_REPORTER: false
           GITHUB_STATUS_REPORTER: true

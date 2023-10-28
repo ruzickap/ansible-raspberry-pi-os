@@ -4,11 +4,9 @@ Configure Raspbian (RPi) using Ansible
 
 ## Preparation
 
-Insert the SD card to some Linux based OS and run:
+Insert the SD card to some Linux based OS and run as root:
 
 ```bash
-#!/usr/bin/env bash
-
 set -euxo pipefail
 
 RPI_USER="pi"
@@ -39,14 +37,32 @@ cp owner.txt "${MYTMP}/"
 umount "${MYTMP}"
 
 mount "/dev/${DEVICE}p2" "${MYTMP}"
-bash -c "cat >> ${MYTMP}/etc/network/interfaces.d/eth0" << EOF
-auto eth0
-iface eth0 inet static
-    address 192.168.1.2
-    netmask 255.255.255.0
-    gateway 192.168.1.1
-    dns-nameservers 1.1.1.1
+cat > "${MYTMP}/etc/NetworkManager/system-connections/ruzickovi 2.4 GHz.nmconnection" << EOF
+[connection]
+id=ruzickovi 2.4 GHz
+uuid=5a62d13a-fdf8-4737-8f7d-f43764685207
+type=wifi
+interface-name=wlan0
+autoconnect=true
+
+[wifi]
+mode=infrastructure
+ssid=ruzickovi 2.4 GHz
+
+[wifi-security]
+auth-alg=open
+key-mgmt=wpa-psk
+psk=Sxxxxxxxxxxx
+
+[ipv4]
+method=manual
+dns=8.8.8.8;1.1.1.1;
+address1=192.168.1.2/24,192.168.1.1
+
+[ipv6]
+method=auto
 EOF
+chmod 600 "${MYTMP}/etc/NetworkManager/system-connections/ruzickovi 2.4 GHz.nmconnection"
 cp owner.txt "${MYTMP}/"
 umount "${MYTMP}"
 ```

@@ -44,7 +44,7 @@ rpi_packages_additional:
   - hd-idle
   - hdparm
   - kodi
-  - kodi-visualization-spectrum
+  # - kodi-visualization-spectrum
   - libgl1-mesa-dri
   - podman
   - prometheus-blackbox-exporter
@@ -70,7 +70,6 @@ rpi_disable_boot_services:
   - nmbd
   - samba-ad-dc
   - triggerhappy
-  - wpa_supplicant
 
 boot_config_parameters: |
   hdmi_ignore_cec_init=1
@@ -79,7 +78,6 @@ boot_config_parameters: |
   dtoverlay=rpivid-v4l2
   disable_overscan=1
   disable_fw_kms_setup=1
-  dtoverlay=disable-wifi
 
 grafana_cloud_api_url_region: eu-west
 grafana_cloud_api_key: !vault |
