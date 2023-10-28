@@ -468,42 +468,32 @@
         mode: u=rw,g=r,o=r
       no_log: true
       loop:
-        - dest: /var/lib/hass_config/automations.yaml
-          src: files/var/lib/hass_config/automations.yaml.j2
         - dest: /var/lib/hass_config/configuration.yaml
           src: files/var/lib/hass_config/configuration.yaml.j2
-        - dest: /var/lib/hass_config/scenes.yaml
-          src: files/var/lib/hass_config/scenes.yaml.j2
-        - dest: /var/lib/hass_config/scripts.yaml
-          src: files/var/lib/hass_config/scripts.yaml.j2
         - dest: /var/lib/hass_config/.storage/auth_provider.homeassistant
           src: files/var/lib/hass_config/.storage/auth_provider.homeassistant.j2
         - dest: /var/lib/hass_config/.storage/onboarding
           src: files/var/lib/hass_config/.storage/onboarding.j2
         - dest: /var/lib/hass_config/.storage/person
           src: files/var/lib/hass_config/.storage/person.j2
+      notify: Restart hass
 
     - name: Home Assistant container
       containers.podman.podman_container:
-        name: homeassistant
+        name: home-assistant
         image: ghcr.io/home-assistant/home-assistant:stable
         volume:
           - /etc/localtime:/etc/localtime:ro
-          - /var/lib/hass_config:/config:Z
+          - /var/lib/hass_config:/config
         network: host
         privileged: true
         label:
           io.containers.autoupdate: registry
         generate_systemd:
-          path: /etc/systemd/system
+          path: /etc/systemd/system/
+          new: true
         hostname: "{{ inventory_hostname }}"
-
-    - name: Enable Home Assistant container via systemd
-      ansible.builtin.systemd_service:
-        daemon_reload: true
-        name: container-homeassistant
-        enabled: true
-        state: started
+      notify: Restart hass
 
     #################################################
     # Samba
@@ -652,14 +642,16 @@
         src: etc/sudoers.d/020_kodi
         dest: /etc/sudoers.d/020_kodi
         mode: u=rw,g=r,o=r
-      notify: kodi_service
+      notify: Restart kodi
 
     - name: Create startup script for Kodi
       ansible.builtin.copy:
         src: lib/systemd/system/kodi.service
         dest: /lib/systemd/system/kodi.service
         mode: u=rw,g=r,o=r
-      notify: kodi_service
+      notify:
+        - Reload systemd
+        - Restart kodi
 
     - name: Change default target to graphical.target
       ansible.builtin.file:
@@ -785,6 +777,13 @@
         state: restarted
         enabled: true
 
+    - name: Restart hass
+      ansible.builtin.systemd_service:
+        daemon_reload: true
+        name: container-home-assistant
+        enabled: true
+        state: restarted
+
     - name: Restart hd-idle
       ansible.builtin.systemd_service:
         name: hd-idle
@@ -809,7 +808,6 @@
     - name: Reload systemd
       ansible.builtin.systemd_service:
         daemon_reload: true
-      when: kodi_service.changed
 
     - name: Restart sshd
       ansible.builtin.systemd_service:
