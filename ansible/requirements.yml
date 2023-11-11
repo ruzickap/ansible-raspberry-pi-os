@@ -5,7 +5,7 @@ collections:
   - name: community.general
     version: 7.5.1
   - name: containers.podman
-    version: 1.10.4
+    version: 1.11.0
 roles:
   - name: geerlingguy.firewall
     src: https://github.com/geerlingguy/ansible-role-firewall.git
