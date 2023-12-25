@@ -2,8 +2,8 @@
 # See all available variables at https://megalinter.io/latest/configuration/ and in linters documentation
 
 ANSIBLE_ANSIBLE_LINT_PRE_COMMANDS:
-  - { "command": "ansible-galaxy install -r ansible/requirements.yml" }
-ANSIBLE_ANSIBLE_LINT_ARGUMENTS: ansible
+  - command: ansible-galaxy install -r ansible/requirements.yml
+    cwd: "workspace"
 ANSIBLE_ANSIBLE_LINT_CONFIG_FILE: ansible/.ansible-lint
 
 BASH_SHFMT_ARGUMENTS: --indent 2 --space-redirects
@@ -30,5 +30,4 @@ PRINT_ALPACA: false
 # Disable creating report directory
 REPORT_OUTPUT_FOLDER: none
 
-# Overwritten by .github/workflows/megalinter.yml
-VALIDATE_ALL_CODEBASE: false
+VALIDATE_ALL_CODEBASE: true
