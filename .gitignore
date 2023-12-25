@@ -6,3 +6,6 @@
 
 # Ansible vault password file
 vault-raspbian.password
+
+# Lychee cache
+.lycheecache

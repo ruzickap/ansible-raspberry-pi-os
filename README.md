@@ -15,15 +15,10 @@ RPI_PASSWORD_YESCRYPT_HASH='$y$j9T$teBQF20fiZEV5K3NZbwZ30$kIlVP6po2p43KH17C/26cm
 DEVICE="mmcblk0"
 
 wget -c "https://downloads.raspberrypi.org/raspios_lite_arm64/images/raspios_lite_arm64-2023-10-10/2023-10-10-raspios-bookworm-arm64-lite.img.xz"
-
-cat > owner.txt << EOF
-Petr Ruzicka - petr.ruzicka@gmail.com
-EOF
+echo "Petr Ruzicka - petr.ruzicka@gmail.com" > owner.txt
 
 lsblk --output NAME,MODEL,MODEL | grep ${DEVICE}
-
 umount "/dev/${DEVICE}p1" "/dev/${DEVICE}p2" || true
-
 read -r -p "Press enter to remove everything from ${DEVICE} !!!"
 
 xzcat ./*raspios*.xz | dd of=/dev/${DEVICE} bs=4M
@@ -31,12 +26,14 @@ partprobe /dev/${DEVICE}
 
 MYTMP=$(mktemp --directory)
 mount /dev/${DEVICE}p1 "${MYTMP}"
+
 touch "${MYTMP}/ssh"
 echo "${RPI_USER}:${RPI_PASSWORD_YESCRYPT_HASH}" > "${MYTMP}/userconf.txt"
 cp owner.txt "${MYTMP}/"
-umount "${MYTMP}"
 
+umount "${MYTMP}"
 mount "/dev/${DEVICE}p2" "${MYTMP}"
+
 cat > "${MYTMP}/etc/NetworkManager/system-connections/ruzickovi 2.4 GHz.nmconnection" << EOF
 [connection]
 id=ruzickovi 2.4 GHz
@@ -62,8 +59,10 @@ address1=192.168.1.2/24,192.168.1.1
 [ipv6]
 method=auto
 EOF
+
 chmod 600 "${MYTMP}/etc/NetworkManager/system-connections/ruzickovi 2.4 GHz.nmconnection"
 cp owner.txt "${MYTMP}/"
+
 umount "${MYTMP}"
 ```
 

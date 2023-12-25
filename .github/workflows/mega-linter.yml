@@ -36,18 +36,10 @@ jobs:
           chmod a+x README.sh
 
       - name: MegaLinter
-        uses: oxsecurity/megalinter@v7.4.0
+        uses: oxsecurity/megalinter@v7.7.0
         env:
-          ANSIBLE_ANSIBLE_LINT_PRE_COMMANDS: '[{"command": "ansible-galaxy install -r ansible/requirements.yml"}]'
-          ANSIBLE_ANSIBLE_LINT_ARGUMENTS: ansible
-          ANSIBLE_ANSIBLE_LINT_CONFIG_FILE: ansible/.ansible-lint
-          BASH_SHFMT_ARGUMENTS: --indent 2 --space-redirects
-          DISABLE_LINTERS: REPOSITORY_DEVSKIM,REPOSITORY_KICS,SPELL_CSPELL
-          FILTER_REGEX_EXCLUDE: CHANGELOG.md
-          FORMATTERS_DISABLE_ERRORS: false
           GITHUB_COMMENT_REPORTER: false
           GITHUB_STATUS_REPORTER: true
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PRINT_ALPACA: false
           # Needed for scanning generated README.sh file
           VALIDATE_ALL_CODEBASE: true
