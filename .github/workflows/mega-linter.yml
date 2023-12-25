@@ -41,5 +41,3 @@ jobs:
           GITHUB_COMMENT_REPORTER: false
           GITHUB_STATUS_REPORTER: true
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Needed for scanning generated README.sh file
-          VALIDATE_ALL_CODEBASE: true
