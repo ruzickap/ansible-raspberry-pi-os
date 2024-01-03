@@ -4,7 +4,10 @@ Configure Raspbian (RPi) using Ansible
 
 ## Preparation
 
-Insert the SD card to some Linux based OS and run as root:
+1. Connect mouse and keyboard to RPi
+1. Boot the RPi with using the USB stick with standard Raspberry OS with Desktop
+1. Put the SD card into RPi
+1. Run as root
 
 ```bash
 set -euxo pipefail
@@ -13,8 +16,11 @@ RPI_USER="pi"
 # shellcheck disable=SC2016
 RPI_PASSWORD_YESCRYPT_HASH='$y$j9T$teBQF20fiZEV5K3NZbwZ30$kIlVP6po2p43KH17C/26cmDN1i./cQriWj9Wp4rSHq2' # raspberry
 DEVICE="mmcblk0"
+WIFI_SSID="ruzickovi 2.4 GHz"
 
-wget -c "https://downloads.raspberrypi.org/raspios_lite_arm64/images/raspios_lite_arm64-2023-10-10/2023-10-10-raspios-bookworm-arm64-lite.img.xz"
+read -r -p "WiFi Password: " WIFI_PASSWORD
+
+wget -c "https://downloads.raspberrypi.org/raspios_lite_arm64/images/raspios_lite_arm64-2023-12-11/2023-12-11-raspios-bookworm-arm64-lite.img.xz"
 echo "Petr Ruzicka - petr.ruzicka@gmail.com" > owner.txt
 
 lsblk --output NAME,MODEL,MODEL | grep ${DEVICE}
@@ -34,9 +40,9 @@ cp owner.txt "${MYTMP}/"
 umount "${MYTMP}"
 mount "/dev/${DEVICE}p2" "${MYTMP}"
 
-cat > "${MYTMP}/etc/NetworkManager/system-connections/ruzickovi 2.4 GHz.nmconnection" << EOF
+cat > "${MYTMP}/etc/NetworkManager/system-connections/${WIFI_SSID}.nmconnection" << EOF
 [connection]
-id=ruzickovi 2.4 GHz
+id=${WIFI_SSID}
 uuid=5a62d13a-fdf8-4737-8f7d-f43764685207
 type=wifi
 interface-name=wlan0
@@ -44,12 +50,12 @@ autoconnect=true
 
 [wifi]
 mode=infrastructure
-ssid=ruzickovi 2.4 GHz
+ssid=${WIFI_SSID}
 
 [wifi-security]
 auth-alg=open
 key-mgmt=wpa-psk
-psk=Sxxxxxxxxxxx
+psk=${WIFI_PASSWORD}
 
 [ipv4]
 method=manual
@@ -60,11 +66,13 @@ address1=192.168.1.2/24,192.168.1.1
 method=auto
 EOF
 
-chmod 600 "${MYTMP}/etc/NetworkManager/system-connections/ruzickovi 2.4 GHz.nmconnection"
+chmod 600 "${MYTMP}/etc/NetworkManager/system-connections/${WIFI_SSID}.nmconnection"
 cp owner.txt "${MYTMP}/"
 
 umount "${MYTMP}"
 ```
+
+Reboot...
 
 ## Notes
 
