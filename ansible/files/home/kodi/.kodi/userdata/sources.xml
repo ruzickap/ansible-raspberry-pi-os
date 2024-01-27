@@ -6,22 +6,12 @@
             <path pathversion="1">/mnt/usb/movies</path>
             <allowsharing>true</allowsharing>
         </source>
-        <source>
-            <name>peru.xvx.cz</name>
-            <path pathversion="1">dav://webdav.peru.xvx.cz:80/videos/</path>
-            <allowsharing>true</allowsharing>
-        </source>
     </video>
     <music>
         <default pathversion="1"></default>
         <source>
             <name>Music</name>
-            <path pathversion="1">/mnt/usb/music</path>
-            <allowsharing>true</allowsharing>
-        </source>
-        <source>
-            <name>peru.xvx.cz</name>
-            <path pathversion="1">dav://webdav.peru.xvx.cz:80/music/</path>
+            <path pathversion="1">/mnt/usb/backups/peru-nb-work/Users/Petr_Ruzicka/Music</path>
             <allowsharing>true</allowsharing>
         </source>
     </music>
@@ -29,7 +19,7 @@
         <default pathversion="1"></default>
         <source>
             <name>Photos</name>
-            <path pathversion="1">/mnt/usb/backups/peru-nb-work/home/pruzicka/Pictures</path>
+            <path pathversion="1">/mnt/usb/backups/peru-nb-work/Users/Petr_Ruzicka/Pictures</path>
             <allowsharing>false</allowsharing>
         </source>
     </pictures>
