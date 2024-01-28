@@ -16,9 +16,6 @@ on:
           - debug
           - trace
   push:
-    paths:
-      - .github/workflows/renovate.yml
-      - .github/renovate.json5
     branches:
       - main
       - "!renovate/*"

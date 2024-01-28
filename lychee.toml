@@ -14,12 +14,29 @@ max_cache_age = "1d"
 # Maximum number of concurrent link checks
 max_concurrency = 128
 
+#############################  Requests  ############################
+
+# Comma-separated list of accepted status codes for valid links.
+accept = [999]
+
 #############################  Exclusions  ##########################
 
+# Exclude URLs and mail addresses from checking (supports regex)
 exclude = [
-  'http://raspi.xvx.cz.*',
-  'https://pkg.cloudflare.com/cloudflared',
+  # Ignore all URLs with '$' - BASH variable in URL
+  '\$',
+  # Ignore all URLs with '{ ... }' - BASH / Ansible variable in URL
+  '%7B.*%7D',
+  # Ignore all URLs which starts with 'file://'
+  'file://'
 ]
 
 # Exclude these filesystem paths from getting checked
-exclude_path = []
+exclude_path = [
+  "CHANGELOG.md",
+]
+
+# Exclude all private IPs from checking.
+# Equivalent to setting `exclude_private`, `exclude_link_local`, and
+# `exclude_loopback` to true
+exclude_all_private = true
