@@ -35,7 +35,7 @@ REPORT_OUTPUT_FOLDER: none
 REPOSITORY_CHECKOV_ARGUMENTS: --skip-check CKV_GHA_7
 
 # Do not leave debug code in production, Insecure URL
-REPOSITORY_DEVSKIM_ARGUMENTS: --ignore-globs CHANGELOG.md --log-file-level Debug --ignore-rule-ids DS162092,DS137138
+REPOSITORY_DEVSKIM_ARGUMENTS: --ignore-globs CHANGELOG.md --ignore-rule-ids DS162092,DS137138
 
 # Communication Over HTTP
 REPOSITORY_KICS_ARGUMENTS: --exclude-queries 2e8d4922-8362-4606-8c14-aa10466a1ce3
