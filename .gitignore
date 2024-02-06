@@ -2,7 +2,7 @@
 .pre-commit-config.yaml
 
 # Ansible vault password file
-vault-raspbian.password
+vault-*.password
 
 # Lychee cache
 .lycheecache
