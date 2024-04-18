@@ -826,14 +826,6 @@
       delay: 10
       changed_when: false
 
-    # - name: Set content for Music
-    #   ansible.builtin.command: |
-    #     sqlite3 /home/kodi/.kodi/userdata/Database/MyMusic82.db "INSERT OR IGNORE INTO path VALUES(1,'/mnt/usb/music/','12aa680d4b25256c69b20c0591b57e72');" # DevSkim: ignore DS173237
-    #   register: result
-    #   until: result is succeeded
-    #   delay: 10
-    #   changed_when: false
-
     - name: Flush handlers
       ansible.builtin.meta: flush_handlers
 
