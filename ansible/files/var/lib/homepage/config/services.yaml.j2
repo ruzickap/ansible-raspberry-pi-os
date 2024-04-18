@@ -1,0 +1,49 @@
+---
+# For configuration options and examples, please see:
+# https://gethomepage.dev/latest/configs/services
+
+- Apps:
+    - Kodi:
+        description: Free and Open Source home theatre software
+        href: https://kodi-rpi.xvx.cz/
+        icon: https://raw.githubusercontent.com/teamapps-org/teamapps-antu-icons/68d1f2a9e9b38b78f265809cb0a69237b8a85900/project-resources/antu-classic/Antu/apps/48/kodi.svg
+        siteMonitor: http://localhost:8080
+
+    - OpenSSH:
+        description: Connectivity tool for remote login with the SSH protocol
+        href: https://ssh-rpi.xvx.cz/
+        icon: https://upload.wikimedia.org/wikipedia/commons/0/00/Unofficial_SSH_Logo.svg
+        siteMonitor: https://ssh-rpi.xvx.cz/
+
+    - Transmission:
+        description:
+        href: https://transmission-rpi.xvx.cz/
+        icon: https://raw.githubusercontent.com/transmission/transmission/083529c5bb43afaad7d53df295407ff4d8a7a20c/qt/icons/transmission.svg
+        siteMonitor: http://localhost:9991
+        widget:
+          type: transmission
+          url: http://localhost:9991
+          username: transmission
+          password: {{ transmission_rpc_password }}
+          rpcUrl: /
+
+    - Home Assistant:
+        container: home-assistant
+        description: Home Assistant is free and open-source software for home automation, designed to be an Internet of things ecosystem-independent integration platform and central control system for smart home devices, with a focus on local control and privacy
+        href: https://hass-rpi.xvx.cz/
+        icon: https://raw.githubusercontent.com/bskaplou/home-assistant-electron/ade0e4761cf73bfcfcd3b001aa0eb27f44b7a30c/home_assistant_logo.svg
+        siteMonitor: http://localhost:8123
+
+    - Homepage:
+        container: homepage
+        description: A modern, fully static, fast, secure fully proxied, highly customizable application dashboard with integrations for over 100 services and translations into multiple languages.
+        href: https://rpi.xvx.cz/
+        icon: https://raw.githubusercontent.com/gethomepage/homepage/47765ee05e633c87fcf8fca8ee1293bf0ef6bb3e/docs/assets/light_squircle%402x.png
+        siteMonitor: http://localhost:3000
+
+    - Plex Media Server:
+        container: plex
+        description: Plex Media Server is free software that allows users to create a client–server for movies, television shows, and music.
+        href: https://plex-rpi.xvx.cz/
+        icon: https://raw.githubusercontent.com/plexinc/plex-media-player/51e2b74367850cb5ab77ac51329dfd8a7a7320e4/resources/images/icon.svg
+        siteMonitor: http://localhost:32400

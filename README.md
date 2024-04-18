@@ -20,7 +20,7 @@ WIFI_SSID="ruzickovi 2.4 GHz"
 
 read -r -p "WiFi Password: " WIFI_PASSWORD
 
-wget -c "https://downloads.raspberrypi.org/raspios_lite_arm64/images/raspios_lite_arm64-2023-12-11/2023-12-11-raspios-bookworm-arm64-lite.img.xz"
+wget -c "https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2024-03-15/2024-03-15-raspios-bookworm-arm64-lite.img.xz"
 echo "Petr Ruzicka - petr.ruzicka@gmail.com" > owner.txt
 
 lsblk --output NAME,MODEL,MODEL | grep ${DEVICE}
@@ -67,6 +67,12 @@ method=auto
 EOF
 
 chmod 600 "${MYTMP}/etc/NetworkManager/system-connections/${WIFI_SSID}.nmconnection"
+
+mkdir -p "${MYTMP}/home/pi/.ssh"
+chmod 700 "${MYTMP}/home/pi/.ssh"
+wget https://github.com/ruzickap.keys -O "${MYTMP}/home/pi/.ssh/authorized_keys"
+chmod 600 "${MYTMP}/home/pi/.ssh/authorized_keys"
+
 cp owner.txt "${MYTMP}/"
 
 umount "${MYTMP}"

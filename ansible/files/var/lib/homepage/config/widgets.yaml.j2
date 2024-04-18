@@ -1,0 +1,22 @@
+---
+# For configuration options and examples, please see:
+# https://gethomepage.dev/latest/configs/service-widgets
+
+- resources:
+    cpu: true
+    cputemp: true
+    memory: true
+    uptime: true
+
+- resources:
+    expanded: true
+    disk:
+      - /
+      - /mnt/usb/music
+
+- greeting:
+    text_size: xl
+    text: {{ inventory_hostname }} | {{ ansible_default_ipv4.address }}
+
+- logo:
+    icon: https://raw.githubusercontent.com/riscv-admin/riscv-landscape/5fa7a97ceaf0ba23fdcbdd3348cba7bbeaeae9a9/cached_logos/raspberry-pi-trading-ltd-member.svg
