@@ -23,8 +23,6 @@
 
 [global]
 
-min protocol = SMB2
-
 ## Browsing/Identification ###
 
 # Change this to the workgroup/NT-domain name your Samba server will part of
@@ -104,8 +102,8 @@ min protocol = SMB2
 ########## Domains ###########
 
 #
-# The following settings only takes effect if 'server role = primary
-# classic domain controller', 'server role = backup domain controller'
+# The following settings only takes effect if 'server role = classic
+# primary domain controller', 'server role = classic backup domain controller'
 # or 'domain logons' is set
 #
 
@@ -133,7 +131,7 @@ min protocol = SMB2
 # This allows Unix users to be created on the domain controller via the SAMR
 # RPC pipe.  The example command creates a user account with a disabled Unix
 # password; please adapt to your needs
-; add user script = /usr/sbin/adduser --quiet --disabled-password --gecos "" %u
+; add user script = /usr/sbin/useradd --create-home %u
 
 # This allows machine accounts to be created on the domain controller via the
 # SAMR RPC pipe.

@@ -31,14 +31,7 @@
       firewall_log_dropped_packets: false
       firewall_allowed_tcp_ports: "{{ fw_allowed_tcp_ports }}"
       firewall_allowed_udp_ports: "{{ fw_allowed_udp_ports }}"
-      firewall_forwarded_tcp_ports:
-        - src: 22222
-          dest: 22
-        - src: 42400
-          dest: 32400
-      firewall_additional_rules:
-        - "iptables -A INPUT -m pkttype --pkt-type multicast -j ACCEPT"
-        - "iptables -t nat -A POSTROUTING -o {{ ansible_default_ipv4.interface }} -j MASQUERADE"
+      firewall_forwarded_tcp_ports: "{{ fw_forwarded_tcp_ports }}"
 
   tasks:
     - name: Set timezone to Europe/Prague
@@ -460,7 +453,7 @@
         state: directory
         recurse: true
 
-    - name: Copy configuration.yaml for Home Assistand to /var/lib/hass_config/
+    - name: Copy config files for Home Assistant to /var/lib/hass_config/
       ansible.builtin.template:
         src: "{{ item.src }}"
         dest: "{{ item.dest }}"
@@ -483,16 +476,112 @@
         image: ghcr.io/home-assistant/home-assistant:stable
         volume:
           - /etc/localtime:/etc/localtime:ro
+          - /run/dbus:/run/dbus:ro
           - /var/lib/hass_config:/config
         network: host
         privileged: true
         label:
           io.containers.autoupdate: registry
+          homepage.group: Containers
+          homepage.name: Home Assistant
+          homepage.icon: https://upload.wikimedia.org/wikipedia/en/4/49/Home_Assistant_logo_%282023%29.svg
+          homepage.href: https://hass-rpi.xvx.cz/
+          homepage.description: Open source home automation that puts local control and privacy first
         generate_systemd:
           path: /etc/systemd/system/
           new: true
         hostname: "{{ inventory_hostname }}"
       notify: Restart hass
+
+    #################################################
+    # Homepage
+    #################################################
+
+    - name: Create homepage directory (/var/lib/homepage/config)
+      ansible.builtin.file:
+        path: /var/lib/homepage/config
+        state: directory
+        recurse: true
+
+    - name: Copy config files for homepage to /var/lib/homepage/config
+      ansible.builtin.template:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        mode: u=rw,g=r,o=r
+      no_log: true
+      loop:
+        - dest: /var/lib/homepage/config/docker.yaml
+          src: files/var/lib/homepage/config/docker.yaml.j2
+        - dest: /var/lib/homepage/config/widgets.yaml
+          src: files/var/lib/homepage/config/widgets.yaml.j2
+        - dest: /var/lib/homepage/config/services.yaml
+          src: files/var/lib/homepage/config/services.yaml.j2
+        - dest: /var/lib/homepage/config/settings.yaml
+          src: files/var/lib/homepage/config/settings.yaml.j2
+      notify: Restart hass
+
+    - name: Homepage container
+      containers.podman.podman_container:
+        name: homepage
+        image: ghcr.io/gethomepage/homepage:latest
+        volume:
+          - /var/lib/homepage/config:/app/config
+          - /mnt/usb/music:/mnt/usb/music:ro
+          - /run/podman/podman.sock:/var/run/docker.sock:ro
+        network: host
+        privileged: true
+        env:
+          LOG_TARGETS: stdout
+        label:
+          io.containers.autoupdate: registry
+          homepage.group: Containers
+          homepage.name: Homepage
+          homepage.icon: https://raw.githubusercontent.com/gethomepage/homepage/47765ee05e633c87fcf8fca8ee1293bf0ef6bb3e/docs/assets/light_squircle%402x.png
+          homepage.href: https://rpi.xvx.cz/
+          homepage.description: A modern, fully static, fast, secure fully proxied, highly customizable application dashboard with integrations for over 100 services and translations into multiple languages.
+        generate_systemd:
+          path: /etc/systemd/system/
+          new: true
+        hostname: "{{ inventory_hostname }}"
+      notify: Restart homepage
+
+    #################################################
+    # Plex
+    #################################################
+
+    - name: Create plex directory (/var/lib/plex/config)
+      ansible.builtin.file:
+        path: /var/lib/plex/config
+        state: directory
+        recurse: true
+
+    - name: Plex container
+      containers.podman.podman_container:
+        name: plex
+        image: ghcr.io/linuxserver/plex:arm64v8-latest
+        network: host
+        device: "/dev/dri:/dev/dri"
+        volume:
+          - /var/lib/plex/config:/config
+          - /mnt/usb/movies:/movies:ro
+          - /mnt/usb/music:/music:ro
+        env:
+          PLEX_UID: 1000
+          PLEX_GID: 1000
+          TZ: Europe/Prague
+          PLEX_CLAIM: "{{ plex_claim }}"
+        label:
+          io.containers.autoupdate: registry
+          homepage.group: Containers
+          homepage.name: Plex
+          homepage.icon: https://raw.githubusercontent.com/plexinc/plex-media-player/51e2b74367850cb5ab77ac51329dfd8a7a7320e4/resources/images/icon.svg
+          homepage.href: https://plex-rpi.xvx.cz/
+          homepage.description: Plex Media Server (PMS) is free software that allows users to create a client–server for movies, television shows, and music.
+        generate_systemd:
+          path: /etc/systemd/system/
+          new: true
+        hostname: "{{ inventory_hostname }}"
+      notify: Restart plex
 
     #################################################
     # Samba
@@ -737,14 +826,13 @@
       delay: 10
       changed_when: false
 
-    - name: Set content for Music
-      ansible.builtin.command: |
-        sqlite3 /home/kodi/.kodi/userdata/Database/MyMusic82.db \
-          "INSERT OR IGNORE INTO path VALUES(1,'/mnt/usb/music/','12aa680d4b25256c69b20c0591b57e72');" # DevSkim: ignore DS173237
-      register: result
-      until: result is succeeded
-      delay: 10
-      changed_when: false
+    # - name: Set content for Music
+    #   ansible.builtin.command: |
+    #     sqlite3 /home/kodi/.kodi/userdata/Database/MyMusic82.db "INSERT OR IGNORE INTO path VALUES(1,'/mnt/usb/music/','12aa680d4b25256c69b20c0591b57e72');" # DevSkim: ignore DS173237
+    #   register: result
+    #   until: result is succeeded
+    #   delay: 10
+    #   changed_when: false
 
     - name: Flush handlers
       ansible.builtin.meta: flush_handlers
@@ -780,6 +868,27 @@
       ansible.builtin.systemd_service:
         daemon_reload: true
         name: container-home-assistant
+        enabled: true
+        state: restarted
+
+    - name: Restart homepage
+      ansible.builtin.systemd_service:
+        daemon_reload: true
+        name: container-homepage
+        enabled: true
+        state: restarted
+
+    - name: Restart plex
+      ansible.builtin.systemd_service:
+        daemon_reload: true
+        name: container-plex
+        enabled: true
+        state: restarted
+
+    - name: Restart scrutiny
+      ansible.builtin.systemd_service:
+        daemon_reload: true
+        name: container-scrutiny
         enabled: true
         state: restarted
 
