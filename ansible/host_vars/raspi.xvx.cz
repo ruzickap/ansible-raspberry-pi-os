@@ -23,21 +23,16 @@ transmission_rpc_password: !vault |
   3238336533316436610a393336313136626434663366393035363963653438656132653835336265
   3831
 
-plex_claim: !vault |
-  $ANSIBLE_VAULT;1.1;AES256
-  61653964363566383730366636313738386437373334333564306635353739346130663639386539
-  3463313862626233343332393565663131636632663464630a656563333134616663353933336538
-  31333935656435396330363565323034373935653361393165363362663066366165633838633566
-  3864663333383562310a623733383664396664613861633534353361326166326166316333656466
-  61636662326366376461336638363466636337666230343461343732383064386439
-
 transmission_blocklist_url: http://list.iblocklist.com/?list=ydxerpxkpcfqjaybcssw&fileformat=p2p
 
 fw_allowed_tcp_ports:
   - 22          # SSH
   - 139         # CIFS / Samba
   - 445         # CIFS / Samba
-  - 8080        # Kodi
+  # - 8080        # Kodi
+  # - 8081        # Scrutiny
+  # - 8086        # Scrutiny - InfluxDB
+  - 32400       # Plex
   - 49152:65535 # Transmission - torrent - peer port peer-port-random-low:peer-port-random-high
   - 51413       # Transmission - torrent
 
@@ -63,6 +58,7 @@ rpi_packages_additional:
   - podman
   - prometheus-blackbox-exporter
   - samba
+  - smartmontools
   - sqlite3
   - telnet
   - transmission-daemon

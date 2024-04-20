@@ -486,7 +486,7 @@
           homepage.name: Home Assistant
           homepage.icon: https://upload.wikimedia.org/wikipedia/en/4/49/Home_Assistant_logo_%282023%29.svg
           homepage.href: https://hass-rpi.xvx.cz/
-          homepage.description: Open source home automation that puts local control and privacy first
+          homepage.description: Open source home automation that puts local control and privacy first.
         generate_systemd:
           path: /etc/systemd/system/
           new: true
@@ -559,8 +559,6 @@
       containers.podman.podman_container:
         name: plex
         image: ghcr.io/linuxserver/plex:arm64v8-latest
-        network: host
-        device: "/dev/dri:/dev/dri"
         volume:
           - /var/lib/plex/config:/config
           - /mnt/usb/movies:/movies:ro
@@ -569,7 +567,8 @@
           PLEX_UID: 1000
           PLEX_GID: 1000
           TZ: Europe/Prague
-          PLEX_CLAIM: "{{ plex_claim }}"
+        ports:
+          - 32400:32400
         label:
           io.containers.autoupdate: registry
           homepage.group: Containers
@@ -582,6 +581,47 @@
           new: true
         hostname: "{{ inventory_hostname }}"
       notify: Restart plex
+
+    #################################################
+    # Scrutiny
+    #################################################
+
+    - name: Create scrutiny directory (/var/lib/scrutiny)
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        recurse: true
+      loop:
+        - /var/lib/scrutiny/config
+        - /var/lib/scrutiny/influxdb2
+
+    - name: Scrutiny container
+      containers.podman.podman_container:
+        name: scrutiny
+        image: ghcr.io/analogj/scrutiny:master-omnibus
+        device:
+          - /dev/sda:/dev/sda
+        volume:
+          - /var/lib/scrutiny/config:/opt/scrutiny/config
+          - /var/lib/scrutiny/influxdb2:/opt/scrutiny/influxdb
+          - /run/udev:/run/udev:ro
+        cap_add:
+          - SYS_RAWIO
+        ports:
+          - 8081:8080
+          - 8086:8086
+        label:
+          io.containers.autoupdate: registry
+          homepage.group: Containers
+          homepage.name: Scrutiny
+          homepage.icon: https://raw.githubusercontent.com/AnalogJ/scrutiny/8482272d45aaf4a6a32a1585b03e07a3c79a0682/webapp/frontend/src/assets/images/logo/scrutiny-logo-white.svg
+          homepage.href: https://scrutiny-rpi.xvx.cz/
+          homepage.description: Hard Drive S.M.A.R.T Monitoring, Historical Trends & Real World Failure Thresholds.
+        generate_systemd:
+          path: /etc/systemd/system/
+          new: true
+        hostname: "{{ inventory_hostname }}"
+      notify: Restart scrutiny
 
     #################################################
     # Samba
