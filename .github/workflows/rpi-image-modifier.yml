@@ -22,7 +22,7 @@ jobs:
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
       - name: Change Raspberry Pi OS
-        uses: dtcooper/rpi-image-modifier@v1
+        uses: dtcooper/rpi-image-modifier@745a9b5b056f781978676f1c0f935ff47daddf03 # v1
         id: create-image
         with:
           base-image-url: https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-${{ env.RASPBERRY_PI_OS_VERSION }}/${{ env.RASPBERRY_PI_OS_VERSION }}-raspios-bookworm-arm64-lite.img.xz
@@ -74,7 +74,7 @@ jobs:
             chmod 600 "/home/${RPI_USER}/.ssh/authorized_keys"
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@1746f4ab65b179e0ea60a494b83293b640dd5bba # v4
         with:
           name: ${{ env.RASPBERRY_PI_OS_VERSION }}-raspios-bookworm-arm64-lite-modified.img
           path: ${{ steps.create-image.outputs.image-path }}
