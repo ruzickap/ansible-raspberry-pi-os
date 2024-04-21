@@ -74,7 +74,7 @@ jobs:
             chmod 600 "/home/${RPI_USER}/.ssh/authorized_keys"
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@1746f4ab65b179e0ea60a494b83293b640dd5bba # v4
+        uses: actions/upload-artifact@1746f4ab65b179e0ea60a494b83293b640dd5bba # v4.3.2
         with:
           name: ${{ env.RASPBERRY_PI_OS_VERSION }}-raspios-bookworm-arm64-lite-modified.img
           path: ${{ steps.create-image.outputs.image-path }}
