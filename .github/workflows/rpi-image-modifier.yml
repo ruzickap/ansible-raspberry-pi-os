@@ -18,9 +18,6 @@ jobs:
   rpi-image-modifier:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-
       - name: Change Raspberry Pi OS
         uses: dtcooper/rpi-image-modifier@a72db974c3ef4068e79af05e86420a40c49f393f # v1.0.1
         id: create-image
@@ -31,14 +28,9 @@ jobs:
           run: |
             set -euxo pipefail
 
-            # Copy project README to root directory
-            cp -v /mounted-github-repo/README.md /home/pi/README.md
-            chown -v pi:pi /home/pi/README.md
-
-            # Create owner.txt file in /boot directory
             echo "Petr Ruzicka - petr.ruzicka@gmail.com" | tee -a /owner.txt > /boot/owner.txt
             touch /boot/ssh
-            echo "${RPI_USER}:${RPI_PASSWORD_YESCRYPT_HASH}" > "/userconf.txt"
+            echo "${RPI_USER}:${RPI_PASSWORD_YESCRYPT_HASH}" > /boot/userconf.txt
 
             cat > "/etc/NetworkManager/system-connections/${WIFI_SSID}.nmconnection" << EOF
             [connection]
@@ -70,8 +62,9 @@ jobs:
 
             mkdir -p "/home/${RPI_USER}/.ssh"
             chmod 700 "/home/${RPI_USER}/.ssh"
-            wget https://github.com/ruzickap.keys -O "/home/${RPI_USER}/.ssh/authorized_keys"
+            wget -q https://github.com/ruzickap.keys -O "/home/${RPI_USER}/.ssh/authorized_keys"
             chmod 600 "/home/${RPI_USER}/.ssh/authorized_keys"
+            chown -R -v "${RPI_USER}:${RPI_USER}" "/home/${RPI_USER}/.ssh"
 
       - name: Upload build artifact
         uses: actions/upload-artifact@1746f4ab65b179e0ea60a494b83293b640dd5bba # v4.3.2
