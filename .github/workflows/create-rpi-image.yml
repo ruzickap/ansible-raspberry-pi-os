@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Generate Raspberry Pi OS
-        uses: usimd/pi-gen-action@v1
+        uses: usimd/pi-gen-action@3efbb7e03d31abc388e78fc38ef280a21126bbbd # v1
         id: build
         with:
           # Compression to apply on final image (either "none", "zip", "xz" or "gz").
