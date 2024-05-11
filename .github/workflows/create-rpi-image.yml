@@ -14,6 +14,48 @@ jobs:
   create-rpi-image:
     runs-on: ubuntu-latest
     steps:
+      - name: Prepare stage4 for pi-gen
+        run: |
+          mkdir -p stage-wifi/00-networkmanager-config
+
+          cat > stage-wifi/prerun.sh << \EOF
+          #!/bin/bash -e
+
+          if [ ! -d "${ROOTFS_DIR}" ]; then
+            copy_previous
+          fi
+          EOF
+          chmod +x stage-wifi/prerun.sh
+
+          cat >> stage-wifi/00-networkmanager-config/00-run-chroot.sh << EOF
+          #!/bin/bash -e
+
+          cat > "/etc/NetworkManager/system-connections/${WIFI_SSID}.nmconnection" << EOF2
+          [connection]
+          id=${WIFI_SSID}
+          uuid=5a62d13a-fdf8-4737-8f7d-f43764685207
+          type=wifi
+          interface-name=wlan0
+          autoconnect=true
+
+          [wifi]
+          mode=infrastructure
+          ssid=${WIFI_SSID}
+
+          [wifi-security]
+          auth-alg=open
+          key-mgmt=wpa-psk
+          psk=${WIFI_PASSWORD}
+
+          [ipv4]
+          method=manual
+          address1=192.168.1.2/24,192.168.1.1
+          dns=8.8.8.8;1.1.1.1;
+          EOF2
+          chmod 600 "/etc/NetworkManager/system-connections/${WIFI_SSID}.nmconnection"
+          EOF
+          chmod a+x stage-wifi/00-networkmanager-config/00-run-chroot.sh
+
       - name: Generate Raspberry Pi OS
         uses: usimd/pi-gen-action@3efbb7e03d31abc388e78fc38ef280a21126bbbd # v1
         id: build
@@ -25,7 +67,7 @@ jobs:
           # 'username' stays activated. 'username' must be set for this to work. Please be
           # aware of the implied security risk of defining a default username and password
           # for your devices.
-          disable-first-boot-user-rename: 0
+          disable-first-boot-user-rename: true
 
           # Additional options to include in PIGEN_DOCKER_OPTS
           docker-opts: ""
@@ -65,7 +107,7 @@ jobs:
           hostname: raspberrypi
 
           # Final image name.
-          image-name: ""
+          image-name: raspios-bookworm-arm64-lite-modified.img
 
           # Default keyboard keymap.
           keyboard-keymap: us
@@ -77,7 +119,8 @@ jobs:
           locale: en_US.UTF-8
 
           # Password of the intial user account, locked if empty.
-          password: ""
+          # kics-scan ignore-line
+          password: raspberry
 
           # Path where selected pi-gen ref will be checked out to. If the path does not yet
           # exist, it will be created (including its parents).
@@ -109,7 +152,7 @@ jobs:
           # images in stage2 (lite), stage4 and stage5. You probably want to hook in custom
           # stages before one of the exported stages. Otherwise, the action will make sure
           # any custom stage will include an image export directive.
-          stage-list: stage0 stage1 stage2
+          stage-list: stage0 stage1 stage2 ./stage-wifi
 
           # System timezone.
           timezone: Europe/Prague
@@ -121,13 +164,13 @@ jobs:
           verbose-output: false
 
           # Wifi country code of default network to connect to.
-          wpa-country: ""
+          wpa-country: CZ
 
           # SSID of a default wifi network to connect to.
-          wpa-essid: ${{ env.WIFI_SSID }}
+          wpa-essid: ""
 
           # Password of default wifi network to connect to.
-          wpa-password: ${{ env.WIFI_PASSWORD }}
+          wpa-password: ""
 
       - name: Upload build artifact
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
