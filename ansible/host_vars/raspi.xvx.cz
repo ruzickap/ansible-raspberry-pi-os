@@ -78,6 +78,7 @@ kodi_guisettings_services_webserverpassword: !vault |
 rpi_disable_boot_services:
   - bluetooth
   - console-setup
+  - dnsmasq
   - dphys-swapfile
   - hciuart
   - ModemManager

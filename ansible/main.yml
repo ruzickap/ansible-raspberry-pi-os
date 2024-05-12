@@ -429,7 +429,7 @@
         src: files/etc/NetworkManager/
         dest: /etc/NetworkManager/
         directory_mode: u=rwx,g=rx,o=rx
-        mode: u=rw,g=r,o=r
+        mode: u=rw,g=,o=
       notify: Restart NetworkManager
 
     - name: Enable IP forwarding
