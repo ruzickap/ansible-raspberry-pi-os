@@ -32,6 +32,9 @@
       firewall_allowed_tcp_ports: "{{ fw_allowed_tcp_ports }}"
       firewall_allowed_udp_ports: "{{ fw_allowed_udp_ports }}"
       firewall_forwarded_tcp_ports: "{{ fw_forwarded_tcp_ports }}"
+      firewall_additional_rules:
+        - "iptables -A INPUT -m pkttype --pkt-type multicast -j ACCEPT"
+        - "iptables -t nat -A POSTROUTING -o {{ ansible_default_ipv4.interface }} -j MASQUERADE"
 
   tasks:
     - name: Set timezone to Europe/Prague
@@ -385,13 +388,23 @@
         user: root
         key: "{{ lookup('file', lookup('env', 'HOME') + '/Documents/backups/id_ed25519.pub') }}"
 
+    # mkfs.btrfs -L My_Disk_2_TB -f -R free-space-tree /dev/sda1
     - name: Mount USB disk
       ansible.posix.mount:
         path: /mnt/usb
         src: LABEL=My_Disk_2_TB
         fstype: btrfs
-        opts: noatime,nodiratime
+        opts: noatime,nodiratime,compress=zstd,autodefrag,space_cache=v2
         state: mounted
+
+    - name: Create hass config directory (/var/lib/hass_config)
+      ansible.builtin.file:
+        path: /mnt/usb/{{ item }}
+        state: directory
+        mode: u=rwx,g=rx,o=rx
+      loop:
+        - music
+        - movies
 
     - name: Enable hd-idle
       community.general.ini_file:
@@ -402,6 +415,29 @@
         value: '"-i 600 -a /dev/sda"'
         mode: u=rw,g=r,o=r
       notify: Restart hd-idle
+
+    # https://superuser.com/questions/1389730/unmounted-unpartitioned-hdd-wakes-up-4-times-per-day-on-centos
+    - name: Change hdparm settings
+      ansible.builtin.replace:
+        path: /etc/smartd.conf
+        regexp: " -n standby "
+        replace: " -n standby,10,q "
+      notify: Restart smartd
+
+    - name: Copy config files for NetworkManager
+      ansible.builtin.copy:
+        src: files/etc/NetworkManager/
+        dest: /etc/NetworkManager/
+        directory_mode: u=rwx,g=rx,o=rx
+        mode: u=rw,g=r,o=r
+      notify: Restart NetworkManager
+
+    - name: Enable IP forwarding
+      ansible.posix.sysctl:
+        name: net.ipv4.ip_forward
+        value: "1"
+        sysctl_set: true
+        reload: true
 
     #################################################
     # Cloudflared
@@ -595,33 +631,33 @@
         - /var/lib/scrutiny/config
         - /var/lib/scrutiny/influxdb2
 
-    - name: Scrutiny container
-      containers.podman.podman_container:
-        name: scrutiny
-        image: ghcr.io/analogj/scrutiny:master-omnibus
-        device:
-          - /dev/sda:/dev/sda
-        volume:
-          - /var/lib/scrutiny/config:/opt/scrutiny/config
-          - /var/lib/scrutiny/influxdb2:/opt/scrutiny/influxdb
-          - /run/udev:/run/udev:ro
-        cap_add:
-          - SYS_RAWIO
-        ports:
-          - 8081:8080
-          - 8086:8086
-        label:
-          io.containers.autoupdate: registry
-          homepage.group: Containers
-          homepage.name: Scrutiny
-          homepage.icon: https://raw.githubusercontent.com/AnalogJ/scrutiny/8482272d45aaf4a6a32a1585b03e07a3c79a0682/webapp/frontend/src/assets/images/logo/scrutiny-logo-white.svg
-          homepage.href: https://scrutiny-rpi.xvx.cz/
-          homepage.description: Hard Drive S.M.A.R.T Monitoring, Historical Trends & Real World Failure Thresholds.
-        generate_systemd:
-          path: /etc/systemd/system/
-          new: true
-        hostname: "{{ inventory_hostname }}"
-      notify: Restart scrutiny
+    # - name: Scrutiny container
+    #   containers.podman.podman_container:
+    #     name: scrutiny
+    #     image: ghcr.io/analogj/scrutiny:master-omnibus
+    #     device:
+    #       - /dev/sda:/dev/sda
+    #     volume:
+    #       - /var/lib/scrutiny/config:/opt/scrutiny/config
+    #       - /var/lib/scrutiny/influxdb2:/opt/scrutiny/influxdb
+    #       - /run/udev:/run/udev:ro
+    #     cap_add:
+    #       - SYS_RAWIO
+    #     ports:
+    #       - 8081:8080
+    #       - 8086:8086
+    #     label:
+    #       io.containers.autoupdate: registry
+    #       homepage.group: Containers
+    #       homepage.name: Scrutiny
+    #       homepage.icon: https://raw.githubusercontent.com/AnalogJ/scrutiny/8482272d45aaf4a6a32a1585b03e07a3c79a0682/webapp/frontend/src/assets/images/logo/scrutiny-logo-white.svg
+    #       homepage.href: https://scrutiny-rpi.xvx.cz/
+    #       homepage.description: Hard Drive S.M.A.R.T Monitoring, Historical Trends & Real World Failure Thresholds.
+    #     generate_systemd:
+    #       path: /etc/systemd/system/
+    #       new: true
+    #     hostname: "{{ inventory_hostname }}"
+    #   notify: Restart scrutiny
 
     #################################################
     # Samba
@@ -896,11 +932,28 @@
         state: restarted
         enabled: true
 
+    - name: Restart dnsmasq
+      ansible.builtin.service:
+        name: dnsmasq
+        state: restarted
+        enabled: true
+
+    - name: Restart grafana-agent
+      ansible.builtin.systemd_service:
+        name: grafana-agent
+        state: restarted
+        enabled: true
+
     - name: Restart hass
       ansible.builtin.systemd_service:
         daemon_reload: true
         name: container-home-assistant
         enabled: true
+        state: restarted
+
+    - name: Restart hd-idle
+      ansible.builtin.systemd_service:
+        name: hd-idle
         state: restarted
 
     - name: Restart homepage
@@ -910,30 +963,23 @@
         enabled: true
         state: restarted
 
+    - name: Restart kodi
+      ansible.builtin.systemd_service:
+        name: kodi
+        state: restarted
+        enabled: true
+
+    - name: Restart NetworkManager
+      ansible.builtin.systemd_service:
+        name: NetworkManager
+        state: restarted
+
     - name: Restart plex
       ansible.builtin.systemd_service:
         daemon_reload: true
         name: container-plex
         enabled: true
         state: restarted
-
-    - name: Restart scrutiny
-      ansible.builtin.systemd_service:
-        daemon_reload: true
-        name: container-scrutiny
-        enabled: true
-        state: restarted
-
-    - name: Restart hd-idle
-      ansible.builtin.systemd_service:
-        name: hd-idle
-        state: restarted
-
-    - name: Restart kodi
-      ansible.builtin.systemd_service:
-        name: kodi
-        state: restarted
-        enabled: true
 
     - name: Restart prometheus-blackbox-exporter
       ansible.builtin.systemd_service:
@@ -943,6 +989,18 @@
     - name: Restart samba
       ansible.builtin.systemd_service:
         name: smbd
+        state: restarted
+
+    # - name: Restart scrutiny
+    #   ansible.builtin.systemd_service:
+    #     daemon_reload: true
+    #     name: container-scrutiny
+    #     enabled: true
+    #     state: restarted
+
+    - name: Restart smartd
+      ansible.builtin.systemd_service:
+        name: smartd
         state: restarted
 
     - name: Reload systemd
@@ -959,12 +1017,6 @@
         name: transmission-daemon
         daemon_reload: true
         state: reloaded
-
-    - name: Restart grafana-agent
-      ansible.builtin.systemd_service:
-        name: grafana-agent
-        state: restarted
-        enabled: true
 
     - name: Reboot
       ansible.builtin.reboot:

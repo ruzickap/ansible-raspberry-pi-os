@@ -27,6 +27,7 @@ transmission_blocklist_url: http://list.iblocklist.com/?list=ydxerpxkpcfqjaybcss
 
 fw_allowed_tcp_ports:
   - 22          # SSH
+  - 53          # DNS
   - 139         # CIFS / Samba
   - 445         # CIFS / Samba
   # - 8080        # Kodi
@@ -43,12 +44,15 @@ fw_forwarded_tcp_ports:
     dest: 32400
 
 fw_allowed_udp_ports:
+  - 67          # DHCP
+  - 53          # DNS
   - 137:138     # CIFS / Samba
   - 5353        # mDNS - avahi-daemon
   - 51413       # Transmission - torrent
 
 rpi_packages_additional:
   - btrfs-progs
+  - dnsmasq
   - dnsutils
   - hd-idle
   - hdparm
