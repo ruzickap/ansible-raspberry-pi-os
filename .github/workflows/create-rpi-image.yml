@@ -57,7 +57,7 @@ jobs:
           chmod a+x stage-wifi/00-networkmanager-config/00-run-chroot.sh
 
       - name: Generate Raspberry Pi OS
-        uses: usimd/pi-gen-action@bf082dedce15e8eb4b2f74b0817a808e00f9494d # v1
+        uses: usimd/pi-gen-action@bf082dedce15e8eb4b2f74b0817a808e00f9494d # v1.9.0
         id: build
         with:
           # Compression to apply on final image (either "none", "zip", "xz" or "gz").
