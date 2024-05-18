@@ -691,6 +691,11 @@
     # Transmission - raspi.xvx.cz:9991/web/
     #################################################
 
+    - name: Stop transmission
+      ansible.builtin.systemd_service:
+        name: transmission-daemon
+        state: stopped
+
     - name: Create "torrent" directories in /mnt/
       ansible.builtin.file:
         path: "{{ item }}"
@@ -710,9 +715,9 @@
         owner: debian-transmission
         group: debian-transmission
         mode: u=rw,g=,o=
-      # This file are frequently updated by Transmission - changed_when: false
+      # This files are frequently updated by Transmission - changed_when: false
       changed_when: false
-      notify: Reload transmission
+      notify: Restart transmission
 
     - name: Install blacklist file for transmission
       ansible.builtin.unarchive:
@@ -1012,11 +1017,11 @@
         name: sshd
         state: restarted
 
-    - name: Reload transmission
+    - name: Restart transmission
       ansible.builtin.systemd_service:
         name: transmission-daemon
         daemon_reload: true
-        state: reloaded
+        state: restarted
 
     - name: Reboot
       ansible.builtin.reboot:
