@@ -619,47 +619,6 @@
       notify: Restart plex
 
     #################################################
-    # Scrutiny
-    #################################################
-
-    - name: Create scrutiny directory (/var/lib/scrutiny)
-      ansible.builtin.file:
-        path: "{{ item }}"
-        state: directory
-        recurse: true
-      loop:
-        - /var/lib/scrutiny/config
-        - /var/lib/scrutiny/influxdb2
-
-    # - name: Scrutiny container
-    #   containers.podman.podman_container:
-    #     name: scrutiny
-    #     image: ghcr.io/analogj/scrutiny:master-omnibus
-    #     device:
-    #       - /dev/sda:/dev/sda
-    #     volume:
-    #       - /var/lib/scrutiny/config:/opt/scrutiny/config
-    #       - /var/lib/scrutiny/influxdb2:/opt/scrutiny/influxdb
-    #       - /run/udev:/run/udev:ro
-    #     cap_add:
-    #       - SYS_RAWIO
-    #     ports:
-    #       - 8081:8080
-    #       - 8086:8086
-    #     label:
-    #       io.containers.autoupdate: registry
-    #       homepage.group: Containers
-    #       homepage.name: Scrutiny
-    #       homepage.icon: https://raw.githubusercontent.com/AnalogJ/scrutiny/8482272d45aaf4a6a32a1585b03e07a3c79a0682/webapp/frontend/src/assets/images/logo/scrutiny-logo-white.svg
-    #       homepage.href: https://scrutiny-rpi.xvx.cz/
-    #       homepage.description: Hard Drive S.M.A.R.T Monitoring, Historical Trends & Real World Failure Thresholds.
-    #     generate_systemd:
-    #       path: /etc/systemd/system/
-    #       new: true
-    #     hostname: "{{ inventory_hostname }}"
-    #   notify: Restart scrutiny
-
-    #################################################
     # Samba
     #################################################
 
@@ -742,53 +701,14 @@
         groups: debian-transmission
 
     #################################################
-    # grafana-agent
+    # Grafana Alloy
     #################################################
 
-    - name: Add an Apt signing keys
-      ansible.builtin.get_url:
-        url: https://apt.grafana.com/gpg.key
-        dest: /etc/apt/trusted.gpg.d/grafana.asc
-        mode: u=rw,g=r,o=r
-
-    - name: Add Grafana repository
-      ansible.builtin.apt_repository:
-        repo: deb https://apt.grafana.com stable main
-        filename: grafana
-
-    - name: Install grafana-agent
-      ansible.builtin.apt:
-        name: grafana-agent
-        install_recommends: false
-      register: result
-      until: result is succeeded
-
-    - name: Change grafana-agent ports
-      # Collision with Transmission
-      community.general.ini_file:
-        path: /etc/default/grafana-agent
-        no_extra_spaces: true
-        section: null
-        option: CUSTOM_ARGS
-        value: '"-server.http.address=127.0.0.1:7090 -server.grpc.address=127.0.0.1:7091"'
-        mode: u=rw,g=r,o=r
-      notify: Restart grafana-agent
-
-    - name: Configure grafana-agent
-      ansible.builtin.template:
-        dest: /etc/grafana-agent.yaml
-        src: files/etc/grafana-agent.yaml.j2
-        mode: u=rw,g=,o=
-        owner: grafana-agent
-        group: grafana-agent
-      notify: Restart grafana-agent
-
-    - name: Configure prometheus-blackbox-exporter
-      ansible.builtin.copy:
-        dest: /etc/prometheus/blackbox.yml
-        src: files/etc/prometheus/blackbox.yml
-        mode: u=rw,g=r,o=r
-      notify: Restart prometheus-blackbox-exporter
+    - name: Install alloy
+      ansible.builtin.include_role:
+        name: grafana.grafana.alloy
+      vars:
+        config: "{{ lookup('ansible.builtin.template', 'files/etc/alloy/config.alloy.j2') }}"
 
     #################################################
     # Kodi
@@ -943,12 +863,6 @@
         state: restarted
         enabled: true
 
-    - name: Restart grafana-agent
-      ansible.builtin.systemd_service:
-        name: grafana-agent
-        state: restarted
-        enabled: true
-
     - name: Restart hass
       ansible.builtin.systemd_service:
         daemon_reload: true
@@ -986,22 +900,10 @@
         enabled: true
         state: restarted
 
-    - name: Restart prometheus-blackbox-exporter
-      ansible.builtin.systemd_service:
-        name: prometheus-blackbox-exporter
-        state: restarted
-
     - name: Restart samba
       ansible.builtin.systemd_service:
         name: smbd
         state: restarted
-
-    # - name: Restart scrutiny
-    #   ansible.builtin.systemd_service:
-    #     daemon_reload: true
-    #     name: container-scrutiny
-    #     enabled: true
-    #     state: restarted
 
     - name: Restart smartd
       ansible.builtin.systemd_service:

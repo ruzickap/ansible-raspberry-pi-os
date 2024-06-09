@@ -4,3 +4,5 @@ skip_list:
   - yaml[comments]
   - yaml[document-start]
   - yaml[line-length]
+  # Needed for alloy
+  - var-naming[no-role-prefix]
