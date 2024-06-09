@@ -6,6 +6,8 @@ collections:
     version: 9.0.1
   - name: containers.podman
     version: 1.14.0
+  - name: grafana.grafana
+    version: 5.2.0
 roles:
   - name: geerlingguy.firewall
     src: https://github.com/geerlingguy/ansible-role-firewall.git

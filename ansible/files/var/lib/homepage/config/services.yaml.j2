@@ -6,7 +6,7 @@
     - Kodi:
         description: Free and Open Source home theatre software.
         href: https://kodi-rpi.xvx.cz/
-        icon: https://raw.githubusercontent.com/teamapps-org/teamapps-antu-icons/68d1f2a9e9b38b78f265809cb0a69237b8a85900/project-resources/antu-classic/Antu/apps/48/kodi.svg
+        icon: kodi.svg
         siteMonitor: http://localhost:8080
 
     - OpenSSH:
@@ -18,7 +18,7 @@
     - Transmission:
         description: Transmission is a BitTorrent client which features a variety of user interfaces on top of a cross-platform back-end.
         href: https://transmission-rpi.xvx.cz/
-        icon: https://raw.githubusercontent.com/transmission/transmission/083529c5bb43afaad7d53df295407ff4d8a7a20c/qt/icons/transmission.svg
+        icon: transmission.svg
         siteMonitor: http://localhost:9991
         widget:
           type: transmission
@@ -31,7 +31,7 @@
         container: home-assistant
         description: Home Assistant is free and open-source software for home automation, designed to be an Internet of things ecosystem-independent integration platform and central control system for smart home devices, with a focus on local control and privacy.
         href: https://hass-rpi.xvx.cz/
-        icon: https://raw.githubusercontent.com/bskaplou/home-assistant-electron/ade0e4761cf73bfcfcd3b001aa0eb27f44b7a30c/home_assistant_logo.svg
+        icon: home-assistant.svg
         siteMonitor: http://localhost:8123
 
     - Homepage:
@@ -41,42 +41,17 @@
         icon: https://raw.githubusercontent.com/gethomepage/homepage/47765ee05e633c87fcf8fca8ee1293bf0ef6bb3e/docs/assets/light_squircle%402x.png
         siteMonitor: http://localhost:3000
 
-    - Scrutiny:
-        container: scrutiny
-        description: Hard Drive S.M.A.R.T Monitoring, Historical Trends & Real World Failure Thresholds.
-        href: https://scrutiny-rpi.xvx.cz/
-        icon: https://raw.githubusercontent.com/AnalogJ/scrutiny/8482272d45aaf4a6a32a1585b03e07a3c79a0682/webapp/frontend/src/assets/images/logo/scrutiny-logo-white.svg
-        siteMonitor: http://localhost:8081
-
     - Plex Media Server:
         container: plex
         description: Plex Media Server is free software that allows users to create a client–server for movies, television shows, and music.
         href: https://plex-rpi.xvx.cz/
-        icon: https://raw.githubusercontent.com/plexinc/plex-media-player/51e2b74367850cb5ab77ac51329dfd8a7a7320e4/resources/images/icon.svg
+        icon: plex.svg
         siteMonitor: http://localhost:32400
-
-    - Grafana - Node Exporter Full:
-        description: Grafana is a multi-platform open-source analytics and interactive visualization web application.
-        href: https://xvx.grafana.net/d/rYdddlPWk/node-exporter-full?orgId=1&refresh=1m
-        icon: https://raw.githubusercontent.com/gilbarbara/logos/84fc2abe2b9d0b5b39ceac4af32c6e7eccecd657/logos/grafana.svg
-        siteMonitor: https://xvx.grafana.net
-
-    - Grafana - Node Exporter Server Metrics:
-        description: Grafana is a multi-platform open-source analytics and interactive visualization web application.
-        href: https://xvx.grafana.net/d/P1HjJ7A7z/node-exporter-server-metrics?orgId=1&refresh=1m
-        icon: https://raw.githubusercontent.com/gilbarbara/logos/84fc2abe2b9d0b5b39ceac4af32c6e7eccecd657/logos/grafana.svg
-        siteMonitor: https://xvx.grafana.net
-
-    - Grafana - Node - Network Overview:
-        description: Grafana is a multi-platform open-source analytics and interactive visualization web application.
-        href: https://xvx.grafana.net/d/MBRTkBRZk/node-network-overview?orgId=1&refresh=1m
-        icon: https://raw.githubusercontent.com/gilbarbara/logos/84fc2abe2b9d0b5b39ceac4af32c6e7eccecd657/logos/grafana.svg
-        siteMonitor: https://xvx.grafana.net
 
     - CloudFlare:
         description: Cloudflare provides content delivery network services, DDoS mitigation, Internet security, and distributed domain name server services.
         href: https://one.dash.cloudflare.com/b39266dd4dcec1a04068ba36d36bd250/access/apps
-        icon: https://raw.githubusercontent.com/gilbarbara/logos/5d365d6566feda9301b95dffa57825728410ce01/logos/cloudflare-icon.svg
+        icon: cloudflare.svg
         siteMonitor: https://one.dash.cloudflare.com
 
     - My Status Page:
@@ -84,3 +59,29 @@
         href: https://status.xvx.cz
         icon: https://raw.githubusercontent.com/gilbarbara/logos/ee038548b93789076d01d889e684d8c518c937fe/logos/statuspage.svg
         siteMonitor: https://status.xvx.cz
+
+    - Openwrt:
+        description: OpenWrt is an open-source project for embedded operating systems based on Linux, primarily used on embedded devices to route network traffic.
+        href: https://192.168.1.1
+        icon: openwrt.svg
+        siteMonitor: https://192.168.1.1
+        widget:
+          type: openwrt
+          url: https://192.168.1.1
+          username: homepage
+          password: {{ openwrt_homepage_password }}
+          interfaceName: eth0
+
+- Grafana - Raspberry Pi / overview:
+    - Grafana - Raspberry Pi / overview:
+        description: Grafana is a multi-platform open-source analytics and interactive visualization web application.
+        href: https://xvx.grafana.net/d/raspberrypinode-overview/raspberry-pi-overview?orgId=1&refresh=30s
+        icon: grafana.svg
+        siteMonitor: https://xvx.grafana.net
+
+- Grafana - Raspberry Pi / logs:
+    - Grafana - Raspberry Pi / logs:
+        description: Grafana is a multi-platform open-source analytics and interactive visualization web application.
+        href: https://xvx.grafana.net/d/raspberrypinode-logs/raspberry-pi-logs?orgId=1&refresh=30s
+        icon: grafana.svg
+        siteMonitor: https://xvx.grafana.net
