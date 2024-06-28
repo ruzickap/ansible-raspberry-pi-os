@@ -397,7 +397,7 @@
         opts: noatime,nodiratime,compress=zstd,autodefrag,space_cache=v2
         state: mounted
 
-    - name: Create hass config directory (/var/lib/hass_config)
+    - name: Create movies and music directory (/mnt/usb/)
       ansible.builtin.file:
         path: /mnt/usb/{{ item }}
         state: directory
@@ -582,6 +582,68 @@
       notify: Restart homepage
 
     #################################################
+    # Navidrome
+    #################################################
+
+    - name: Create config directory (/var/lib/navidrome)
+      ansible.builtin.file:
+        path: /var/lib/navidrome
+        state: directory
+        owner: pi
+        group: pi
+        recurse: true
+
+    - name: Navidrome container
+      containers.podman.podman_container:
+        name: navidrome
+        image: docker.io/deluan/navidrome:latest
+        user: 1000:1000
+        volume:
+          - /var/lib/navidrome:/data
+          - /mnt/usb/music:/music:ro
+        env:
+          ND_RECENTLYADDEDBYMODTIME: "true"
+          ND_SCANSCHEDULE: "@every 6m"
+        ports:
+          - 4533:4533
+        label:
+          io.containers.autoupdate: registry
+          homepage.group: Containers
+          homepage.name: Navidrome
+          homepage.icon: https://raw.githubusercontent.com/navidrome/navidrome/64e2a0bcd47ae35849ce453285065d54b6d22950/resources/logo-192x192.png
+          homepage.href: https://navidrome-rpi.xvx.cz/
+          homepage.description: Modern Music Server and Streamer compatible with Subsonic/Airsonic
+        generate_systemd:
+          path: /etc/systemd/system/
+          new: true
+        hostname: "{{ inventory_hostname }}"
+      notify: Restart navidrome
+
+    - name: Start Navidrome
+      ansible.builtin.systemd_service:
+        daemon_reload: true
+        name: container-navidrome
+        state: started
+        enabled: true
+      changed_when: false
+
+    - name: Wait for Navidrome to be started
+      ansible.builtin.wait_for:
+        port: 4533
+
+    - name: Start Navidrome
+      ansible.builtin.systemd_service:
+        daemon_reload: true
+        name: container-navidrome
+        state: stopped
+      changed_when: false
+
+    - name: Create admin user for Navidrome
+      ansible.builtin.shell: |
+        sqlite3 /var/lib/navidrome/navidrome.db "INSERT OR IGNORE INTO user VALUES('99a714a6-c536-5a3a-91ec-41aaa1d18b93','{{ navidrome_username }}','{{ navidrome_username }}','','{{ navidrome_password }}',1,'2024-06-19 04:34:03.998486592+00:00',NULL,'2024-06-19 04:33:43.930525922+00:00','2024-06-19T04:33:43.929377428Z');"
+      changed_when: false
+
+    #################################################
     # Plex
     #################################################
 
@@ -654,6 +716,7 @@
       ansible.builtin.systemd_service:
         name: transmission-daemon
         state: stopped
+      changed_when: false
 
     - name: Create "torrent" directories in /mnt/
       ansible.builtin.file:
@@ -676,7 +739,7 @@
         mode: u=rw,g=,o=
       # This files are frequently updated by Transmission - changed_when: false
       changed_when: false
-      notify: Restart transmission
+      notify: Reload transmission
 
     - name: Install blacklist file for transmission
       ansible.builtin.unarchive:
@@ -739,7 +802,6 @@
         dest: /lib/systemd/system/kodi.service
         mode: u=rw,g=r,o=r
       notify:
-        - Reload systemd
         - Restart kodi
 
     - name: Change default target to graphical.target
@@ -747,9 +809,6 @@
         src: /usr/lib/systemd/system/graphical.target
         dest: /etc/systemd/system/default.target
         state: link
-
-    - name: Flush handlers
-      ansible.builtin.meta: flush_handlers
 
     - name: Create Kodi addon directory (/home/kodi/.kodi/addons)
       ansible.builtin.file:
@@ -857,6 +916,12 @@
         state: restarted
         enabled: true
 
+    - name: Restart navidrome
+      ansible.builtin.service:
+        name: container-navidrome
+        state: restarted
+        enabled: true
+
     - name: Restart dnsmasq
       ansible.builtin.service:
         name: dnsmasq
@@ -884,6 +949,7 @@
 
     - name: Restart kodi
       ansible.builtin.systemd_service:
+        daemon_reload: true
         name: kodi
         state: restarted
         enabled: true
@@ -919,11 +985,10 @@
         name: sshd
         state: restarted
 
-    - name: Restart transmission
+    - name: Reload transmission
       ansible.builtin.systemd_service:
         name: transmission-daemon
-        daemon_reload: true
-        state: restarted
+        state: reloaded
 
     - name: Reboot
       ansible.builtin.reboot:
