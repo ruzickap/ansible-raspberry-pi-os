@@ -15,16 +15,16 @@
         icon: https://upload.wikimedia.org/wikipedia/commons/0/00/Unofficial_SSH_Logo.svg
         siteMonitor: https://ssh-rpi.xvx.cz/
 
-    - Transmission:
-        description: Transmission is a BitTorrent client which features a variety of user interfaces on top of a cross-platform back-end.
-        href: https://transmission-rpi.xvx.cz/
-        icon: transmission.svg
-        siteMonitor: http://localhost:9991
+    - qBittorrent:
+        description: qBittorrent BitTorrent client
+        href: https://qbittorrent-rpi.xvx.cz/
+        icon: qbittorrent.svg
+        siteMonitor: http://localhost:8081
         widget:
-          type: transmission
-          url: http://localhost:9991
-          username: transmission
-          password: {{ transmission_rpc_password }}
+          type: qbittorrent
+          url: http://localhost:8081
+          username: admin
+          password: {{ qbittorrent_password }}
           rpcUrl: /
 
     - Home Assistant:
