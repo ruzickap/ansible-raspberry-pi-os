@@ -465,8 +465,6 @@
       ansible.builtin.template:
         src: files/etc/systemd/system/cloudflared.service
         dest: /etc/systemd/system/cloudflared.service
-        owner: root
-        group: root
         mode: u=rw,g=r,o=r
       notify: Reload systemd
 
@@ -483,28 +481,61 @@
     # Home Assistant
     #################################################
 
-    - name: Create hass config directory (/var/lib/hass_config)
-      ansible.builtin.file:
-        path: /var/lib/hass_config/.storage
-        state: directory
-        recurse: true
+    - name: Check that the directory exists - {{ hass_config_directory }}
+      ansible.builtin.stat:
+        path: "{{ hass_config_directory }}"
+      register: hass_config_dir
 
-    - name: Copy config files for Home Assistant to /var/lib/hass_config/
-      ansible.builtin.template:
-        src: "{{ item.src }}"
-        dest: "{{ item.dest }}"
-        mode: u=rw,g=r,o=r
-      no_log: true
-      loop:
-        - dest: /var/lib/hass_config/configuration.yaml
-          src: files/var/lib/hass_config/configuration.yaml.j2
-        - dest: /var/lib/hass_config/.storage/auth_provider.homeassistant
-          src: files/var/lib/hass_config/.storage/auth_provider.homeassistant.j2
-        - dest: /var/lib/hass_config/.storage/onboarding
-          src: files/var/lib/hass_config/.storage/onboarding.j2
-        - dest: /var/lib/hass_config/.storage/person
-          src: files/var/lib/hass_config/.storage/person.j2
+    - name: Check if there are any HASS backups
+      ansible.builtin.find:
+        paths: "{{ hass_backup_directory }}"
+      register: hass_backups
+
+    - name: Create hass config directory - {{ hass_config_directory }}
+      ansible.builtin.file:
+        path: "{{ hass_config_directory }}"
+        state: directory
+        mode: u=rwx,g=rx,o=rx
+
+    - name: Restore Home Assistant configuration from backup
+      when: not hass_config_dir.stat.exists and hass_backups.matched > 0
       notify: Restart hass
+      block:
+        - name: Unpack the tar backup
+          ansible.builtin.unarchive:
+            src: "{{ (hass_backups.files | sort(attribute='mtime') | last).path }}"
+            dest: /tmp/
+            include: "homeassistant.tar.gz"
+            remote_src: true
+          changed_when: false
+
+        - name: Unpack the homeassistant.tar.gz
+          ansible.builtin.unarchive:
+            src: /tmp/homeassistant.tar.gz
+            dest: "{{ hass_config_directory }}"
+            extra_opts:
+              - "--strip-components=1"
+            remote_src: true
+          changed_when: false
+
+        - name: Delete /tmp/homeassistant.tar.gz
+          ansible.builtin.file:
+            path: /tmp/homeassistant.tar.gz
+            state: absent
+
+        - name: Create cron job for Home Assistant backup to USB disk
+          ansible.builtin.cron:
+            name: Create cron job for Home Assistant backup to USB disk
+            weekday: "*"
+            minute: "0"
+            hour: "1"
+            user: root
+            job: "rsync -av {{ hass_config_directory }}/backups/ /mnt/usb/hass-backups/"
+            cron_file: hass_backup
+      rescue:
+        - name: Print when errors
+          ansible.builtin.fail:
+            msg: Restore from backup failed
 
     - name: Home Assistant container
       containers.podman.podman_container:
@@ -513,7 +544,7 @@
         volume:
           - /etc/localtime:/etc/localtime:ro
           - /run/dbus:/run/dbus:ro
-          - /var/lib/hass_config:/config
+          - "{{ hass_config_directory }}:/config"
         network: host
         privileged: true
         label:
@@ -528,6 +559,31 @@
           new: true
         hostname: "{{ inventory_hostname }}"
       notify: Restart hass
+
+    - name: New Home Assistant configuration
+      when: not hass_config_dir.stat.exists and hass_backups.matched == 0
+      block:
+        - name: Wait for Home Assistant to be started
+          ansible.builtin.wait_for:
+            port: 8123
+
+        - name: Configure configuration.yaml
+          ansible.builtin.blockinfile:
+            dest: "{{ hass_config_directory }}/configuration.yaml"
+            create: true
+            prepend_newline: true
+            mode: u=rw,g=r,o=r
+            block: |
+              http:
+                use_x_forwarded_for: true
+                trusted_proxies:
+                  - 127.0.0.1
+                  - ::1
+          notify: Restart hass
+      rescue:
+        - name: Print when errors
+          ansible.builtin.fail:
+            msg: Create new Home Assistant configuration failed
 
     #################################################
     # Homepage
@@ -619,19 +675,11 @@
         hostname: "{{ inventory_hostname }}"
       notify: Restart navidrome
 
-    - name: Start Navidrome
-      ansible.builtin.systemd_service:
-        daemon_reload: true
-        name: container-navidrome
-        state: started
-        enabled: true
-      changed_when: false
-
     - name: Wait for Navidrome to be started
       ansible.builtin.wait_for:
         port: 4533
 
-    - name: Start Navidrome
+    - name: Stop Navidrome
       ansible.builtin.systemd_service:
         daemon_reload: true
         name: container-navidrome
@@ -709,59 +757,130 @@
       changed_when: false
 
     #################################################
-    # Transmission - raspi.xvx.cz:9991/web/
+    # qBittorrent
     #################################################
 
-    - name: Stop transmission
+    - name: Create qBittorrent group
+      ansible.builtin.group:
+        name: qbittorrent
+
+    - name: Create qBittorrent user
+      ansible.builtin.user:
+        name: qbittorrent
+        comment: qBittorrent user
+        shell: /usr/sbin/nologin
+        group: qbittorrent
+
+    - name: Create qBittorrent directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        recurse: true
+        owner: qbittorrent
+        group: qbittorrent
+      loop:
+        - /home/qbittorrent/.config/qBittorrent
+        - /mnt/usb/torrents
+
+    # Note: reload doesn't work for qBittorrent systemd service
+    - name: Stop qBittorrent
       ansible.builtin.systemd_service:
-        name: transmission-daemon
+        name: qbittorrent-nox@qbittorrent
         state: stopped
       changed_when: false
 
-    - name: Create "torrent" directories in /mnt/
-      ansible.builtin.file:
-        path: "{{ item }}"
-        recurse: true
-        state: directory
-        owner: debian-transmission
-        group: debian-transmission
-        mode: u=rwx,g=rwx,o=rx
+    - name: Configure qBittorrent
+      community.general.ini_file:
+        path: /home/qbittorrent/.config/qBittorrent/qBittorrent.conf
+        no_extra_spaces: true
+        section: "{{ item.section }}"
+        option: "{{ item.option }}"
+        value: "{{ item.value }}"
+        owner: qbittorrent
+        group: qbittorrent
+        mode: u=rw,g=r,o=r
       loop:
-        - /mnt/usb/torrents/torrents-completed
-        - /mnt/usb/torrents/torrents-incomplete
+        - section: BitTorrent
+          option: 'Session\AddExtensionToIncompleteFiles'
+          value: "true"
+        - section: BitTorrent
+          option: 'Session\AddTorrentPaused'
+          value: "false"
+        - section: BitTorrent
+          option: 'Session\AlternativeGlobalDLSpeedLimit'
+          value: 0
+        - section: BitTorrent
+          option: 'Session\AnonymousModeEnabled'
+          value: "true"
+        - section: BitTorrent
+          option: 'Session\BandwidthSchedulerEnabled'
+          value: "true"
+        - section: BitTorrent
+          option: 'Session\DefaultSavePath'
+          value: /mnt/usb/torrents/
+        - section: BitTorrent
+          option: 'Session\GlobalDLSpeedLimit'
+          value: 3000
+        - section: BitTorrent
+          option: 'Session\GlobalMaxSeedingMinutes'
+          value: 1
+        - section: BitTorrent
+          option: 'Session\GlobalUPSpeedLimit'
+          value: 10
+        - section: BitTorrent
+          option: 'Session\MaxRatioAction'
+          value: 1
+        - section: Core
+          option: AutoDeleteAddedTorrentFile
+          value: IfAdded
+        - section: Preferences
+          option: 'MailNotification\email'
+          value: "{{ notification_email }}"
+        - section: Preferences
+          option: 'MailNotification\enabled'
+          value: "true"
+        - section: Preferences
+          option: 'MailNotification\password'
+          value: "{{ smtp_gmail_auth_password }}"
+        - section: Preferences
+          option: 'MailNotification\req_auth'
+          value: "true"
+        - section: Preferences
+          option: 'MailNotification\req_ssl'
+          value: "true"
+        - section: Preferences
+          option: 'MailNotification\smtp_server'
+          value: smtp.gmail.com
+        - section: Preferences
+          option: 'MailNotification\username'
+          value: "{{ smtp_gmail_auth_user }}"
+        - section: Preferences
+          option: 'Scheduler\days'
+          value: EveryDay
+        - section: Preferences
+          option: 'Scheduler\start_time'
+          value: '@Variant(\0\0\0\xf\0\0\0\0)'
+        - section: Preferences
+          option: 'Scheduler\end_time'
+          value: '@Variant(\0\0\0\xf\x1\x12\xa8\x80)'
+        - section: Preferences
+          option: 'WebUI\Address'
+          value: 127.0.0.1
+        - section: Preferences
+          option: 'WebUI\LocalHostAuth'
+          value: "false"
+        - section: Preferences
+          option: 'WebUI\Password_PBKDF2'
+          value: '"{{ qbittorrent_password_hash }}"'
+        - section: Preferences
+          option: WebUI\Port
+          value: 8081
 
-    - name: Configure Transmission
-      ansible.builtin.template:
-        dest: /etc/transmission-daemon/settings.json
-        src: files/etc/transmission-daemon/settings.json.j2
-        owner: debian-transmission
-        group: debian-transmission
-        mode: u=rw,g=,o=
-      # This files are frequently updated by Transmission - changed_when: false
+    - name: Start qBittorrent
+      ansible.builtin.systemd_service:
+        name: qbittorrent-nox@qbittorrent
+        state: started
       changed_when: false
-      notify: Reload transmission
-
-    - name: Install blacklist file for transmission
-      ansible.builtin.unarchive:
-        src: "{{ transmission_blocklist_url }}&archiveformat=zip"
-        dest: /var/lib/transmission-daemon/info/blocklists/
-        owner: debian-transmission
-        group: debian-transmission
-        remote_src: true
-
-    - name: Install Transmission torrent done script
-      ansible.builtin.template:
-        dest: /etc/transmission-daemon/torrent-done.sh
-        src: files/etc/transmission-daemon/torrent-done.sh.j2
-        mode: u=rwx,g=rx,o=rx
-        owner: debian-transmission
-        group: debian-transmission
-
-    - name: Add user 'pi' to debian-transmission group
-      ansible.builtin.user:
-        name: pi
-        append: true
-        groups: debian-transmission
 
     #################################################
     # Grafana Alloy
@@ -984,11 +1103,6 @@
       ansible.builtin.systemd_service:
         name: sshd
         state: restarted
-
-    - name: Reload transmission
-      ansible.builtin.systemd_service:
-        name: transmission-daemon
-        state: reloaded
 
     - name: Reboot
       ansible.builtin.reboot:
