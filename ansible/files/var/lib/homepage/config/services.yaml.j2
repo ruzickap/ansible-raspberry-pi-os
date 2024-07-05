@@ -66,12 +66,12 @@
 
     - Openwrt:
         description: OpenWrt is an open-source project for embedded operating systems based on Linux, primarily used on embedded devices to route network traffic.
-        href: https://192.168.1.1
+        href: https://{{ openwrt_ip }}
         icon: openwrt.svg
-        siteMonitor: https://192.168.1.1
+        siteMonitor: https://{{ openwrt_ip }}
         widget:
           type: openwrt
-          url: https://192.168.1.1
+          url: https://{{ openwrt_ip }}
           username: homepage
           password: {{ openwrt_homepage_password }}
           interfaceName: eth0

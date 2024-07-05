@@ -175,24 +175,6 @@
         block: "{{ boot_config_parameters }}"
       notify: Reboot
 
-    - name: Add an Apt signing keys
-      ansible.builtin.get_url:
-        url: https://azlux.fr/repo.gpg.key
-        dest: /etc/apt/trusted.gpg.d/azlux.asc
-        mode: u=rw,g=r,o=r
-
-    - name: Add log2ram repository
-      ansible.builtin.apt_repository:
-        repo: deb http://packages.azlux.fr/debian/ {{ ansible_distribution_release }} main
-        filename: azlux
-
-    - name: Install log2ram
-      ansible.builtin.apt:
-        name: log2ram
-        install_recommends: false
-      register: result
-      until: result is succeeded
-
     - name: Enable watchdog
       community.general.ini_file:
         path: /etc/systemd/system.conf
@@ -497,6 +479,28 @@
         state: directory
         mode: u=rwx,g=rx,o=rx
 
+    - name: Copy config files for Home Assistant to {{ hass_config_directory }}
+      ansible.builtin.copy:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        mode: u=rw,g=r,o=r
+      loop:
+        - dest: /var/lib/hass_config/automations.yaml
+          src: files/var/lib/hass_config/automations.yaml
+      notify: Restart hass
+
+    - name: Create config files for Home Assistant to {{ hass_config_directory }}
+      ansible.builtin.template:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        mode: u=rw,g=r,o=r
+      loop:
+        - dest: /var/lib/hass_config/configuration.yaml
+          src: files/var/lib/hass_config/configuration.yaml.j2
+        - dest: /var/lib/hass_config/secrets.yaml
+          src: files/var/lib/hass_config/secrets.yaml.j2
+      notify: Restart hass
+
     - name: Restore Home Assistant configuration from backup
       when: not hass_config_dir.stat.exists and hass_backups.matched > 0
       notify: Restart hass
@@ -522,16 +526,6 @@
           ansible.builtin.file:
             path: /tmp/homeassistant.tar.gz
             state: absent
-
-        - name: Create cron job for Home Assistant backup to USB disk
-          ansible.builtin.cron:
-            name: Create cron job for Home Assistant backup to USB disk
-            weekday: "*"
-            minute: "0"
-            hour: "1"
-            user: root
-            job: "rsync -av {{ hass_config_directory }}/backups/ /mnt/usb/hass-backups/"
-            cron_file: hass_backup
       rescue:
         - name: Print when errors
           ansible.builtin.fail:
@@ -545,6 +539,8 @@
           - /etc/localtime:/etc/localtime:ro
           - /run/dbus:/run/dbus:ro
           - "{{ hass_config_directory }}:/config"
+          - "{{ hass_backup_directory }}:/config/backups"
+          - /mnt/usb/music:/media/music:ro
         network: host
         privileged: true
         label:
@@ -560,30 +556,27 @@
         hostname: "{{ inventory_hostname }}"
       notify: Restart hass
 
-    - name: New Home Assistant configuration
-      when: not hass_config_dir.stat.exists and hass_backups.matched == 0
+    - name: Install HACS
+      when: not hass_config_dir.stat.exists
+      notify: Restart hass
       block:
-        - name: Wait for Home Assistant to be started
-          ansible.builtin.wait_for:
-            port: 8123
+        # - name: Wait for Home Assistant to be started
+        #   ansible.builtin.wait_for:
+        #     port: 8123
 
-        - name: Configure configuration.yaml
-          ansible.builtin.blockinfile:
-            dest: "{{ hass_config_directory }}/configuration.yaml"
-            create: true
-            prepend_newline: true
-            mode: u=rw,g=r,o=r
-            block: |
-              http:
-                use_x_forwarded_for: true
-                trusted_proxies:
-                  - 127.0.0.1
-                  - ::1
+        - name: Install HACS
+          containers.podman.podman_container_exec:
+            name: home-assistant
+            argv:
+              - /bin/bash
+              - -c
+              - wget -O - https://get.hacs.xyz | bash -
+          when: not hass_config_dir.stat.exists
           notify: Restart hass
       rescue:
         - name: Print when errors
           ansible.builtin.fail:
-            msg: Create new Home Assistant configuration failed
+            msg: HACS installation failed
 
     #################################################
     # Homepage
@@ -610,7 +603,7 @@
           src: files/var/lib/homepage/config/services.yaml.j2
         - dest: /var/lib/homepage/config/settings.yaml
           src: files/var/lib/homepage/config/settings.yaml.j2
-      notify: Restart hass
+      notify: Restart homepage
 
     - name: Homepage container
       containers.podman.podman_container:
@@ -875,6 +868,9 @@
         - section: Preferences
           option: WebUI\Port
           value: 8081
+        - section: Preferences
+          option: WebUI\CSRFProtection
+          value: "false"
 
     - name: Start qBittorrent
       ansible.builtin.systemd_service:

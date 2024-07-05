@@ -1,0 +1,50 @@
+- alias: Automatic Backup
+  id: acac055e-ea1e-41cd-9f46-62e7a8c006aa
+  initial_state: true
+  trigger:
+    platform: time
+    at: "00:55:00"
+  action:
+    - service: auto_backup.backup
+      data:
+        name: "Automated Backup {{ now().strftime('%Y-%m-%d') }}"
+        keep_days: 30
+
+- alias: "Notify Backup Failure"
+  id: eb3ef8ea-e19a-4b1e-b7ff-482089a346b5
+  trigger:
+    platform: event
+    event_type: auto_backup.backup_failed
+  action:
+    service: persistent_notification.create
+    data:
+      title: "Backup Failed."
+      message: |-
+        Name: {{ trigger.event.data.name }}
+        Error: {{ trigger.event.data.error }}
+
+- alias: "ERRORs in System Log - Counter"
+  id: 3b8230a5-49d5-437b-8bd9-d3f72f95425f
+  trigger:
+    platform: event
+    event_type: system_log_event
+    event_data:
+      level: ERROR
+  mode: parallel
+  max: 50
+  action:
+    - service: counter.increment
+      entity_id: counter.syslog_errors
+
+- alias: "WARNINGs in System Log - Counter"
+  id: acdf3489-b611-445c-bd24-2efc9c431124
+  trigger:
+    platform: event
+    event_type: system_log_event
+    event_data:
+      level: WARNING
+  mode: parallel
+  max: 50
+  action:
+    - service: counter.increment
+      entity_id: counter.syslog_warnings

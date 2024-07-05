@@ -4,6 +4,8 @@ Configure Raspbian (RPi) using Ansible
 
 ## Preparation
 
+> Obsolete steps - use create-rpi-image GitHub Action to build the image
+
 1. Connect mouse and keyboard to RPi
 1. Boot the RPi with using the USB stick with standard Raspberry OS with Desktop
 1. Put the SD card into RPi

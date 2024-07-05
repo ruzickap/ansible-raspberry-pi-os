@@ -1,0 +1,51 @@
+#################################################
+# Core config
+#################################################
+
+homeassistant:
+  name: Home, Sweet Home...
+  latitude: {{ hass_latitude }}
+  longitude: {{ hass_longitude}}
+  elevation: {{ hass_elevation}}
+  # unit_system: metric
+  currency: CZK
+  country: CZ
+  time_zone: {{ timezone }}
+  external_url: {{ hass_url }}
+  media_dirs:
+    media: /media
+
+#################################################
+# Features
+#################################################
+
+automation: !include automations.yaml
+
+default_config:
+
+logger:
+  default: warn
+  filters:
+    homeassistant.loader:
+      - "We found a custom integration .* which has not been tested by Home Assistant.*"
+    py.warnings:
+      - "InsecureRequestWarning: Unverified HTTPS request is being made to host.*"
+
+http:
+  use_x_forwarded_for: true
+  trusted_proxies:
+    - 127.0.0.1
+    - ::1
+{% for ip_address in ansible_facts.all_ipv4_addresses %}
+    - {{ ip_address }}
+{% endfor %}
+
+recorder:
+  purge_keep_days: 7
+
+device_tracker:
+  - platform: luci
+    host: {{ openwrt_ip }}
+    username: !secret openwrt_luci_username
+    password: !secret openwrt_luci_password
+    verify_ssl: false
