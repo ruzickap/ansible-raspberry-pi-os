@@ -1,0 +1,750 @@
+#################################################
+# Cloudflared
+#################################################
+
+- name: Add Cloudflare apt signing keys
+  ansible.builtin.get_url:
+    url: https://pkg.cloudflare.com/cloudflare-main.gpg
+    dest: /etc/apt/trusted.gpg.d/cloudflare.gpg
+    mode: u=rw,g=r,o=r
+
+- name: Add Cloudflare repository
+  ansible.builtin.apt_repository:
+    repo: deb https://pkg.cloudflare.com/cloudflared {{ ansible_distribution_release }} main
+    filename: cloudflared
+
+- name: Install cloudflared
+  ansible.builtin.apt:
+    name: cloudflared
+    install_recommends: false
+  register: result
+  until: result is succeeded
+
+- name: Copy cloudflared systemd unit file into place
+  ansible.builtin.template:
+    src: files/etc/systemd/system/cloudflared.service
+    dest: /etc/systemd/system/cloudflared.service
+    mode: u=rw,g=r,o=r
+  notify: Reload systemd
+
+- name: Configure cloudflared
+  ansible.builtin.copy:
+    dest: /etc/default/cloudflared
+    content: |
+      CLOUDFLARED_TOKEN={{ cloudflared_tunnel_token }}
+    mode: u=rw,g=,o=
+  no_log: true
+  notify: Restart cloudflared
+
+#################################################
+# Emqx
+#################################################
+
+- name: Add Emqx apt signing keys
+  ansible.builtin.get_url:
+    url: https://packages.emqx.com/emqx/emqx/gpgkey
+    dest: /etc/apt/trusted.gpg.d/emqx_emqx.asc
+    mode: u=rw,g=r,o=r
+
+- name: Add Emqx repository
+  ansible.builtin.apt_repository:
+    repo: deb https://packages.emqx.com/emqx/emqx/debian/ {{ ansible_distribution_release }} main
+    filename: emqx_emqx
+
+- name: Install Emqx
+  ansible.builtin.apt:
+    name: emqx
+    install_recommends: false
+  register: result
+  until: result is succeeded
+
+# - name: Create json file with users for emqx (/etc/emqx/init_user.json)
+#   ansible.builtin.copy:
+#     dest: /etc/emqx/init_user.json
+#     content: |
+#       [
+#           {
+#               "user_id": "my_user",
+#               "password": "s3cr3tp@ssw0rd",
+#               "is_superuser": true
+#           }
+#       ]
+#     mode: u=rw,g=r,o=r
+#     owner: emqx
+#     group: emqx
+
+- name: Configure Emqx (/etc/emqx/emqx.conf)
+  ansible.builtin.template:
+    dest: /etc/emqx/emqx.conf
+    src: files/etc/emqx/emqx.conf.j2
+    mode: u=rw,g=r,o=r
+    owner: emqx
+    group: emqx
+
+- name: Start Emqx
+  ansible.builtin.systemd_service:
+    name: emqx
+    state: started
+
+# - name: Set admin password for Emqx
+#   ansible.builtin.command: emqx_ctl admins passwd admin {{ emqx_dashboard_password }}
+#   changed_when: false
+
+#################################################
+# cAdvisor
+#################################################
+
+- name: Container for cAdvisor
+  containers.podman.podman_container:
+    name: cadvisor
+    image: gcr.io/cadvisor/cadvisor:latest
+    volume:
+      - /:/rootfs:ro
+      - /dev/disk/:/dev/disk:ro
+      - /etc/machine-id:/etc/machine-id:ro
+      - /sys:/sys:ro
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+      - /var/lib/containers:/var/lib/containers:ro
+      - /var/run:/var/run:ro
+      - /var/run/podman/podman.sock:/var/run/docker.sock:rw
+    privileged: true
+    ports:
+      - 8085:8080
+    label:
+      io.containers.autoupdate: registry
+      homepage.group: Containers
+      homepage.name: cAdvisor
+      homepage.icon: https://raw.githubusercontent.com/walkxcode/dashboard-icons/50c4b5ee2b207708a16726b5ff87a9ab0438ea17/png/cadvisor.png
+      homepage.description: Analyzes resource usage and performance characteristics of running containers.
+    generate_systemd:
+      path: /etc/systemd/system/
+      new: true
+    hostname: "{{ inventory_hostname }}"
+  notify: Restart cadvisor
+
+#################################################
+# Zigbee2MQTT
+#################################################
+
+# - name: Create Zigbee2MQTT directory (/var/lib/zigbee2mqtt)
+#   ansible.builtin.file:
+#     path: /var/lib/zigbee2mqtt
+#     state: directory
+#     recurse: true
+
+# - name: Configure Zigbee2MQTT (/var/lib/zigbee2mqtt/configuration.yaml)
+#   ansible.builtin.template:
+#     dest: /var/lib/zigbee2mqtt/configuration.yaml
+#     src: files/var/lib/zigbee2mqtt/configuration.yaml.j2
+#     mode: u=rwx,g=r,o=r
+#   notify: Restart zigbee2mqtt
+
+# - name: Zigbee2MQTT container
+#   containers.podman.podman_container:
+#     name: zigbee2mqtt
+#     image: docker.io/koenkk/zigbee2mqtt:latest
+#     volume:
+#       - /run/dbus:/run/dbus:ro
+#       - /var/lib/zigbee2mqtt:/app/data
+#     ports:
+#       - 8082:8080
+#     env:
+#       TZ: "{{ timezone }}"
+#     label:
+#       io.containers.autoupdate: registry
+#       homepage.group: Containers
+#       homepage.name: Zigbee2MQTT
+#       homepage.icon: https://raw.githubusercontent.com/Koenkk/zigbee2mqtt.io/bfd27df45e931d18675eb5aba8bdcbaf688a608f/docs/images/logo.png
+#       homepage.description: Zigbee 🐝 to MQTT bridge 🌉, get rid of your proprietary Zigbee bridges 🔨
+#     generate_systemd:
+#       path: /etc/systemd/system/
+#       new: true
+#     hostname: "{{ inventory_hostname }}"
+#   notify: Restart zigbee2mqtt
+
+#################################################
+# ESPHome
+#################################################
+
+- name: Create ESPHome directory (/var/lib/esphome/config)
+  ansible.builtin.file:
+    path: /var/lib/esphome/config
+    state: directory
+    recurse: true
+
+- name: Configure ESPHome (/var/lib/esphome/config/xiaomi-miija-lywsd03mmc.yaml)
+  ansible.builtin.template:
+    dest: /var/lib/esphome/config/xiaomi-miija-lywsd03mmc.yaml
+    src: files/var/lib/esphome/config/xiaomi-miija-lywsd03mmc.yaml
+    mode: u=rwx,g=r,o=r
+  notify: Restart esphome
+
+- name: ESPHome container
+  containers.podman.podman_container:
+    name: esphome
+    image: ghcr.io/esphome/esphome:stable
+    volume:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/lib/esphome/config:/config
+    ports:
+      - 6052:6052
+    label:
+      io.containers.autoupdate: registry
+      homepage.group: Containers
+      homepage.name: ESPHome
+      homepage.icon: https://raw.githubusercontent.com/esphome/esphome-docs/e28345cd8f1c9380bc25dd977fcf443ba5c8612c/images/logo.svg
+      homepage.description: ESPHome is a system to control your ESP8266/ESP32 by simple yet powerful configuration files and control them remotely through Home Automation systems.
+    generate_systemd:
+      path: /etc/systemd/system/
+      new: true
+    hostname: "{{ inventory_hostname }}"
+  notify: Restart esphome
+
+#################################################
+# Home Assistant
+#################################################
+
+- name: Check that the directory exists - {{ hass_config_directory }}
+  ansible.builtin.stat:
+    path: "{{ hass_config_directory }}"
+  register: hass_config_dir
+
+- name: Check if there are any HASS backups
+  ansible.builtin.find:
+    paths: "{{ hass_backup_directory }}"
+  register: hass_backups
+
+- name: Create hass config directory - {{ hass_config_directory }}
+  ansible.builtin.file:
+    path: "{{ hass_config_directory }}"
+    state: directory
+    mode: u=rwx,g=rx,o=rx
+
+- name: Copy config files for Home Assistant to {{ hass_config_directory }}
+  ansible.builtin.copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: u=rw,g=r,o=r
+  loop:
+    - dest: /var/lib/hass_config/automations.yaml
+      src: files/var/lib/hass_config/automations.yaml
+    - dest: /var/lib/hass_config/known_devices.yaml
+      src: files/var/lib/hass_config/known_devices.yaml
+  notify: Restart hass
+
+- name: Create config files for Home Assistant to {{ hass_config_directory }}
+  ansible.builtin.template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: u=rw,g=r,o=r
+  loop:
+    - dest: /var/lib/hass_config/configuration.yaml
+      src: files/var/lib/hass_config/configuration.yaml.j2
+  notify: Restart hass
+
+- name: Create secret file for Home Assistant to {{ hass_config_directory }}
+  ansible.builtin.template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: u=rw,g=,o=
+  loop:
+    - dest: /var/lib/hass_config/secrets.yaml
+      src: files/var/lib/hass_config/secrets.yaml.j2
+  no_log: true
+  notify: Restart hass
+
+- name: Restore Home Assistant configuration from backup
+  when: not hass_config_dir.stat.exists and hass_backups.matched > 0
+  notify: Restart hass
+  block:
+    - name: Unpack the tar backup
+      ansible.builtin.unarchive:
+        src: "{{ (hass_backups.files | sort(attribute='mtime') | last).path }}"
+        dest: /tmp/
+        include: "homeassistant.tar.gz"
+        remote_src: true
+      changed_when: false
+
+    - name: Unpack the homeassistant.tar.gz
+      ansible.builtin.unarchive:
+        src: /tmp/homeassistant.tar.gz
+        dest: "{{ hass_config_directory }}"
+        extra_opts:
+          - "--strip-components=1"
+        remote_src: true
+      changed_when: false
+
+    - name: Delete /tmp/homeassistant.tar.gz
+      ansible.builtin.file:
+        path: /tmp/homeassistant.tar.gz
+        state: absent
+  rescue:
+    - name: Print when errors
+      ansible.builtin.fail:
+        msg: Restore from backup failed
+
+- name: Home Assistant container
+  containers.podman.podman_container:
+    name: home-assistant
+    image: ghcr.io/home-assistant/home-assistant:stable
+    volume:
+      - /etc/localtime:/etc/localtime:ro
+      - /run/dbus:/run/dbus:ro
+      - "{{ hass_config_directory }}:/config"
+      - "{{ hass_backup_directory }}:/config/backups"
+      - /mnt/usb/music:/media/music:ro
+    network: host
+    privileged: true
+    label:
+      io.containers.autoupdate: registry
+      homepage.group: Containers
+      homepage.name: Home Assistant
+      homepage.icon: https://upload.wikimedia.org/wikipedia/en/4/49/Home_Assistant_logo_%282023%29.svg
+      homepage.href: https://hass-rpi.xvx.cz/
+      homepage.description: Open source home automation that puts local control and privacy first.
+    generate_systemd:
+      path: /etc/systemd/system/
+      new: true
+    hostname: "{{ inventory_hostname }}"
+  notify: Restart hass
+
+- name: Install HACS
+  containers.podman.podman_container_exec:
+    name: home-assistant
+    argv:
+      - /bin/bash
+      - -c
+      - wget -O - https://get.hacs.xyz | bash -
+  when: not hass_config_dir.stat.exists
+  notify: Restart hass
+
+#################################################
+# Homepage
+#################################################
+
+- name: Create homepage directory (/var/lib/homepage/config)
+  ansible.builtin.file:
+    path: /var/lib/homepage/config
+    state: directory
+    recurse: true
+
+- name: Copy config files for homepage to /var/lib/homepage/config
+  ansible.builtin.template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: u=rw,g=r,o=r
+  no_log: true
+  loop:
+    - dest: /var/lib/homepage/config/bookmarks.yaml
+      src: files/var/lib/homepage/config/bookmarks.yaml.j2
+    - dest: /var/lib/homepage/config/docker.yaml
+      src: files/var/lib/homepage/config/docker.yaml.j2
+    - dest: /var/lib/homepage/config/widgets.yaml
+      src: files/var/lib/homepage/config/widgets.yaml.j2
+    - dest: /var/lib/homepage/config/services.yaml
+      src: files/var/lib/homepage/config/services.yaml.j2
+    - dest: /var/lib/homepage/config/settings.yaml
+      src: files/var/lib/homepage/config/settings.yaml.j2
+  notify: Restart homepage
+
+- name: Homepage container
+  containers.podman.podman_container:
+    name: homepage
+    image: ghcr.io/gethomepage/homepage:latest
+    volume:
+      - /var/lib/homepage/config:/app/config
+      - /mnt/usb/music:/mnt/usb/music:ro
+      - /run/podman/podman.sock:/var/run/docker.sock:ro
+    network: host
+    privileged: true
+    env:
+      LOG_TARGETS: stdout
+    label:
+      io.containers.autoupdate: registry
+      homepage.group: Containers
+      homepage.name: Homepage
+      homepage.icon: https://raw.githubusercontent.com/gethomepage/homepage/47765ee05e633c87fcf8fca8ee1293bf0ef6bb3e/docs/assets/light_squircle%402x.png
+      homepage.href: https://rpi.xvx.cz/
+      homepage.description: A modern, fully static, fast, secure fully proxied, highly customizable application dashboard with integrations for over 100 services and translations into multiple languages.
+    generate_systemd:
+      path: /etc/systemd/system/
+      new: true
+    hostname: "{{ inventory_hostname }}"
+  notify: Restart homepage
+
+#################################################
+# Navidrome
+#################################################
+
+- name: Create config directory (/var/lib/navidrome)
+  register: navidrome_config_dir
+  ansible.builtin.file:
+    path: /var/lib/navidrome
+    state: directory
+    owner: pi
+    group: pi
+    recurse: true
+  notify: "Create admin user for Navidrome"
+
+- name: Navidrome container
+  containers.podman.podman_container:
+    name: navidrome
+    image: docker.io/deluan/navidrome:latest
+    user: 1000:1000
+    volume:
+      - /var/lib/navidrome:/data
+      - /mnt/usb/music:/music:ro
+    env:
+      ND_RECENTLYADDEDBYMODTIME: "true"
+      ND_SCANSCHEDULE: "@every 6m"
+    ports:
+      - 4533:4533
+    label:
+      io.containers.autoupdate: registry
+      homepage.group: Containers
+      homepage.name: Navidrome
+      homepage.icon: https://raw.githubusercontent.com/navidrome/navidrome/64e2a0bcd47ae35849ce453285065d54b6d22950/resources/logo-192x192.png
+      homepage.href: https://navidrome-rpi.xvx.cz/
+      homepage.description: Modern Music Server and Streamer compatible with Subsonic/Airsonic
+    generate_systemd:
+      path: /etc/systemd/system/
+      new: true
+    hostname: "{{ inventory_hostname }}"
+  notify: Restart navidrome
+
+#################################################
+# Plex
+#################################################
+
+- name: Create plex directory (/var/lib/plex/config)
+  ansible.builtin.file:
+    path: /var/lib/plex/config
+    state: directory
+    recurse: true
+
+- name: Plex container
+  containers.podman.podman_container:
+    name: plex
+    image: ghcr.io/linuxserver/plex:arm64v8-latest
+    volume:
+      - /var/lib/plex/config:/config
+      - /mnt/usb/movies:/movies:ro
+      - /mnt/usb/music:/music:ro
+    env:
+      PLEX_UID: 1000
+      PLEX_GID: 1000
+      TZ: "{{ timezone }}"
+    ports:
+      - 32400:32400
+    label:
+      io.containers.autoupdate: registry
+      homepage.group: Containers
+      homepage.name: Plex
+      homepage.icon: https://raw.githubusercontent.com/plexinc/plex-media-player/51e2b74367850cb5ab77ac51329dfd8a7a7320e4/resources/images/icon.svg
+      homepage.href: https://plex-rpi.xvx.cz/
+      homepage.description: Plex Media Server (PMS) is free software that allows users to create a client–server for movies, television shows, and music.
+    generate_systemd:
+      path: /etc/systemd/system/
+      new: true
+    hostname: "{{ inventory_hostname }}"
+  notify: Restart plex
+
+#################################################
+# Samba
+#################################################
+
+- name: Configure Samba (smb.conf)
+  ansible.builtin.template:
+    dest: /etc/samba/smb.conf
+    src: files/etc/samba/smb.conf.j2
+    mode: u=rw,g=r,o=r
+  notify: Restart samba
+
+- name: Create local credential file for smaba
+  delegate_to: localhost
+  ansible.builtin.copy:
+    dest: "{{ lookup('env', 'HOME') }}/Documents/secrets/{{ inventory_hostname }}-cifs-credentials"
+    content: |
+      [{{ inventory_hostname }}]
+      username=pi
+      password={{ samba_pi_password }}
+    mode: u=rw,g=,o=
+    owner: "{{ lookup('env', 'USER') }}"
+
+- name: Set SMB password for pi
+  ansible.builtin.shell: set -o pipefail && ( echo {{ samba_pi_password }} ; echo {{ samba_pi_password }} ) | smbpasswd -a -s pi
+  args:
+    executable: /bin/bash
+  changed_when: false
+
+#################################################
+# qBittorrent
+#################################################
+
+- name: Create qBittorrent group
+  ansible.builtin.group:
+    name: qbittorrent
+
+- name: Create qBittorrent user
+  ansible.builtin.user:
+    name: qbittorrent
+    comment: qBittorrent user
+    shell: /usr/sbin/nologin
+    group: qbittorrent
+
+- name: Create qBittorrent directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    recurse: true
+    owner: qbittorrent
+    group: qbittorrent
+  loop:
+    - /home/qbittorrent/.config/qBittorrent
+    - /mnt/usb/torrents
+
+# Note: reload doesn't work for qBittorrent systemd service
+- name: Stop qBittorrent
+  ansible.builtin.systemd_service:
+    name: qbittorrent-nox@qbittorrent
+    state: stopped
+    enabled: true
+  changed_when: false
+
+- name: Configure qBittorrent
+  community.general.ini_file:
+    path: /home/qbittorrent/.config/qBittorrent/qBittorrent.conf
+    no_extra_spaces: true
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+    owner: qbittorrent
+    group: qbittorrent
+    mode: u=rw,g=r,o=r
+  loop:
+    - section: BitTorrent
+      option: 'Session\AddExtensionToIncompleteFiles'
+      value: "true"
+    - section: BitTorrent
+      option: 'Session\AddTorrentPaused'
+      value: "false"
+    - section: BitTorrent
+      option: 'Session\AlternativeGlobalDLSpeedLimit'
+      value: 0
+    - section: BitTorrent
+      option: 'Session\AnonymousModeEnabled'
+      value: "true"
+    - section: BitTorrent
+      option: 'Session\BandwidthSchedulerEnabled'
+      value: "true"
+    - section: BitTorrent
+      option: 'Session\DefaultSavePath'
+      value: /mnt/usb/torrents/
+    - section: BitTorrent
+      option: 'Session\GlobalDLSpeedLimit'
+      value: 3000
+    - section: BitTorrent
+      option: 'Session\GlobalMaxSeedingMinutes'
+      value: 1
+    - section: BitTorrent
+      option: 'Session\GlobalUPSpeedLimit'
+      value: 10
+    - section: BitTorrent
+      option: 'Session\MaxRatioAction'
+      value: 1
+    - section: Core
+      option: AutoDeleteAddedTorrentFile
+      value: IfAdded
+    - section: Preferences
+      option: 'MailNotification\email'
+      value: "{{ notification_email }}"
+    - section: Preferences
+      option: 'MailNotification\enabled'
+      value: "true"
+    - section: Preferences
+      option: 'MailNotification\password'
+      value: "{{ smtp_gmail_auth_password }}"
+    - section: Preferences
+      option: 'MailNotification\req_auth'
+      value: "true"
+    - section: Preferences
+      option: 'MailNotification\req_ssl'
+      value: "true"
+    - section: Preferences
+      option: 'MailNotification\smtp_server'
+      value: smtp.gmail.com
+    - section: Preferences
+      option: 'MailNotification\username'
+      value: "{{ smtp_gmail_auth_user }}"
+    - section: Preferences
+      option: 'Scheduler\days'
+      value: EveryDay
+    - section: Preferences
+      option: 'Scheduler\start_time'
+      value: '@Variant(\0\0\0\xf\0\0\0\0)'
+    - section: Preferences
+      option: 'Scheduler\end_time'
+      value: '@Variant(\0\0\0\xf\x1\x12\xa8\x80)'
+    - section: Preferences
+      option: 'WebUI\Address'
+      value: 127.0.0.1
+    - section: Preferences
+      option: 'WebUI\LocalHostAuth'
+      value: "false"
+    - section: Preferences
+      option: 'WebUI\Password_PBKDF2'
+      value: '"{{ qbittorrent_password_hash }}"'
+    - section: Preferences
+      option: WebUI\Port
+      value: 8081
+    - section: Preferences
+      option: WebUI\CSRFProtection
+      value: "false"
+
+- name: Start qBittorrent
+  ansible.builtin.systemd_service:
+    name: qbittorrent-nox@qbittorrent
+    state: started
+  changed_when: false
+
+#################################################
+# Grafana Alloy
+#################################################
+
+- name: Install alloy
+  ansible.builtin.include_role:
+    name: grafana.grafana.alloy
+  vars:
+    config: "{{ lookup('ansible.builtin.template', 'files/etc/alloy/config.alloy.j2') }}"
+
+#################################################
+# Kodi
+#################################################
+
+- name: Add kodi group
+  ansible.builtin.group:
+    name: kodi
+
+- name: Add kodi user
+  ansible.builtin.user:
+    name: kodi
+    comment: Kodi
+    shell: /usr/bin/sh
+    groups: audio,input,uucp,video
+    group: kodi
+
+- name: Create sudoers file for Kodi
+  ansible.builtin.copy:
+    src: etc/sudoers.d/020_kodi
+    dest: /etc/sudoers.d/020_kodi
+    mode: u=rw,g=r,o=r
+  notify: Restart kodi
+
+- name: Create startup script for Kodi
+  ansible.builtin.copy:
+    src: lib/systemd/system/kodi.service
+    dest: /lib/systemd/system/kodi.service
+    mode: u=rw,g=r,o=r
+  notify:
+    - Restart kodi
+
+- name: Change default target to graphical.target
+  ansible.builtin.file:
+    src: /usr/lib/systemd/system/graphical.target
+    dest: /etc/systemd/system/default.target
+    state: link
+
+- name: Create Kodi addon directory (/home/kodi/.kodi/addons)
+  ansible.builtin.file:
+    path: /home/kodi/.kodi/addons
+    state: directory
+    recurse: true
+    owner: kodi
+    group: kodi
+
+- name: Get the latest version of YouTube Kodi plugin
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/anxdpanic/plugin.video.youtube/releases/latest
+  register: github_api_youtube_kodi_plugin
+
+- name: Download and unpack the YouTube Kodi plugin
+  ansible.builtin.unarchive:
+    src: "{{ github_api_youtube_kodi_plugin.json.assets[0].browser_download_url }}"
+    dest: /home/kodi/.kodi/addons/
+    remote_src: true
+    creates: /home/kodi/.kodi/addons/plugin.video.youtube
+
+- name: Copy Kodi configuration files
+  ansible.posix.synchronize:
+    src: home/kodi/.kodi
+    dest: /home/kodi/
+  # These files are frequently updated by Kodi
+  changed_when: false
+  notify: Restart kodi
+
+- name: Additional Kodi configuration
+  ansible.builtin.template:
+    dest: "{{ item.dest }}"
+    src: "{{ item.src }}"
+    mode: u=rw,g=,o=
+  loop:
+    - dest: /home/kodi/.kodi/userdata/guisettings.xml
+      src: files/home/kodi/.kodi/userdata/guisettings.xml.j2
+  # This file is frequently updated by Kodi
+  changed_when: false
+
+- name: Chown "/home/kodi"
+  ansible.builtin.file:
+    path: /home/kodi
+    owner: kodi
+    group: kodi
+    recurse: true
+  changed_when: false
+
+# It happens sometimes, that the Kodi don't start for the first time - SubState": "dead"
+- name: Start Kodi
+  ansible.builtin.systemd_service:
+    name: kodi
+    state: started
+    enabled: true
+  register: result
+  until: result.status.SubState == "running"
+
+- name: Wait for Kodi to be started
+  ansible.builtin.wait_for:
+    port: 8080
+
+- name: Enable YouTube Kodi plugin in database
+  ansible.builtin.command: sqlite3 /home/kodi/.kodi/userdata/Database/Addons33.db "UPDATE installed SET enabled = 1 WHERE addonID = 'plugin.video.youtube'"
+  register: result
+  until: result is succeeded
+  delay: 10
+  changed_when: false
+
+- name: Enable Kodi Visualization addon spectrum
+  ansible.builtin.command: sqlite3 /home/kodi/.kodi/userdata/Database/Addons33.db "UPDATE installed SET enabled = 1 WHERE addonID = '{{ item }}'"
+  loop:
+    - visualization.spectrum
+  register: result
+  until: result is succeeded
+  delay: 10
+  changed_when: false
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers
+
+- name: Wait for Kodi to be started
+  ansible.builtin.wait_for:
+    port: 8080
+
+- name: Refresh Music Library
+  no_log: true
+  # checkov:skip=CKV2_ANSIBLE_1
+  ansible.builtin.uri:
+    url: http://{{ ansible_host }}:8080/jsonrpc
+    user: kodi
+    password: "{{ kodi_guisettings_services_webserverpassword }}"
+    method: POST
+    body: '{ "jsonrpc": "2.0", "method": "AudioLibrary.Scan", "id": "ansible" }'
+    force_basic_auth: true
+    body_format: json

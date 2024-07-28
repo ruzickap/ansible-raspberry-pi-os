@@ -1,0 +1,102 @@
+- name: Create admin user for Navidrome
+  ansible.builtin.import_tasks: navidrome-create-user.yml
+
+- name: Reload systemd
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+
+- name: Restart cadvisor
+  ansible.builtin.systemd_service:
+    name: container-cadvisor
+    enabled: true
+    state: restarted
+
+- name: Restart cloudflared
+  ansible.builtin.service:
+    name: cloudflared
+    state: restarted
+    enabled: true
+
+- name: Restart navidrome
+  ansible.builtin.service:
+    name: container-navidrome
+    state: restarted
+    enabled: true
+
+- name: Restart dnsmasq
+  ansible.builtin.service:
+    name: dnsmasq
+    state: restarted
+    enabled: true
+
+- name: Restart esphome
+  ansible.builtin.systemd_service:
+    name: container-esphome
+    enabled: true
+    state: restarted
+
+- name: Restart hass
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    name: container-home-assistant
+    enabled: true
+    state: restarted
+
+- name: Restart hd-idle
+  ansible.builtin.systemd_service:
+    name: hd-idle
+    state: restarted
+
+- name: Restart homepage
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    name: container-homepage
+    enabled: true
+    state: restarted
+
+- name: Restart kodi
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    name: kodi
+    state: restarted
+    enabled: true
+
+- name: Restart NetworkManager
+  ansible.builtin.systemd_service:
+    name: NetworkManager
+    state: restarted
+
+- name: Restart plex
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    name: container-plex
+    enabled: true
+    state: restarted
+
+- name: Restart samba
+  ansible.builtin.systemd_service:
+    name: smbd
+    state: restarted
+
+- name: Restart smartd
+  ansible.builtin.systemd_service:
+    name: smartd
+    state: restarted
+
+- name: Reload systemd
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+
+- name: Restart sshd
+  ansible.builtin.systemd_service:
+    name: sshd
+    state: restarted
+
+# - name: Restart zigbee2mqtt
+#   ansible.builtin.systemd_service:
+#     name: container-zigbee2mqtt
+#     enabled: true
+#     state: restarted
+
+- name: Reboot
+  ansible.builtin.reboot:

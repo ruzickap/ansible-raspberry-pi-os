@@ -1,0 +1,383 @@
+- name: Set timezone to Europe/Prague
+  community.general.timezone:
+    name: "{{ timezone }}"
+
+- name: Set hostname
+  ansible.builtin.hostname:
+    name: "{{ inventory_hostname }}"
+
+- name: Add hostname to '/etc/hosts'
+  ansible.builtin.lineinfile:
+    dest: /etc/hosts
+    regexp: ".*{{ inventory_hostname }}.*"
+    line: "{{ ansible_default_ipv4.address }} {{ inventory_hostname }}"
+    mode: u=rw,g=r,o=r
+  when: ansible_default_ipv4.address is defined
+
+- name: Disable swap
+  ansible.builtin.command: dphys-swapfile uninstall
+  changed_when: false
+
+- name: Configure /tmp as tmpfs
+  ansible.posix.mount:
+    path: /tmp
+    src: tmpfs
+    fstype: tmpfs
+    opts: defaults,noatime,nodiratime,nosuid,size=128m
+    state: mounted
+
+- name: Configure NTP
+  community.general.ini_file:
+    path: /etc/systemd/timesyncd.conf
+    no_extra_spaces: true
+    section: Time
+    option: NTP
+    value: "{{ ntp_server }}"
+    mode: u=rw,g=r,o=r
+
+- name: Copy sshd keys to /etc/ssh/
+  ansible.builtin.copy:
+    src: files/etc/ssh/
+    dest: /etc/ssh/
+    mode: u=rw,g=,o=
+  notify: Restart sshd
+
+- name: Create /etc/systemd/journald.conf.d directory
+  ansible.builtin.file:
+    path: /etc/systemd/journald.conf.d
+    state: directory
+    mode: u=rwx,g=rx,o=rx
+
+- name: Forward journald to /dev/tty12
+  community.general.ini_file:
+    path: /etc/systemd/journald.conf.d/fw-tty12.conf
+    no_extra_spaces: true
+    section: Journal
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+    mode: u=rw,g=r,o=r
+  loop:
+    - option: ForwardToConsole
+      value: "yes"
+    - option: TTYPath
+      value: /dev/tty12
+    - option: MaxLevelConsole
+      value: info
+  notify: Reload systemd
+
+- name: Configure journald
+  community.general.ini_file:
+    path: /etc/systemd/journald.conf.d/journal-size.conf
+    section: Journal
+    option: SystemMaxUse
+    value: 10M
+    mode: u=rw,g=r,o=r
+  notify: Reload systemd
+
+- name: Configure .bashrc for root
+  ansible.builtin.blockinfile:
+    dest: /root/.bashrc
+    block: |
+      PS1='\[\033[01;31m\]\h\[\033[01;34m\] \w #\[\033[00m\] '
+      source /usr/share/doc/fzf/examples/key-bindings.bash
+      alias ll='ls -l --color=auto'
+
+- name: Switch keyboard layout to US
+  community.general.ini_file:
+    path: /etc/default/keyboard
+    section: null
+    no_extra_spaces: true
+    option: XKBLAYOUT
+    value: us
+    mode: u=rw,g=r,o=r
+
+- name: Configure locale (/etc/default/locale)
+  community.general.ini_file:
+    path: /etc/default/locale
+    no_extra_spaces: true
+    section: null
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+    mode: u=rw,g=r,o=r
+  loop:
+    - option: LANG
+      value: en_US.UTF-8
+    - option: LC_ALL
+      value: en_US.UTF-8
+    - option: LANGUAGE
+      value: en_US.UTF-8
+
+- name: Replace before the expression till the begin of the file
+  ansible.builtin.replace:
+    path: /etc/locale.gen
+    regexp: "^# en_US.UTF-8 UTF-8$"
+    replace: "en_US.UTF-8 UTF-8"
+
+- name: Generate locale for en_US.UTF-8
+  community.general.locale_gen:
+    name: en_US.UTF-8
+
+- name: Add the modules module
+  community.general.modprobe:
+    name: "{{ item }}"
+  loop: "{{ enable_kernel_modules }}"
+
+- name: Load modules during boot
+  ansible.builtin.copy:
+    dest: /etc/modules-load.d/{{ item }}.conf
+    content: |
+      {{ item }}
+    mode: u=rw,g=r,o=r
+  loop: "{{ enable_kernel_modules }}"
+
+- name: Change params in /boot/config.txt
+  ansible.builtin.blockinfile:
+    path: /boot/config.txt
+    block: "{{ boot_config_parameters }}"
+  notify: Reboot
+
+- name: Enable watchdog
+  community.general.ini_file:
+    path: /etc/systemd/system.conf
+    no_extra_spaces: true
+    section: "Manager"
+    option: "RuntimeWatchdogSec"
+    value: "10"
+    mode: u=rw,g=r,o=r
+  notify: Reload systemd
+
+- name: Update all packages
+  ansible.builtin.apt:
+    name: "*"
+    install_recommends: false
+    update_cache: true
+  register: result
+  until: result is succeeded
+
+- name: Install packages
+  ansible.builtin.apt:
+    name: "{{ rpi_packages }}"
+    install_recommends: false
+  register: result
+  until: result is succeeded
+
+- name: Install additional packages
+  ansible.builtin.apt:
+    name: "{{ rpi_packages_additional }}"
+    install_recommends: false
+  register: result
+  until: result is succeeded
+
+- name: Stop services and disable them
+  ansible.builtin.systemd_service:
+    name: "{{ item }}"
+    state: stopped
+    enabled: false
+  loop: "{{ rpi_disable_boot_services }}"
+
+- name: Create directory for mc inside /etc/skel
+  ansible.builtin.file:
+    path: /etc/skel/.config/mc/
+    state: directory
+    mode: u=rwx,g=,o=
+
+- name: Create /etc/skel/.config/mc/ini file
+  community.general.ini_file:
+    path: /etc/skel/.config/mc/ini
+    no_extra_spaces: true
+    section: "{{ item.section }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+    mode: u=rw,g=r,o=r
+  loop:
+    - section: Midnight-Commander
+      option: auto_save_setup
+      value: "false"
+    - section: Midnight-Commander
+      option: drop_menus
+      value: "true"
+    - section: Midnight-Commander
+      option: editor_return_does_auto_indent
+      value: "false"
+    - section: Layout
+      option: keybar_visible
+      value: "false"
+    - section: Layout
+      option: menubar_visible
+      value: "false"
+    - section: Layout
+      option: message_visible
+      value: "false"
+    - section: Panels
+      option: navigate_with_arrows
+      value: "true"
+
+- name: Copy mc configuration to root directory
+  ansible.builtin.copy:
+    src: /etc/skel/.config
+    dest: /root/
+    remote_src: true
+    mode: u=rw,g=r,o=r
+
+- name: Copy mc configuration to pi home directory
+  ansible.builtin.copy:
+    src: /etc/skel/.config
+    dest: /home/pi/
+    owner: pi
+    group: pi
+    remote_src: true
+    mode: u=rw,g=r,o=r
+
+- name: Put "mc" alias into /etc/profile.d/my-mc.sh
+  ansible.builtin.copy:
+    dest: /etc/profile.d/my-mc.sh
+    content: |
+      [ -n "${BASH_VERSION}${KSH_VERSION}${ZSH_VERSION}" ] || return 0
+      alias mc='. /usr/lib/mc/mc-wrapper.sh --nomouse'
+    mode: u=rw,g=r,o=r
+
+- name: Tweak vim
+  ansible.builtin.copy:
+    dest: /etc/vim/vimrc.local
+    content: |
+      set laststatus=2
+      set statusline=%F%m%r%h%w\ (%{&ff}){\%Y}[%l,%v][%p%%]\ %{strftime(\"%d/%m/%y\ -\ %H:%M\")}
+      set ttymouse=
+      source /usr/share/doc/fzf/examples/fzf.vim
+    mode: u=rw,g=r,o=r
+
+- name: Tweak logrotate (/etc/logrotate.conf)
+  ansible.builtin.blockinfile:
+    dest: /etc/logrotate.conf
+    insertafter: "^create"
+    block: |
+      compress
+      compresscmd /usr/bin/xz
+      compressoptions -9
+      uncompresscmd /usr/bin/unxz
+      compressext .xz
+
+- name: Configure dma auth.conf
+  ansible.builtin.lineinfile:
+    path: /etc/dma/auth.conf
+    regexp: ".*|smtp.gmail.com:.*"
+    line: "{{ smtp_gmail_auth_user }}|smtp.gmail.com:{{ smtp_gmail_auth_password }}"
+    mode: u=rw,g=r
+  no_log: true
+
+- name: Configure dma dma.conf
+  ansible.builtin.blockinfile:
+    dest: /etc/dma/dma.conf
+    block: |
+      SMARTHOST smtp.gmail.com
+      PORT 587
+      AUTHPATH /etc/dma/auth.conf
+      SECURETRANSFER
+      STARTTLS
+      INSECURE
+
+- name: Configure /etc/aliases
+  ansible.builtin.copy:
+    dest: /etc/aliases
+    content: |
+      root:           {{ notification_email }}
+    mode: u=rw,g=r,o=r
+
+- name: Configure email notification after reboot
+  ansible.builtin.template:
+    dest: /etc/rc.local
+    src: files/etc/rc.local.j2
+    mode: u=rwx,g=rx,o=rx
+
+- name: Modify Unattended upgrade settings
+  ansible.builtin.replace:
+    dest: /etc/apt/apt.conf.d/50unattended-upgrades
+    regexp: "{{ item.regexp }}"
+    replace: "{{ item.replace }}"
+    mode: u=rw,g=r,o=r
+  loop:
+    - regexp: '^//Unattended-Upgrade::Mail "";'
+      replace: 'Unattended-Upgrade::Mail "root";'
+    - regexp: '^//Unattended-Upgrade::MailOnlyOnError "false";'
+      replace: 'Unattended-Upgrade::MailOnlyOnError "true";'
+    - regexp: '^//Unattended-Upgrade::Remove-Unused-Dependencies "false";'
+      replace: 'Unattended-Upgrade::Remove-Unused-Dependencies "true";'
+    - regexp: '^//Unattended-Upgrade::Automatic-Reboot "false";'
+      replace: 'Unattended-Upgrade::Automatic-Reboot "true";'
+
+- name: Add Raspbian to /etc/apt/apt.conf.d/50unattended-upgrades
+  ansible.builtin.blockinfile:
+    path: /etc/apt/apt.conf.d/50unattended-upgrades
+    marker: "// {mark} ANSIBLE MANAGED BLOCK"
+    insertafter: "^Unattended-Upgrade::Origins-Pattern"
+    block: |2
+              "origin=*";
+
+- name: Install bcmstat.sh script
+  ansible.builtin.get_url:
+    dest: /usr/local/bin/
+    url: https://raw.githubusercontent.com/MilhouseVH/bcmstat/master/bcmstat.sh
+    mode: u=rwx,g=rx,o=rx
+
+- name: Autoremove unused packages
+  ansible.builtin.apt:
+    autoremove: true
+
+- name: Run all hanlers
+  ansible.builtin.meta: flush_handlers
+
+- name: Set authorized key for backup script
+  ansible.posix.authorized_key:
+    user: root
+    key: "{{ lookup('file', lookup('env', 'HOME') + '/Documents/backups/id_ed25519.pub') }}"
+
+# mkfs.btrfs -L My_Disk_2_TB -f -R free-space-tree /dev/sda1
+- name: Mount USB disk
+  ansible.posix.mount:
+    path: /mnt/usb
+    src: LABEL=My_Disk_2_TB
+    fstype: btrfs
+    opts: noatime,nodiratime,compress=zstd,autodefrag,space_cache=v2
+    state: mounted
+
+- name: Create movies and music directory (/mnt/usb/)
+  ansible.builtin.file:
+    path: /mnt/usb/{{ item }}
+    state: directory
+    mode: u=rwx,g=rx,o=rx
+  loop:
+    - music
+    - movies
+
+- name: Enable hd-idle
+  community.general.ini_file:
+    path: /etc/default/hd-idle
+    no_extra_spaces: true
+    section: null
+    option: HD_IDLE_OPTS
+    value: '"-i 600 -a /dev/sda"'
+    mode: u=rw,g=r,o=r
+  notify: Restart hd-idle
+
+# # https://superuser.com/questions/1389730/unmounted-unpartitioned-hdd-wakes-up-4-times-per-day-on-centos
+# - name: Change hdparm settings
+#   ansible.builtin.replace:
+#     path: /etc/smartd.conf
+#     regexp: " -n standby "
+#     replace: " -n standby,671,q "
+#   notify: Restart smartd
+
+- name: Copy config files for NetworkManager
+  ansible.builtin.copy:
+    src: files/etc/NetworkManager/
+    dest: /etc/NetworkManager/
+    directory_mode: u=rwx,g=rx,o=rx
+    mode: u=rw,g=,o=
+  notify: Restart NetworkManager
+
+- name: Enable IP forwarding
+  ansible.posix.sysctl:
+    name: net.ipv4.ip_forward
+    value: "1"
+    sysctl_set: true
+    reload: true
