@@ -1,5 +1,41 @@
 # Changelog
 
+## [0.3.0](https://github.com/ruzickap/ansible-raspberry-pi-os/compare/v0.2.0...v0.3.0) (2024-07-28)
+
+
+### Features
+
+* add alloy, remove scrutiny and grafana-agent ([#180](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/180)) ([3cf2ccf](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/3cf2ccfb00150fbe3cac986fcddfa00e787be97a))
+* add grafana, prometheus, emqx, zigbee2mqtt, esphome ([#186](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/186)) ([69616dd](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/69616dd84b6c361bdf4dee00ebf7b3f9ea3112b1))
+* add navidrome, enable bluetooth ([#181](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/181)) ([0e8ab2f](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/0e8ab2fd05f6c4d134287e90e8e00b8cef179f4a))
+* **gha:** add create-rpi-image ([#173](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/173)) ([aad8bbb](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/aad8bbbc40d87d641ab05f6ce1ff39c30a84f63f))
+* **gha:** Add GitHub Actions workflow files ([#160](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/160)) ([132231e](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/132231e1cc1149b7029ced4b6f9b7b563e9af5ca))
+* **gha:** Add GitHub repo files ([#163](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/163)) ([1e2c3d8](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/1e2c3d820d228b0934ffba528fd5c7d6f59d3693))
+* **gha:** add pubkey-ssh to create-rpi-image ([#176](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/176)) ([d00ea87](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/d00ea87358fff7b1ce5e53ce64e30e85a5b21ad6))
+* **gha:** add rpi-image-modifier and update GitHub Actions ([#171](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/171)) ([9b45f3e](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/9b45f3e3a1eb6a33efbad64fd0fcf96274294683))
+* **gh:** add default GitHub repo files ([#164](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/164)) ([372f3e1](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/372f3e1c216e73f27794a6c7d7c5bc1793da4fc0))
+* **gh:** add default GitHub repo files ([#165](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/165)) ([09e1470](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/09e14703e97c08c357137851c74f3e637e7b30ad))
+* **gh:** add default GitHub repo files ([#166](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/166)) ([a56a1dc](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/a56a1dcb903402c224a4c6d130974353644cab69))
+* **gha:** delete rpi-image-modifier ([#178](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/178)) ([80286cd](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/80286cde12fc6d930fe84298fcc45c00f83f87d4))
+* **gha:** unify GHA - renovate, megalinter, markdown, and others ([ba2c687](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/ba2c6870b9d9816025bdd15f143d7f91d3ce99c0))
+* **gha:** upgrade release-please-action ([a803a8f](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/a803a8f818d88ab22d949a698352286693f9ab24))
+* **kodi:** remove old samba shares from kodi config ([a50645e](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/a50645e29fa5204634a600b005a8d881b1a2ae43))
+* remove log2ram, improve hass, fix qbittorrent ([#183](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/183)) ([73601b8](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/73601b8dc52f618d62da104d6b481ad790e44761))
+* replace transmission by qbittorrent, rewrite hass ([#182](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/182)) ([0d53703](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/0d537036f6ec53cd88c41702bb1e8e2141a9627c))
+* **rpi:** add dnsmasq + configuration ([#174](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/174)) ([89b275d](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/89b275db1f6e3c241736a0ee7668a4fea6bf951a))
+* **rpi:** add plex and homepage + fix smb ([#168](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/168)) ([5d014e0](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/5d014e0564cd5672b7de4693267ed1c223538df7))
+* **rpi:** add scrutiny + minor homepage changes ([#170](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/170)) ([0d3d6e4](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/0d3d6e49ab105c90e558ce79679bb7e146d91bf8))
+* **rpi:** enable wifi + update README ([c68e4b5](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/c68e4b50e944033e71c48a08429256df578be741))
+
+
+### Bug Fixes
+
+* **dnsmasq:** fix permissions in NetworkManager, disable dnsmasq ([#175](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/175)) ([5d4f939](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/5d4f939e9e9595a73fcb4179b4a2a810789dc079))
+* **gha:** fix devskim issue - remove music update ([#169](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/169)) ([f63b6ce](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/f63b6ced0e6a70e7324cab0a1297e44d12d3782b))
+* **gha:** fix rpi-image-modifier - add ssh + user ([#172](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/172)) ([de32902](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/de3290257a5ec63a9c872f9125497e6514d5d09c))
+* **gha:** improve mega-linter + ansible ([8818d80](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/8818d802e2bace01488dc0c28b1b2ca75e5051a3))
+* **rpi:** fix sudo in kodi, improve transmission ([#177](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/177)) ([b808fd1](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/b808fd172c1d70d85558df7cee2eafd727bf2a9a))
+
 ## 0.2.0 (2023-10-22)
 
 ## What's Changed
