@@ -189,6 +189,6 @@ jobs:
           name: raspios-bookworm-arm64-lite-modified.img
           path: ${{ steps.build.outputs.image-path }}
           if-no-files-found: error
-          retention-days: 2
+          retention-days: 1
           compression-level: 9
           overwrite: true

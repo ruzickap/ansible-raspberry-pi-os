@@ -1,0 +1,31 @@
+# M-MT912CY9MQ
+cc_08_fa_aa_a1_02:
+  name: Petr's MacBook Air
+  mac: CC:08:FA:AA:A1:02
+  icon: mdi:laptop
+  picture: https://raw.githubusercontent.com/simple-icons/simple-icons/521c96fd04b0ea93034db8715eda5a4de27a58bb/icons/apple.svg
+  track: true
+
+# LAPTOP-5OVKG7VB
+2c_6d_c1_c8_15_95:
+  name: Andy's Laptop
+  mac: 2C:6D:C1:C8:15:95
+  icon: mdi:laptop
+  picture:
+  track: true
+
+# Galaxy-S10e
+42_95_18_df_36_e9:
+  name: Andy's Phone
+  mac: 42:95:18:DF:36:E9
+  icon: mdi:cellphone-basic
+  picture:
+  track: true
+
+# JVC-TV
+48_6d_bb_f4_02_14:
+  name: TV in the living room
+  mac: 48:6D:BB:F4:02:14
+  icon: mdi:television
+  picture:
+  track: true

@@ -1,0 +1,10 @@
+[
+{% for item in mqtt_clients %}
+    {
+        "name": "{{ item.name }}",
+        "user_id": "{{ item.username }}",
+        "password": "{{ item.password }}",
+        "is_superuser": false
+    }{% if not loop.last %},{% endif %}
+{% endfor %}
+]

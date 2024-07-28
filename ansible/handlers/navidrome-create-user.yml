@@ -1,0 +1,15 @@
+- name: Wait for Navidrome to be started
+  ansible.builtin.wait_for:
+    port: 4533
+
+- name: Stop Navidrome
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    name: container-navidrome
+    state: stopped
+  changed_when: false
+
+- name: Create admin user for Navidrome
+  ansible.builtin.shell: |
+    sqlite3 /var/lib/navidrome/navidrome.db "INSERT OR IGNORE INTO user VALUES('99a714a6-c536-5a3a-91ec-41aaa1d18b93','{{ navidrome_username }}','{{ navidrome_username }}','','{{ navidrome_password }}',1,'2024-06-19 04:34:03.998486592+00:00',NULL,'2024-06-19 04:33:43.930525922+00:00','2024-06-19T04:33:43.929377428Z');"
+  changed_when: false
