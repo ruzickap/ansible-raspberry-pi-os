@@ -410,7 +410,6 @@ rpi_packages_additional:
   - podman
   - qbittorrent-nox
   - samba
-  - smartmontools
   - sqlite3
   - telnet
 
