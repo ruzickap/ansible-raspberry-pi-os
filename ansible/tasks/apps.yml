@@ -615,6 +615,7 @@
   ansible.builtin.include_role:
     name: grafana.grafana.alloy
   vars:
+    version: 1.2.1
     config: "{{ lookup('ansible.builtin.template', 'files/etc/alloy/config.alloy.j2') }}"
 
 #################################################

@@ -1,5 +1,5 @@
 - name: Create admin user for Navidrome
-  ansible.builtin.import_tasks: navidrome-create-user.yml
+  ansible.builtin.include_tasks: handlers/navidrome-create-user.yml
 
 - name: Reload systemd
   ansible.builtin.systemd_service:
