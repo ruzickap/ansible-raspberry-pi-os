@@ -70,7 +70,7 @@
     path: /etc/systemd/journald.conf.d/journal-size.conf
     section: Journal
     option: SystemMaxUse
-    value: 10M
+    value: 200M
     mode: u=rw,g=r,o=r
   notify: Reload systemd
 

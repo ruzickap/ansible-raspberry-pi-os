@@ -78,11 +78,6 @@
     name: smbd
     state: restarted
 
-- name: Restart smartd
-  ansible.builtin.systemd_service:
-    name: smartd
-    state: restarted
-
 - name: Reload systemd
   ansible.builtin.systemd_service:
     daemon_reload: true
