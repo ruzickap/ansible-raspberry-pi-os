@@ -7,39 +7,38 @@
 
 - name: Restart cadvisor
   ansible.builtin.systemd_service:
-    name: container-cadvisor
     enabled: true
+    name: container-cadvisor
     state: restarted
 
 - name: Restart cloudflared
   ansible.builtin.service:
+    enabled: true
     name: cloudflared
     state: restarted
-    enabled: true
 
 - name: Restart navidrome
   ansible.builtin.service:
+    enabled: true
     name: container-navidrome
     state: restarted
-    enabled: true
 
 - name: Restart dnsmasq
   ansible.builtin.service:
+    enabled: true
     name: dnsmasq
     state: restarted
-    enabled: true
 
 - name: Restart esphome
   ansible.builtin.systemd_service:
-    name: container-esphome
     enabled: true
+    name: container-esphome
     state: restarted
 
 - name: Restart hass
   ansible.builtin.systemd_service:
-    daemon_reload: true
-    name: container-home-assistant
     enabled: true
+    name: container-home-assistant
     state: restarted
 
 - name: Restart hd-idle
@@ -49,17 +48,15 @@
 
 - name: Restart homepage
   ansible.builtin.systemd_service:
-    daemon_reload: true
-    name: container-homepage
     enabled: true
+    name: container-homepage
     state: restarted
 
 - name: Restart kodi
   ansible.builtin.systemd_service:
-    daemon_reload: true
+    enabled: true
     name: kodi
     state: restarted
-    enabled: true
 
 - name: Restart NetworkManager
   ansible.builtin.systemd_service:
@@ -68,9 +65,8 @@
 
 - name: Restart plex
   ansible.builtin.systemd_service:
-    daemon_reload: true
-    name: container-plex
     enabled: true
+    name: container-plex
     state: restarted
 
 - name: Restart samba

@@ -24,7 +24,7 @@ blackbox_exporter_configuration_modules:
       preferred_ip_protocol: ip4
       tls_config:
         insecure_skip_verify: true
-  icmp_test:
+  icmp:
     prober: icmp
     icmp:
       preferred_ip_protocol: ip4
@@ -222,6 +222,13 @@ mqtt_clients:
 navidrome_username: ruzickap
 navidrome_password: !vault |
   $ANSIBLE_VAULT;1.1;AES256
+  31663861343839363238303230393432393231383663396237623736326635666165656464373062
+  6530326564636330363135643131643961353135626566640a386564646665353961386561343034
+  32323766613166396439333234386261343331623832613063666437373237366336366434653630
+  3039373634383338360a653763346661363662343361306535323530396439663230386439663436
+  3765
+navidrome_password_db: !vault |
+  $ANSIBLE_VAULT;1.1;AES256
   61643539396465323530323033346639313437663965306231663136373139633638353339353133
   3264313562633162383039386530643239613830343262610a383465303936643662303464353338
   32366234626563326139613866613866313035383934656237366639323732643135643861363435
@@ -271,6 +278,8 @@ prometheus_scrape_configs:
           - 192.168.1.1:22
           - gate-bracha.xvx.cz:22222
     relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
       - source_labels: [__param_target]
         target_label: instance
       - target_label: __address__
@@ -283,17 +292,17 @@ prometheus_scrape_configs:
       - targets:
           - https://www.google.com
           # rpi.xvx.cz
-          - http://127.0.0.1:3000
+          - http://127.0.0.1:3000/api/healthcheck
           # grafana-rpi.xvx.cz
-          - http://127.0.0.1:3001
+          - http://127.0.0.1:3001/healthz
           # navidrome-rpi.xvx.cz
-          - http://127.0.0.1:4533
+          - http://127.0.0.1:4533/ping
           # esphome-rpi.xvx.cz
           - http://127.0.0.1:6052/version
           # # kodi-rpi.xvx.cz
           # - http://127.0.0.1:8080
           # qbittorrent-rpi.xvx.cz
-          - http://127.0.0.1:8081
+          - http://127.0.0.1:8081/api/v2/app/version
           # cadvisor-rpi.xvx.cz
           - http://127.0.0.1:8085/healthz
           # hass-rpi.xvx.cz
@@ -303,7 +312,7 @@ prometheus_scrape_configs:
           # emqx-rpi.xvx.cz
           - http://127.0.0.1:18083
           # plex-rpi.xvx.cz
-          - http://127.0.0.1:32400
+          - http://127.0.0.1:32400/identity
           # gate.xvx.cz
           - https://192.168.1.1
     relabel_configs:
