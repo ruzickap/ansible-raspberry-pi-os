@@ -97,7 +97,7 @@
 - name: Container for cAdvisor
   containers.podman.podman_container:
     name: cadvisor
-    image: gcr.io/cadvisor/cadvisor:latest
+    image: gcr.io/cadvisor/cadvisor:latest@sha256:3cde6faf0791ebf7b41d6f8ae7145466fed712ea6f252c935294d2608b1af388
     volume:
       - /:/rootfs:ro
       - /dev/disk/:/dev/disk:ro
@@ -182,7 +182,7 @@
 - name: ESPHome container
   containers.podman.podman_container:
     name: esphome
-    image: ghcr.io/esphome/esphome:stable
+    image: ghcr.io/esphome/esphome:stable@sha256:cb75d2af6df19c2415428cdfe604c82202914c7f54aaed7084a2f51fb3d20f7f
     volume:
       - /etc/localtime:/etc/localtime:ro
       - /var/lib/esphome/config:/config
@@ -286,7 +286,7 @@
 - name: Home Assistant container
   containers.podman.podman_container:
     name: home-assistant
-    image: ghcr.io/home-assistant/home-assistant:stable
+    image: ghcr.io/home-assistant/home-assistant:stable@sha256:82c37d50571cd163fc762fdd4ff5f564044af07931e7844f01c8c196dc735a0d
     volume:
       - /etc/localtime:/etc/localtime:ro
       - /run/dbus:/run/dbus:ro
@@ -350,7 +350,7 @@
 - name: Homepage container
   containers.podman.podman_container:
     name: homepage
-    image: ghcr.io/gethomepage/homepage:latest
+    image: ghcr.io/gethomepage/homepage:latest@sha256:e23fcd332ecf927fe5c0149142040236b17686916004566c149eef06eb6f8d75
     volume:
       - /var/lib/homepage/config:/app/config
       - /mnt/usb/music:/mnt/usb/music:ro
@@ -389,7 +389,7 @@
 - name: Navidrome container
   containers.podman.podman_container:
     name: navidrome
-    image: docker.io/deluan/navidrome:latest
+    image: docker.io/deluan/navidrome:latest@sha256:b154aebe8b33bae82c500ad0a3eb743e31da54c3bfb4e7cc3054b9a919b685c7
     user: 1000:1000
     volume:
       - /var/lib/navidrome:/data
@@ -425,7 +425,7 @@
 - name: Plex container
   containers.podman.podman_container:
     name: plex
-    image: ghcr.io/linuxserver/plex:arm64v8-latest
+    image: ghcr.io/linuxserver/plex:arm64v8-latest@sha256:a58b8846786f6607d8f15fa7d4d1a6a36d3740fe9e03662963943617a0e00540
     volume:
       - /var/lib/plex/config:/config
       - /mnt/usb/movies:/movies:ro
