@@ -133,7 +133,7 @@
 - name: Zigbee2MQTT container
   containers.podman.podman_container:
     name: zigbee2mqtt
-    image: docker.io/koenkk/zigbee2mqtt:latest
+    image: docker.io/koenkk/zigbee2mqtt:latest@sha256:1f5f59f0e67c4271f7773dd1e3f2a90b3354a1b36492fbc1b2b9facbce3af07f
     volume:
       - /run/dbus:/run/dbus:ro
       - /var/lib/zigbee2mqtt:/app/data
