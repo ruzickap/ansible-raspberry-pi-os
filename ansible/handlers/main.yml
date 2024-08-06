@@ -17,6 +17,12 @@
     name: cloudflared
     state: restarted
 
+- name: Restart emqx
+  ansible.builtin.service:
+    enabled: true
+    name: emqx
+    state: restarted
+
 - name: Restart navidrome
   ansible.builtin.service:
     enabled: true
@@ -83,11 +89,11 @@
     name: sshd
     state: restarted
 
-# - name: Restart zigbee2mqtt
-#   ansible.builtin.systemd_service:
-#     name: container-zigbee2mqtt
-#     enabled: true
-#     state: restarted
+- name: Restart zigbee2mqtt
+  ansible.builtin.systemd_service:
+    name: container-zigbee2mqtt
+    enabled: true
+    state: restarted
 
 - name: Reboot
   ansible.builtin.reboot:

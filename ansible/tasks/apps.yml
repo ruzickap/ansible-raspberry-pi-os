@@ -58,28 +58,19 @@
   register: result
   until: result is succeeded
 
-# - name: Create json file with users for emqx (/etc/emqx/init_user.json)
-#   ansible.builtin.copy:
-#     dest: /etc/emqx/init_user.json
-#     content: |
-#       [
-#           {
-#               "user_id": "my_user",
-#               "password": "s3cr3tp@ssw0rd",
-#               "is_superuser": true
-#           }
-#       ]
-#     mode: u=rw,g=r,o=r
-#     owner: emqx
-#     group: emqx
-
-- name: Configure Emqx (/etc/emqx/emqx.conf)
+- name: Configure Emqx (/etc/emqx/)
   ansible.builtin.template:
-    dest: /etc/emqx/emqx.conf
-    src: files/etc/emqx/emqx.conf.j2
+    dest: "{{ item.dest }}"
+    src: "{{ item.src }}"
     mode: u=rw,g=r,o=r
     owner: emqx
     group: emqx
+  loop:
+    - dest: /etc/emqx/emqx.conf
+      src: files/etc/emqx/emqx.conf.j2
+    - dest: /etc/emqx/init_user.json-ready-for-version-5.8.0
+      src: files/etc/emqx/init_user.json.j2
+  notify: Restart emqx
 
 - name: Start Emqx
   ansible.builtin.systemd_service:
@@ -126,41 +117,41 @@
 # Zigbee2MQTT
 #################################################
 
-# - name: Create Zigbee2MQTT directory (/var/lib/zigbee2mqtt)
-#   ansible.builtin.file:
-#     path: /var/lib/zigbee2mqtt
-#     state: directory
-#     recurse: true
+- name: Create Zigbee2MQTT directory (/var/lib/zigbee2mqtt)
+  ansible.builtin.file:
+    path: /var/lib/zigbee2mqtt
+    state: directory
+    recurse: true
 
-# - name: Configure Zigbee2MQTT (/var/lib/zigbee2mqtt/configuration.yaml)
-#   ansible.builtin.template:
-#     dest: /var/lib/zigbee2mqtt/configuration.yaml
-#     src: files/var/lib/zigbee2mqtt/configuration.yaml.j2
-#     mode: u=rwx,g=r,o=r
-#   notify: Restart zigbee2mqtt
+- name: Configure Zigbee2MQTT (/var/lib/zigbee2mqtt/configuration.yaml)
+  ansible.builtin.template:
+    dest: /var/lib/zigbee2mqtt/configuration.yaml
+    src: files/var/lib/zigbee2mqtt/configuration.yaml.j2
+    mode: u=rwx,g=r,o=r
+  notify: Restart zigbee2mqtt
 
-# - name: Zigbee2MQTT container
-#   containers.podman.podman_container:
-#     name: zigbee2mqtt
-#     image: docker.io/koenkk/zigbee2mqtt:latest
-#     volume:
-#       - /run/dbus:/run/dbus:ro
-#       - /var/lib/zigbee2mqtt:/app/data
-#     ports:
-#       - 8082:8080
-#     env:
-#       TZ: "{{ timezone }}"
-#     label:
-#       io.containers.autoupdate: registry
-#       homepage.group: Containers
-#       homepage.name: Zigbee2MQTT
-#       homepage.icon: https://raw.githubusercontent.com/Koenkk/zigbee2mqtt.io/bfd27df45e931d18675eb5aba8bdcbaf688a608f/docs/images/logo.png
-#       homepage.description: Zigbee 🐝 to MQTT bridge 🌉, get rid of your proprietary Zigbee bridges 🔨
-#     generate_systemd:
-#       path: /etc/systemd/system/
-#       new: true
-#     hostname: "{{ inventory_hostname }}"
-#   notify: Restart zigbee2mqtt
+- name: Zigbee2MQTT container
+  containers.podman.podman_container:
+    name: zigbee2mqtt
+    image: docker.io/koenkk/zigbee2mqtt:latest
+    volume:
+      - /run/dbus:/run/dbus:ro
+      - /var/lib/zigbee2mqtt:/app/data
+    ports:
+      - 8082:8080
+    env:
+      TZ: "{{ timezone }}"
+    label:
+      io.containers.autoupdate: registry
+      homepage.group: Containers
+      homepage.name: Zigbee2MQTT
+      homepage.icon: https://raw.githubusercontent.com/Koenkk/zigbee2mqtt.io/bfd27df45e931d18675eb5aba8bdcbaf688a608f/docs/images/logo.png
+      homepage.description: Zigbee 🐝 to MQTT bridge 🌉, get rid of your proprietary Zigbee bridges 🔨
+    generate_systemd:
+      path: /etc/systemd/system/
+      new: true
+    hostname: "{{ inventory_hostname }}"
+  notify: Restart zigbee2mqtt
 
 #################################################
 # ESPHome

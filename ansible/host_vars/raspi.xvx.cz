@@ -139,7 +139,7 @@ grafana_datasources:
   - name: prometheus
     type: prometheus
     access: proxy
-    url: http://localhost:9090
+    url: http://127.0.0.1:9090
     basicAuth: false
     isDefault: true
 grafana_metrics:
@@ -201,7 +201,7 @@ kodi_guisettings_services_webserverpassword: !vault |
 
 mqtt_clients:
   zigbee2mqtt:
-    username: zigbee2mqtt
+    user_id: zigbee2mqtt
     password: !vault |
       $ANSIBLE_VAULT;1.1;AES256
       39393166353635323566353939643838633935393733646266303837313465383134333465666365
@@ -210,7 +210,7 @@ mqtt_clients:
       3334306630376137340a396631316535313536356232663465323736343161373865616133396239
       6236
   homeassistant:
-    username: homeassistant
+    user_id: homeassistant
     password: !vault |
       $ANSIBLE_VAULT;1.1;AES256
       33323934356564623536363431346336623838613035616165316664323061613464393365623734
@@ -218,6 +218,15 @@ mqtt_clients:
       66656430333232643564313631336166623336346134313361663234626135613364306136373266
       3135363561666561660a373236653038346435353661316137633564383933636165653565326235
       3966
+  uzg-01:
+    user_id: uzg-01
+    password: !vault |
+      $ANSIBLE_VAULT;1.1;AES256
+      33643465623565303533613733396264386631663764666338363862303163306562303433373039
+      3731623338623730303563663632323465396233306239320a333231663664666239353531376130
+      63623263643735373938613736623266643566393366383032353939343131646636643636366134
+      3866393337393363360a316465663163363133623034646330396132366466656637313837373630
+      3064
 
 navidrome_username: ruzickap
 navidrome_password: !vault |
@@ -268,7 +277,7 @@ prometheus_scrape_configs:
   - job_name: blackbox
     static_configs:
       - targets:
-          - localhost:9115
+          - 127.0.0.1:9115
   - job_name: blackbox-ssh
     metrics_path: /probe
     params:
@@ -283,7 +292,7 @@ prometheus_scrape_configs:
       - source_labels: [__param_target]
         target_label: instance
       - target_label: __address__
-        replacement: localhost:9115
+        replacement: 127.0.0.1:9115
   - job_name: blackbox-http
     metrics_path: /probe
     params:
@@ -321,7 +330,7 @@ prometheus_scrape_configs:
       - source_labels: [__param_target]
         target_label: instance
       - target_label: __address__
-        replacement: localhost:9115
+        replacement: 127.0.0.1:9115
   - job_name: blackbox-ping
     metrics_path: /probe
     params:
@@ -336,42 +345,42 @@ prometheus_scrape_configs:
       - source_labels: [__param_target]
         target_label: instance
       - target_label: __address__
-        replacement: localhost:9115
+        replacement: 127.0.0.1:9115
   - job_name: cadvisor
     static_configs:
       - targets:
-          - localhost:8086
+          - 127.0.0.1:8086
   - job_name: emqx_stats
     metrics_path: /api/v5/prometheus/stats
     static_configs:
       - targets:
-          - localhost:18083
+          - 127.0.0.1:18083
   - job_name: emqx_auth
     metrics_path: /api/v5/prometheus/auth
     static_configs:
       - targets:
-          - localhost:18083
+          - 127.0.0.1:18083
   - job_name: emqx_data_integration
     metrics_path: /api/v5/prometheus/data_integration
     static_configs:
       - targets:
-          - localhost:18083
+          - 127.0.0.1:18083
   - job_name: grafana
     static_configs:
       - targets:
-          - localhost:3001
+          - 127.0.0.1:3001
   - job_name: node_exporter
     static_configs:
       - targets:
-          - localhost:9100
+          - 127.0.0.1:9100
   - job_name: prometheus
     static_configs:
       - targets:
-          - localhost:9090
+          - 127.0.0.1:9090
   - job_name: systemd_exporter
     static_configs:
       - targets:
-          - localhost:9558
+          - 127.0.0.1:9558
 prometheus_storage_retention_size: 1GB
 prometheus_version: 2.53.1
 prometheus_web_external_url: https://prometheus-rpi.xvx.cz
