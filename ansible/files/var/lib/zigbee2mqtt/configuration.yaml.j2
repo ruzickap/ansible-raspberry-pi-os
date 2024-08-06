@@ -9,14 +9,14 @@ mqtt:
   # MQTT base topic for zigbee2mqtt MQTT messages
   base_topic: zigbee2mqtt
   # MQTT server URL
-  server: 'mqtt://localhost:1883'
+  server: 'mqtt://127.0.0.1:1883'
   # MQTT server authentication, uncomment if required:
-  user: {{ mqtt_clients.zigbee2mqtt.username }}
+  user: {{ mqtt_clients.zigbee2mqtt.user_id }}
   password: {{ mqtt_clients.zigbee2mqtt.password }}
 
 # Serial settings
 serial:
-  port: tcp://{{ zigbee_coordinator_ip }}:6638 #Change IP and Port
+  port: tcp://{{ zigbee_coordinator_ip }}:6638
   baudrate: 115200
 advanced:
   transmit_power: 20

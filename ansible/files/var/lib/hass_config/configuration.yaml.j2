@@ -59,15 +59,15 @@ notify:
     username: !secret smtp_gmail_auth_user
 
 panel_iframe:
-  emqx:
-    title: Emqx
-    url: https://emqx-rpi.xvx.cz
-    icon: mdi:lan-connect
-    require_admin: true
   esphome:
     title: ESPHome
     icon: mdi:chip
     url: https://esphome-rpi.xvx.cz
+    require_admin: true
+  emqx:
+    title: Emqx
+    url: https://emqx-rpi.xvx.cz
+    icon: mdi:lan-connect
     require_admin: true
   grafana:
     title: Grafana
@@ -77,7 +77,12 @@ panel_iframe:
   prometheus:
     title: Prometheus
     icon: mdi:chart-pie
-    url: https://grafana-rpi.xvx.cz
+    url: https://prometheus-rpi.xvx.cz
+    require_admin: true
+  uzg-01:
+    title: UZG-01
+    url: https://uzg-01-rpi.xvx.cz
+    icon: mdi:zigbee
     require_admin: true
   zigbee2mqtt:
     title: Zigbee2Mqtt
