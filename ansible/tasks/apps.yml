@@ -416,7 +416,7 @@
 - name: Plex container
   containers.podman.podman_container:
     name: plex
-    image: ghcr.io/linuxserver/plex:arm64v8-latest@sha256:a58b8846786f6607d8f15fa7d4d1a6a36d3740fe9e03662963943617a0e00540
+    image: ghcr.io/linuxserver/plex:arm64v8-latest@sha256:b94ab60989005f4eb29a16214f7eebc6156a978fb4a702a6731da1c889063ddf
     volume:
       - /var/lib/plex/config:/config
       - /mnt/usb/movies:/movies:ro
