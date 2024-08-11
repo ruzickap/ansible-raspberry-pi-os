@@ -6,3 +6,6 @@ vault-*.password
 
 # Lychee cache
 .lycheecache
+
+# Byte-compiled / optimized
+__pycache__/

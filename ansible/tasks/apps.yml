@@ -37,51 +37,6 @@
   notify: Restart cloudflared
 
 #################################################
-# Emqx
-#################################################
-
-- name: Add Emqx apt signing keys
-  ansible.builtin.get_url:
-    url: https://packages.emqx.com/emqx/emqx/gpgkey
-    dest: /etc/apt/trusted.gpg.d/emqx_emqx.asc
-    mode: u=rw,g=r,o=r
-
-- name: Add Emqx repository
-  ansible.builtin.apt_repository:
-    repo: deb https://packages.emqx.com/emqx/emqx/debian/ {{ ansible_distribution_release }} main
-    filename: emqx_emqx
-
-- name: Install Emqx
-  ansible.builtin.apt:
-    name: emqx
-    install_recommends: false
-  register: result
-  until: result is succeeded
-
-- name: Configure Emqx (/etc/emqx/)
-  ansible.builtin.template:
-    dest: "{{ item.dest }}"
-    src: "{{ item.src }}"
-    mode: u=rw,g=r,o=r
-    owner: emqx
-    group: emqx
-  loop:
-    - dest: /etc/emqx/emqx.conf
-      src: files/etc/emqx/emqx.conf.j2
-    - dest: /etc/emqx/init_user.json-ready-for-version-5.8.0
-      src: files/etc/emqx/init_user.json.j2
-  notify: Restart emqx
-
-- name: Start Emqx
-  ansible.builtin.systemd_service:
-    name: emqx
-    state: started
-
-# - name: Set admin password for Emqx
-#   ansible.builtin.command: emqx_ctl admins passwd admin {{ emqx_dashboard_password }}
-#   changed_when: false
-
-#################################################
 # cAdvisor
 #################################################
 
@@ -112,6 +67,46 @@
       new: true
     hostname: "{{ inventory_hostname }}"
   notify: Restart cadvisor
+
+#################################################
+# Mosquitto
+#################################################
+
+- name: Add Mosquitto apt signing keys
+  # checkov:skip=CKV2_ANSIBLE_2:Ensure that HTTPS url is used with get_url
+  ansible.builtin.get_url:
+    url: http://repo.mosquitto.org/debian/mosquitto-repo.gpg.key
+    dest: /etc/apt/trusted.gpg.d/mosquitto-repo.asc
+    mode: u=rw,g=r,o=r
+
+- name: Add Mosquitto repository
+  ansible.builtin.apt_repository:
+    repo: deb https://repo.mosquitto.org/debian {{ ansible_distribution_release }} main
+    filename: mosquitto
+
+- name: Install mosquitto
+  ansible.builtin.apt:
+    name: mosquitto
+    install_recommends: false
+  register: result
+  until: result is succeeded
+
+- name: Create '/etc/mosquitto/conf.d/my.conf' file
+  ansible.builtin.copy:
+    dest: /etc/mosquitto/conf.d/my.conf
+    content: |
+      listener      1883
+      protocol      mqtt
+      password_file /etc/mosquitto/password_file
+    mode: u=rw,g=,o=
+  notify: Restart mosquitto
+
+- name: Create '/etc/mosquitto/password_file' file
+  ansible.builtin.template:
+    dest: /etc/mosquitto/password_file
+    src: files/etc/mosquitto/password_file.j2
+    mode: u=rw,g=r,o=r
+  notify: Restart mosquitto
 
 #################################################
 # Zigbee2MQTT
@@ -291,7 +286,7 @@
       homepage.group: Containers
       homepage.name: Home Assistant
       homepage.icon: https://upload.wikimedia.org/wikipedia/en/4/49/Home_Assistant_logo_%282023%29.svg
-      homepage.href: https://hass-rpi.xvx.cz/
+      homepage.href: "{{ hass_url }}"
       homepage.description: Open source home automation that puts local control and privacy first.
     generate_systemd:
       path: /etc/systemd/system/
@@ -597,17 +592,6 @@
     name: qbittorrent-nox@qbittorrent
     state: started
   changed_when: false
-
-#################################################
-# Grafana Alloy
-#################################################
-
-- name: Install alloy
-  ansible.builtin.include_role:
-    name: grafana.grafana.alloy
-  vars:
-    version: 1.2.1
-    config: "{{ lookup('ansible.builtin.template', 'files/etc/alloy/config.alloy.j2') }}"
 
 #################################################
 # Kodi

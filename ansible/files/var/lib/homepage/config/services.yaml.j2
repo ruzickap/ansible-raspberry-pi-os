@@ -31,7 +31,7 @@
     - Home Assistant:
         container: home-assistant
         description: Home Assistant is free and open-source software for home automation, designed to be an Internet of things ecosystem-independent integration platform and central control system for smart home devices, with a focus on local control and privacy.
-        href: https://hass-rpi.xvx.cz/
+        href: {{ hass_url }}
         icon: home-assistant.svg
         siteMonitor: http://127.0.0.1:8123/static/icons/favicon.ico
 
@@ -94,7 +94,7 @@
         description: Zigbee 🐝 to MQTT bridge 🌉, get rid of your proprietary Zigbee bridges 🔨
         href: https://zigbee2mqtt-rpi.xvx.cz/
         icon: zigbee2mqtt.svg
-        siteMonitor: http://127.0.0.1:18082
+        siteMonitor: http://127.0.0.1:8082
 
     - ESPHome:
         description: ESPHome is a system to control your ESP8266/ESP32 by simple yet powerful configuration files and control them remotely through Home Automation systems.
@@ -105,15 +105,9 @@
           type: esphome
           url: http://127.0.0.1:6052/version
 
-    - Emqx:
-        description: EMQ X is a highly scalable, real-time distributed MQTT message broker for IoT, M2M, and mobile applications.
-        href: https://emqx-rpi.xvx.cz/
-        icon: emqx.svg
-        siteMonitor: http://127.0.0.1:18083
-
     - Prometheus:
         description: The Prometheus monitoring system and time series database.
-        href: https://prometheus-rpi.xvx.cz/
+        href: {{ prometheus_web_external_url }}
         icon: prometheus.svg
         siteMonitor: http://127.0.0.1:9090/-/ready
         widget:
@@ -140,7 +134,7 @@
 
     - Grafana:
         description: The open and composable observability and data visualization platform. Visualize metrics, logs, and traces from multiple sources like Prometheus, Loki, Elasticsearch, InfluxDB, Postgres and many more.
-        href: https://grafana-rpi.xvx.cz/
+        href: {{ grafana_url }}
         icon: grafana.svg
         siteMonitor: http://127.0.0.1:3001/healthz
         widget:
