@@ -277,7 +277,7 @@
 - name: Home Assistant container
   containers.podman.podman_container:
     name: home-assistant
-    image: ghcr.io/home-assistant/home-assistant:stable@sha256:82c37d50571cd163fc762fdd4ff5f564044af07931e7844f01c8c196dc735a0d
+    image: ghcr.io/home-assistant/home-assistant:stable@sha256:01af627f579835945d9c67cd130aa7e6f7167a09d8ffab5d09c698f285ec8109
     volume:
       - /etc/localtime:/etc/localtime:ro
       - /run/dbus:/run/dbus:ro
