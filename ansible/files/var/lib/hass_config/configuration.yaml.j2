@@ -7,7 +7,6 @@ homeassistant:
   latitude: {{ hass_latitude }}
   longitude: {{ hass_longitude}}
   elevation: {{ hass_elevation}}
-  # unit_system: metric
   currency: CZK
   country: CZ
   time_zone: {{ timezone }}
@@ -45,6 +44,12 @@ logger:
     py.warnings:
       - "InsecureRequestWarning: Unverified HTTPS request is being made to host.*"
 
+# mqtt:
+#   broker: 127.0.0.1
+#   port: 1883
+#   username: {{ mqtt_clients.homeassistant.user }}
+#   password: {{ mqtt_clients.homeassistant.password }}
+
 notify:
   - name: notify_smtp_gmail
     encryption: starttls
@@ -64,22 +69,17 @@ panel_iframe:
     icon: mdi:chip
     url: https://esphome-rpi.xvx.cz
     require_admin: true
-  emqx:
-    title: Emqx
-    url: https://emqx-rpi.xvx.cz
-    icon: mdi:lan-connect
-    require_admin: true
   grafana:
     title: Grafana
     icon: mdi:chart-timeline
-    url: https://grafana-rpi.xvx.cz
+    url: {{ grafana_url }}
     require_admin: true
   prometheus:
     title: Prometheus
     icon: mdi:chart-pie
-    url: https://prometheus-rpi.xvx.cz
+    url: {{ prometheus_web_external_url }}
     require_admin: true
-  uzg-01:
+  uzg_01:
     title: UZG-01
     url: https://uzg-01-rpi.xvx.cz
     icon: mdi:zigbee

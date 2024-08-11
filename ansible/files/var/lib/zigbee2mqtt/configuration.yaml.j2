@@ -1,22 +1,27 @@
+advanced:
+  transmit_power: 20
+  log_output:
+    - console
+
+frontend:
+  url: 'https://zigbee2mqtt-rpi.xvx.cz'
+
 # Home Assistant integration (MQTT discovery)
 homeassistant: true
-
-# allow new devices to join
-permit_join: true
 
 # MQTT settings
 mqtt:
   # MQTT base topic for zigbee2mqtt MQTT messages
   base_topic: zigbee2mqtt
   # MQTT server URL
-  server: 'mqtt://127.0.0.1:1883'
+  server: 'mqtt://{{ ansible_default_ipv4.address }}:1883'
   # MQTT server authentication, uncomment if required:
-  user: {{ mqtt_clients.zigbee2mqtt.user_id }}
+  user: {{ mqtt_clients.zigbee2mqtt.user }}
   password: {{ mqtt_clients.zigbee2mqtt.password }}
+  # version: 5
 
-# Serial settings
+permit_join: true
+
 serial:
   port: tcp://{{ zigbee_coordinator_ip }}:6638
   baudrate: 115200
-advanced:
-  transmit_power: 20

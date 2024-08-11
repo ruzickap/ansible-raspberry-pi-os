@@ -53,8 +53,7 @@ cadvisor_enable_metrics:
   - network
   - oom_event
 cadvisor_listen_ip: 127.0.0.1
-cadvisor_port: 8086
-cadvisor_version: 0.49.1
+cadvisor_port: 8085
 
 cloudflared_tunnel_token: !vault |
   $ANSIBLE_VAULT;1.1;AES256
@@ -71,15 +70,6 @@ cloudflared_tunnel_token: !vault |
   35313233366131366561663262323739643837333337373232313538366232653566353530646564
   34353230353638643139623238646237313961333966383164653036656339346436363730616164
   38663333653834396562353535363131353031636539653130643134373437626338
-
-emqx_dashboard_username: admin
-emqx_dashboard_password: !vault |
-  $ANSIBLE_VAULT;1.1;AES256
-  39353036656330663837663934653738356530633961623632336436383164363837313034306333
-  3766353133383538623134353534373032323831373664390a653935303137313861313238343138
-  61613661353131396530653165376637613866313039353766623837643237363162386565383931
-  6661333333613937350a336562386365313638636563386466336636333031623065353633663866
-  39613537306633616264336331666163616338616337313734383330633236613435
 
 fail2ban_bantime: 86400
 fail2ban_backend: systemd
@@ -113,10 +103,6 @@ grafana_dashboards:
     datasource: prometheus
   # 16124-blackbox-exporter
   - dashboard_id: 16124
-    revision_id: 2
-    datasource: prometheus
-  # 17446-emqx
-  - dashboard_id: 17446
     revision_id: 2
     datasource: prometheus
   # 18538-blackbox-exporter
@@ -201,7 +187,7 @@ kodi_guisettings_services_webserverpassword: !vault |
 
 mqtt_clients:
   zigbee2mqtt:
-    user_id: zigbee2mqtt
+    user: zigbee2mqtt
     password: !vault |
       $ANSIBLE_VAULT;1.1;AES256
       39393166353635323566353939643838633935393733646266303837313465383134333465666365
@@ -210,7 +196,7 @@ mqtt_clients:
       3334306630376137340a396631316535313536356232663465323736343161373865616133396239
       6236
   homeassistant:
-    user_id: homeassistant
+    user: homeassistant
     password: !vault |
       $ANSIBLE_VAULT;1.1;AES256
       33323934356564623536363431346336623838613035616165316664323061613464393365623734
@@ -219,7 +205,7 @@ mqtt_clients:
       3135363561666561660a373236653038346435353661316137633564383933636165653565326235
       3966
   uzg-01:
-    user_id: uzg-01
+    user: uzg-01
     password: !vault |
       $ANSIBLE_VAULT;1.1;AES256
       33643465623565303533613733396264386631663764666338363862303163306562303433373039
@@ -318,8 +304,6 @@ prometheus_scrape_configs:
           - http://127.0.0.1:8123/static/icons/favicon.ico
           # prometheus-rpi.xvx.cz
           - http://127.0.0.1:9090/-/ready
-          # emqx-rpi.xvx.cz
-          - http://127.0.0.1:18083
           # plex-rpi.xvx.cz
           - http://127.0.0.1:32400/identity
           # gate.xvx.cz
@@ -349,22 +333,7 @@ prometheus_scrape_configs:
   - job_name: cadvisor
     static_configs:
       - targets:
-          - 127.0.0.1:8086
-  - job_name: emqx_stats
-    metrics_path: /api/v5/prometheus/stats
-    static_configs:
-      - targets:
-          - 127.0.0.1:18083
-  - job_name: emqx_auth
-    metrics_path: /api/v5/prometheus/auth
-    static_configs:
-      - targets:
-          - 127.0.0.1:18083
-  - job_name: emqx_data_integration
-    metrics_path: /api/v5/prometheus/data_integration
-    static_configs:
-      - targets:
-          - 127.0.0.1:18083
+          - 127.0.0.1:8085
   - job_name: grafana
     static_configs:
       - targets:

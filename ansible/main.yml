@@ -25,6 +25,10 @@
   roles:
     - role: geerlingguy.firewall
     - role: grafana.grafana.grafana
+    - role: grafana.grafana.alloy
+      vars:
+        version: 1.2.1
+        config: "{{ lookup('ansible.builtin.template', 'files/etc/alloy/config.alloy.j2') }}"
     - role: oefenweb.fail2ban
     - role: prometheus.prometheus.prometheus
     - role: prometheus.prometheus.blackbox_exporter
