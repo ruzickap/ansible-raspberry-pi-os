@@ -19,7 +19,7 @@ RPI_USER="pi"
 # shellcheck disable=SC2016
 RPI_PASSWORD_YESCRYPT_HASH='$y$j9T$teBQF20fiZEV5K3NZbwZ30$kIlVP6po2p43KH17C/26cmDN1i./cQriWj9Wp4rSHq2' # raspberry
 DEVICE="mmcblk0"
-WIFI_SSID="ruzickovi 2.4 GHz"
+WIFI_SSID="ruzickovi 5 GHz"
 
 read -r -p "WiFi Password: " WIFI_PASSWORD
 

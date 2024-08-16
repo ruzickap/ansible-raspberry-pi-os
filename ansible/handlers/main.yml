@@ -6,10 +6,10 @@
     daemon_reload: true
 
 - name: Restart cadvisor
-  ansible.builtin.systemd_service:
-    enabled: true
-    name: container-cadvisor
-    state: restarted
+  community.docker.docker_container:
+    name: cadvisor
+    restart: true
+    state: started
 
 - name: Restart cloudflared
   ansible.builtin.service:
@@ -18,10 +18,10 @@
     state: restarted
 
 - name: Restart navidrome
-  ansible.builtin.service:
-    enabled: true
-    name: container-navidrome
-    state: restarted
+  community.docker.docker_container:
+    name: navidrome
+    restart: true
+    state: started
 
 - name: Restart dnsmasq
   ansible.builtin.service:
@@ -30,16 +30,16 @@
     state: restarted
 
 - name: Restart esphome
-  ansible.builtin.systemd_service:
-    enabled: true
-    name: container-esphome
-    state: restarted
+  community.docker.docker_container:
+    name: esphome
+    restart: true
+    state: started
 
 - name: Restart hass
-  ansible.builtin.systemd_service:
-    enabled: true
-    name: container-home-assistant
-    state: restarted
+  community.docker.docker_container:
+    name: home-assistant
+    restart: true
+    state: started
 
 - name: Restart hd-idle
   ansible.builtin.systemd_service:
@@ -47,10 +47,10 @@
     state: restarted
 
 - name: Restart homepage
-  ansible.builtin.systemd_service:
-    enabled: true
-    name: container-homepage
-    state: restarted
+  community.docker.docker_container:
+    name: homepage
+    restart: true
+    state: started
 
 - name: Restart kodi
   ansible.builtin.systemd_service:
@@ -69,10 +69,10 @@
     state: restarted
 
 - name: Restart plex
-  ansible.builtin.systemd_service:
-    enabled: true
-    name: container-plex
-    state: restarted
+  community.docker.docker_container:
+    name: plex
+    restart: true
+    state: started
 
 - name: Restart samba
   ansible.builtin.systemd_service:
@@ -89,10 +89,10 @@
     state: restarted
 
 - name: Restart zigbee2mqtt
-  ansible.builtin.systemd_service:
-    name: container-zigbee2mqtt
-    enabled: true
-    state: restarted
+  community.docker.docker_container:
+    name: zigbee2mqtt
+    restart: true
+    state: started
 
 - name: Reboot
   ansible.builtin.reboot:

@@ -7,7 +7,7 @@ on:
 permissions: read-all
 
 env:
-  WIFI_SSID: "ruzickovi 2.4 GHz"
+  WIFI_SSID: "ruzickovi 5 GHz"
   WIFI_PASSWORD: ${{ secrets.WIFI_PASSWORD }}
 
 jobs:
