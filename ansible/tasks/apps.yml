@@ -98,7 +98,7 @@
 - name: Zigbee2MQTT container
   community.docker.docker_container:
     name: zigbee2mqtt
-    image: docker.io/koenkk/zigbee2mqtt:1.39.1
+    image: docker.io/koenkk/zigbee2mqtt:1.39.1@sha256:1f5f59f0e67c4271f7773dd1e3f2a90b3354a1b36492fbc1b2b9facbce3af07f
     volumes:
       - /run/dbus:/run/dbus:ro
       - /var/lib/zigbee2mqtt:/app/data
@@ -136,7 +136,7 @@
 - name: ESPHome container
   community.docker.docker_container:
     name: esphome
-    image: ghcr.io/esphome/esphome:2024.7.3
+    image: ghcr.io/esphome/esphome:2024.7.3@sha256:cb75d2af6df19c2415428cdfe604c82202914c7f54aaed7084a2f51fb3d20f7f
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /var/lib/esphome/config:/config
@@ -238,7 +238,7 @@
 - name: Home Assistant container
   community.docker.docker_container:
     name: home-assistant
-    image: ghcr.io/home-assistant/home-assistant:2024.8.1
+    image: ghcr.io/home-assistant/home-assistant:2024.8.1@sha256:01af627f579835945d9c67cd130aa7e6f7167a09d8ffab5d09c698f285ec8109
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /run/dbus:/run/dbus:ro
@@ -300,7 +300,7 @@
 - name: Homepage container
   community.docker.docker_container:
     name: homepage
-    image: ghcr.io/gethomepage/homepage:v0.9.6
+    image: ghcr.io/gethomepage/homepage:v0.9.6@sha256:e5b2616d17db8961a53c0b7d389d812d31c265d35696d475732f53278c9276f7
     volumes:
       - /var/lib/homepage/config:/app/config
       - /mnt/usb/music:/mnt/usb/music:ro
@@ -337,7 +337,7 @@
 - name: Navidrome container
   community.docker.docker_container:
     name: navidrome
-    image: docker.io/deluan/navidrome:0.52.5
+    image: docker.io/deluan/navidrome:0.52.5@sha256:b154aebe8b33bae82c500ad0a3eb743e31da54c3bfb4e7cc3054b9a919b685c7
     user: 1000:1000
     volumes:
       - /var/lib/navidrome:/data
@@ -371,7 +371,7 @@
 - name: Plex container
   community.docker.docker_container:
     name: plex
-    image: ghcr.io/linuxserver/plex:arm64v8-1.40.4
+    image: ghcr.io/linuxserver/plex:arm64v8-1.40.4@sha256:9af4b9fe5d215863559796620c4e6ee5acf52c4a8c034d7a8ce90e46059cf4b8
     volumes:
       - /var/lib/plex/config:/config
       - /mnt/usb/movies:/movies:ro
