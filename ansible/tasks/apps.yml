@@ -37,38 +37,6 @@
   notify: Restart cloudflared
 
 #################################################
-# cAdvisor
-#################################################
-
-- name: Container for cAdvisor
-  containers.podman.podman_container:
-    name: cadvisor
-    image: gcr.io/cadvisor/cadvisor:latest@sha256:3cde6faf0791ebf7b41d6f8ae7145466fed712ea6f252c935294d2608b1af388
-    volume:
-      - /:/rootfs:ro
-      - /dev/disk/:/dev/disk:ro
-      - /etc/machine-id:/etc/machine-id:ro
-      - /sys:/sys:ro
-      - /sys/fs/cgroup:/sys/fs/cgroup:ro
-      - /var/lib/containers:/var/lib/containers:ro
-      - /var/run:/var/run:ro
-      - /var/run/podman/podman.sock:/var/run/docker.sock:rw
-    privileged: true
-    ports:
-      - 8085:8080
-    label:
-      io.containers.autoupdate: registry
-      homepage.group: Containers
-      homepage.name: cAdvisor
-      homepage.icon: https://raw.githubusercontent.com/walkxcode/dashboard-icons/50c4b5ee2b207708a16726b5ff87a9ab0438ea17/png/cadvisor.png
-      homepage.description: Analyzes resource usage and performance characteristics of running containers.
-    generate_systemd:
-      path: /etc/systemd/system/
-      new: true
-    hostname: "{{ inventory_hostname }}"
-  notify: Restart cadvisor
-
-#################################################
 # Mosquitto
 #################################################
 
@@ -106,6 +74,7 @@
     dest: /etc/mosquitto/password_file
     src: files/etc/mosquitto/password_file.j2
     mode: u=rw,g=r,o=r
+  no_log: true
   notify: Restart mosquitto
 
 #################################################
@@ -123,29 +92,28 @@
     dest: /var/lib/zigbee2mqtt/configuration.yaml
     src: files/var/lib/zigbee2mqtt/configuration.yaml.j2
     mode: u=rwx,g=r,o=r
+  no_log: true
   notify: Restart zigbee2mqtt
 
 - name: Zigbee2MQTT container
-  containers.podman.podman_container:
+  community.docker.docker_container:
     name: zigbee2mqtt
-    image: docker.io/koenkk/zigbee2mqtt:latest@sha256:1f5f59f0e67c4271f7773dd1e3f2a90b3354a1b36492fbc1b2b9facbce3af07f
-    volume:
+    image: docker.io/koenkk/zigbee2mqtt:1.39.1
+    volumes:
       - /run/dbus:/run/dbus:ro
       - /var/lib/zigbee2mqtt:/app/data
     ports:
       - 8082:8080
     env:
       TZ: "{{ timezone }}"
-    label:
+    labels:
       io.containers.autoupdate: registry
       homepage.group: Containers
       homepage.name: Zigbee2MQTT
       homepage.icon: https://raw.githubusercontent.com/Koenkk/zigbee2mqtt.io/bfd27df45e931d18675eb5aba8bdcbaf688a608f/docs/images/logo.png
       homepage.description: Zigbee 🐝 to MQTT bridge 🌉, get rid of your proprietary Zigbee bridges 🔨
-    generate_systemd:
-      path: /etc/systemd/system/
-      new: true
-    hostname: "{{ inventory_hostname }}"
+    restart_policy: always
+    timeout: "{{ docker_container_timeout }}"
   notify: Restart zigbee2mqtt
 
 #################################################
@@ -166,24 +134,22 @@
   notify: Restart esphome
 
 - name: ESPHome container
-  containers.podman.podman_container:
+  community.docker.docker_container:
     name: esphome
-    image: ghcr.io/esphome/esphome:stable@sha256:cb75d2af6df19c2415428cdfe604c82202914c7f54aaed7084a2f51fb3d20f7f
-    volume:
+    image: ghcr.io/esphome/esphome:2024.7.3
+    volumes:
       - /etc/localtime:/etc/localtime:ro
       - /var/lib/esphome/config:/config
     ports:
       - 6052:6052
-    label:
+    labels:
       io.containers.autoupdate: registry
       homepage.group: Containers
       homepage.name: ESPHome
       homepage.icon: https://raw.githubusercontent.com/esphome/esphome-docs/e28345cd8f1c9380bc25dd977fcf443ba5c8612c/images/logo.svg
       homepage.description: ESPHome is a system to control your ESP8266/ESP32 by simple yet powerful configuration files and control them remotely through Home Automation systems.
-    generate_systemd:
-      path: /etc/systemd/system/
-      new: true
-    hostname: "{{ inventory_hostname }}"
+    restart_policy: always
+    timeout: "{{ docker_container_timeout }}"
   notify: Restart esphome
 
 #################################################
@@ -270,32 +236,30 @@
         msg: Restore from backup failed
 
 - name: Home Assistant container
-  containers.podman.podman_container:
+  community.docker.docker_container:
     name: home-assistant
-    image: ghcr.io/home-assistant/home-assistant:stable@sha256:01af627f579835945d9c67cd130aa7e6f7167a09d8ffab5d09c698f285ec8109
-    volume:
+    image: ghcr.io/home-assistant/home-assistant:2024.8.1
+    volumes:
       - /etc/localtime:/etc/localtime:ro
       - /run/dbus:/run/dbus:ro
       - "{{ hass_config_directory }}:/config"
       - "{{ hass_backup_directory }}:/config/backups"
       - /mnt/usb/music:/media/music:ro
-    network: host
+    network_mode: host
     privileged: true
-    label:
+    labels:
       io.containers.autoupdate: registry
       homepage.group: Containers
       homepage.name: Home Assistant
       homepage.icon: https://upload.wikimedia.org/wikipedia/en/4/49/Home_Assistant_logo_%282023%29.svg
       homepage.href: "{{ hass_url }}"
       homepage.description: Open source home automation that puts local control and privacy first.
-    generate_systemd:
-      path: /etc/systemd/system/
-      new: true
-    hostname: "{{ inventory_hostname }}"
+    restart_policy: always
+    timeout: "{{ docker_container_timeout }}"
   notify: Restart hass
 
 - name: Install HACS
-  containers.podman.podman_container_exec:
+  community.docker.docker_container_exec:
     name: home-assistant
     argv:
       - /bin/bash
@@ -334,28 +298,26 @@
   notify: Restart homepage
 
 - name: Homepage container
-  containers.podman.podman_container:
+  community.docker.docker_container:
     name: homepage
-    image: ghcr.io/gethomepage/homepage:latest@sha256:e23fcd332ecf927fe5c0149142040236b17686916004566c149eef06eb6f8d75
-    volume:
+    image: ghcr.io/gethomepage/homepage:v0.9.6
+    volumes:
       - /var/lib/homepage/config:/app/config
       - /mnt/usb/music:/mnt/usb/music:ro
-      - /run/podman/podman.sock:/var/run/docker.sock:ro
-    network: host
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    network_mode: host
     privileged: true
     env:
       LOG_TARGETS: stdout
-    label:
+    labels:
       io.containers.autoupdate: registry
       homepage.group: Containers
       homepage.name: Homepage
       homepage.icon: https://raw.githubusercontent.com/gethomepage/homepage/47765ee05e633c87fcf8fca8ee1293bf0ef6bb3e/docs/assets/light_squircle%402x.png
       homepage.href: https://rpi.xvx.cz/
       homepage.description: A modern, fully static, fast, secure fully proxied, highly customizable application dashboard with integrations for over 100 services and translations into multiple languages.
-    generate_systemd:
-      path: /etc/systemd/system/
-      new: true
-    hostname: "{{ inventory_hostname }}"
+    restart_policy: always
+    timeout: "{{ docker_container_timeout }}"
   notify: Restart homepage
 
 #################################################
@@ -373,11 +335,11 @@
   notify: "Create admin user for Navidrome"
 
 - name: Navidrome container
-  containers.podman.podman_container:
+  community.docker.docker_container:
     name: navidrome
-    image: docker.io/deluan/navidrome:latest@sha256:b154aebe8b33bae82c500ad0a3eb743e31da54c3bfb4e7cc3054b9a919b685c7
+    image: docker.io/deluan/navidrome:0.52.5
     user: 1000:1000
-    volume:
+    volumes:
       - /var/lib/navidrome:/data
       - /mnt/usb/music:/music:ro
     env:
@@ -385,17 +347,15 @@
       ND_SCANSCHEDULE: "@every 6m"
     ports:
       - 4533:4533
-    label:
+    labels:
       io.containers.autoupdate: registry
       homepage.group: Containers
       homepage.name: Navidrome
       homepage.icon: https://raw.githubusercontent.com/navidrome/navidrome/64e2a0bcd47ae35849ce453285065d54b6d22950/resources/logo-192x192.png
       homepage.href: https://navidrome-rpi.xvx.cz/
       homepage.description: Modern Music Server and Streamer compatible with Subsonic/Airsonic
-    generate_systemd:
-      path: /etc/systemd/system/
-      new: true
-    hostname: "{{ inventory_hostname }}"
+    restart_policy: always
+    timeout: "{{ docker_container_timeout }}"
   notify: Restart navidrome
 
 #################################################
@@ -409,30 +369,28 @@
     recurse: true
 
 - name: Plex container
-  containers.podman.podman_container:
+  community.docker.docker_container:
     name: plex
-    image: ghcr.io/linuxserver/plex:arm64v8-latest@sha256:b94ab60989005f4eb29a16214f7eebc6156a978fb4a702a6731da1c889063ddf
-    volume:
+    image: ghcr.io/linuxserver/plex:arm64v8-1.40.4
+    volumes:
       - /var/lib/plex/config:/config
       - /mnt/usb/movies:/movies:ro
       - /mnt/usb/music:/music:ro
     env:
-      PLEX_UID: 1000
-      PLEX_GID: 1000
+      PLEX_UID: "1000"
+      PLEX_GID: "1000"
       TZ: "{{ timezone }}"
     ports:
       - 32400:32400
-    label:
+    labels:
       io.containers.autoupdate: registry
       homepage.group: Containers
       homepage.name: Plex
       homepage.icon: https://raw.githubusercontent.com/plexinc/plex-media-player/51e2b74367850cb5ab77ac51329dfd8a7a7320e4/resources/images/icon.svg
       homepage.href: https://plex-rpi.xvx.cz/
       homepage.description: Plex Media Server (PMS) is free software that allows users to create a client–server for movies, television shows, and music.
-    generate_systemd:
-      path: /etc/systemd/system/
-      new: true
-    hostname: "{{ inventory_hostname }}"
+    restart_policy: always
+    timeout: "{{ docker_container_timeout }}"
   notify: Restart plex
 
 #################################################

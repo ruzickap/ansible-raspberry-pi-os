@@ -54,6 +54,7 @@ cadvisor_enable_metrics:
   - oom_event
 cadvisor_listen_ip: 127.0.0.1
 cadvisor_port: 8085
+cadvisor_version: 0.50.0
 
 cloudflared_tunnel_token: !vault |
   $ANSIBLE_VAULT;1.1;AES256
@@ -70,6 +71,10 @@ cloudflared_tunnel_token: !vault |
   35313233366131366561663262323739643837333337373232313538366232653566353530646564
   34353230353638643139623238646237313961333966383164653036656339346436363730616164
   38663333653834396562353535363131353031636539653130643134373437626338
+
+docker_config:
+  metrics-addr: 127.0.0.1:9323
+docker_container_timeout: 500
 
 fail2ban_bantime: 86400
 fail2ban_backend: systemd
@@ -121,6 +126,10 @@ grafana_dashboards:
   - dashboard_id: 19908
     revision_id: 1
     datasource: prometheus
+  # 21040-docker-daemons
+  - dashboard_id: 21040
+    revision_id: 1
+    datasource: prometheus
 grafana_datasources:
   - name: prometheus
     type: prometheus
@@ -140,12 +149,14 @@ grafana_security:
     61346135356565363035613261663837636564613232396464623036356637303336616236373435
     6565326435366132660a366461303865326631343338653231616564653331303064353265333763
     61326435303537313636323666323230653337363263636661633137303838333235
+  allow_embedding: true
+  cookie_samesite: none
 grafana_smtp:
   host: smtp.gmail.com:587
   user: "{{ smtp_gmail_auth_user }}"
   password: "{{ smtp_gmail_auth_password }}"
 grafana_url: https://grafana-rpi.xvx.cz
-grafana_version: latest
+grafana_version: 11.1.4
 
 fw_allowed_tcp_ports:
   - 22          # SSH
@@ -334,6 +345,10 @@ prometheus_scrape_configs:
     static_configs:
       - targets:
           - 127.0.0.1:8085
+  - job_name: docker
+    static_configs:
+      - targets:
+          - 127.0.0.1:9323
   - job_name: grafana
     static_configs:
       - targets:
@@ -351,7 +366,7 @@ prometheus_scrape_configs:
       - targets:
           - 127.0.0.1:9558
 prometheus_storage_retention_size: 1GB
-prometheus_version: 2.53.1
+prometheus_version: 2.54.0
 prometheus_web_external_url: https://prometheus-rpi.xvx.cz
 prometheus_web_listen_address: 127.0.0.1:9090
 
@@ -394,7 +409,6 @@ rpi_packages_additional:
   - hdparm
   - kodi
   - libgl1-mesa-dri
-  - podman
   - qbittorrent-nox
   - samba
   - sqlite3
@@ -418,6 +432,7 @@ smtp_gmail_auth_password: !vault |
   32613061646137646163643864356537616236626534373533323833333465393537
 
 systemd_exporter_web_listen_address: 127.0.0.1:9558
+systemd_exporter_version: 0.6.0
 
 uptimerobot_api_key: !vault |
   $ANSIBLE_VAULT;1.1;AES256
