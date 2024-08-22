@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.4.0](https://github.com/ruzickap/ansible-raspberry-pi-os/compare/v0.3.0...v0.4.0) (2024-08-22)
+
+
+### Features
+
+* add alloy health ([#191](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/191)) ([de2f82a](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/de2f82af901dac7bbad2687c5476c0289862e876))
+* add zigbee2mqtt and uzg-01 ([#192](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/192)) ([84ca97f](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/84ca97f7f299d03d4af8db607392efe1594be820))
+* imporve alloy, pin versions, remove smartd ([#187](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/187)) ([2b783aa](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/2b783aa25a54325a03f3c514ad049411e460cd2b))
+* improve blackbox endpoints and navidrome ([#190](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/190)) ([3706d46](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/3706d465b1ee6e5e08eed06bfab40f14e68be22a))
+* remove smartmontools ([#189](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/189)) ([9c236da](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/9c236da080ce65865b9d9a90d35df85e22085fa7))
+* replace emqx by mosquitto ([#193](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/193)) ([72fee45](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/72fee45efd51bb6ce574984a350ec4515b339599))
+* replace podman by docker, pin versions, add docker to alloy ([#194](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/194)) ([b6181fc](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/b6181fc416dcf91291975c5bc813c558cbb653d5))
+
 ## [0.3.0](https://github.com/ruzickap/ansible-raspberry-pi-os/compare/v0.2.0...v0.3.0) (2024-07-28)
 
 
