@@ -11,7 +11,7 @@ collections:
   - name: grafana.grafana
     version: 5.3.0
   - name: prometheus.prometheus
-    version: 0.17.0
+    version: 0.17.1
 
 roles:
   - name: geerlingguy.firewall
