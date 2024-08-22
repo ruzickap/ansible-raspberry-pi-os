@@ -9,6 +9,6 @@ export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
 # Used by grafana debug
 export CI=true
 
-cd ansible
+cd ansible || exit
 ansible-galaxy install -r requirements.yml
 ansible-playbook --diff --user root -i inventory/hosts main.yml
