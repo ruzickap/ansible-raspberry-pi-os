@@ -10,23 +10,17 @@
         icon: kodi.svg
         siteMonitor: http://127.0.0.1:8080
 
-    - OpenSSH:
+    - OpenSSH - raspi:
         description: Connectivity tool for remote login with the SSH protocol.
         href: https://ssh-rpi.xvx.cz/
         icon: https://upload.wikimedia.org/wikipedia/commons/0/00/Unofficial_SSH_Logo.svg
         siteMonitor: https://ssh-rpi.xvx.cz/
 
-    - qBittorrent:
-        description: qBittorrent BitTorrent client
-        href: https://qbittorrent-rpi.xvx.cz/
-        icon: qbittorrent.svg
-        siteMonitor: http://127.0.0.1:8081/api/v2/app/version
-        widget:
-          type: qbittorrent
-          url: http://127.0.0.1:8081
-          username: admin
-          password: {{ qbittorrent_password }}
-          rpcUrl: /
+    - OpenSSH - gate:
+        description: Connectivity tool for remote login with the SSH protocol.
+        href: https://gate.xvx.cz/
+        icon: https://upload.wikimedia.org/wikipedia/commons/0/00/Unofficial_SSH_Logo.svg
+        siteMonitor: https://gate.xvx.cz/
 
     - Home Assistant:
         container: home-assistant
@@ -41,26 +35,6 @@
         href: https://rpi.xvx.cz/
         icon: https://raw.githubusercontent.com/gethomepage/homepage/47765ee05e633c87fcf8fca8ee1293bf0ef6bb3e/docs/assets/light_squircle%402x.png
         siteMonitor: http://127.0.0.1:3000/api/healthcheck
-
-    - Plex Media Server:
-        container: plex
-        description: Plex Media Server is free software that allows users to create a client–server for movies, television shows, and music.
-        href: https://plex-rpi.xvx.cz/
-        icon: plex.svg
-        siteMonitor: http://127.0.0.1:32400/identity
-
-    - Navidrome:
-        container: navidrome
-        description: 🎧☁️ Modern Music Server and Streamer compatible with Subsonic/Airsonic
-        href: https://navidrome-rpi.xvx.cz/
-        icon: navidrome.svg
-        siteMonitor: http://127.0.0.1:4533/ping
-        widget:
-          type: navidrome
-          url: http://127.0.0.1:4533
-          user: {{ navidrome_username }}
-          token: {{ (navidrome_password + navidrome_username) | md5 }}
-          salt: {{ navidrome_username }}
 
     - CloudFlare:
         description: Cloudflare provides content delivery network services, DDoS mitigation, Internet security, and distributed domain name server services.
@@ -80,7 +54,7 @@
 
     - Openwrt:
         description: OpenWrt is an open-source project for embedded operating systems based on Linux, primarily used on embedded devices to route network traffic.
-        href: https://{{ openwrt_ip }}
+        href: https://gate.xvx.cz
         icon: openwrt.svg
         siteMonitor: https://{{ openwrt_ip }}
         widget:
@@ -124,7 +98,7 @@
         description: Universal ZigBee Gateway
         href: https://uzg-01.xvx.cz/
         icon: https://avatars.githubusercontent.com/u/5508130?v=4
-        siteMonitor: http://192.168.1.3
+        siteMonitor: http://{{ zigbee_coordinator_ip }}/logo.svg
 
     - Grafana Alloy:
         description: OpenTelemetry Collector distribution with programmable pipelines.

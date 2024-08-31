@@ -14,18 +14,6 @@
     mode: u=rw,g=r,o=r
   when: ansible_default_ipv4.address is defined
 
-- name: Disable swap
-  ansible.builtin.command: dphys-swapfile uninstall
-  changed_when: false
-
-- name: Configure /tmp as tmpfs
-  ansible.posix.mount:
-    path: /tmp
-    src: tmpfs
-    fstype: tmpfs
-    opts: defaults,noatime,nodiratime,nosuid,size=128m
-    state: mounted
-
 - name: Configure NTP
   community.general.ini_file:
     path: /etc/systemd/timesyncd.conf
@@ -63,15 +51,6 @@
       value: /dev/tty12
     - option: MaxLevelConsole
       value: info
-  notify: Reload systemd
-
-- name: Configure journald
-  community.general.ini_file:
-    path: /etc/systemd/journald.conf.d/journal-size.conf
-    section: Journal
-    option: SystemMaxUse
-    value: 200M
-    mode: u=rw,g=r,o=r
   notify: Reload systemd
 
 - name: Configure .bashrc for root
@@ -120,7 +99,7 @@
 - name: Add the modules module
   community.general.modprobe:
     name: "{{ item }}"
-  loop: "{{ enable_kernel_modules }}"
+  loop: "{{ kernel_modules }}"
 
 - name: Load modules during boot
   ansible.builtin.copy:
@@ -128,7 +107,7 @@
     content: |
       {{ item }}
     mode: u=rw,g=r,o=r
-  loop: "{{ enable_kernel_modules }}"
+  loop: "{{ kernel_modules }}"
 
 - name: Change params in /boot/config.txt
   ansible.builtin.blockinfile:
@@ -157,13 +136,6 @@
 - name: Install packages
   ansible.builtin.apt:
     name: "{{ rpi_packages }}"
-    install_recommends: false
-  register: result
-  until: result is succeeded
-
-- name: Install additional packages
-  ansible.builtin.apt:
-    name: "{{ rpi_packages_additional }}"
     install_recommends: false
   register: result
   until: result is succeeded
@@ -313,12 +285,6 @@
     block: |2
               "origin=*";
 
-- name: Install bcmstat.sh script
-  ansible.builtin.get_url:
-    dest: /usr/local/bin/
-    url: https://raw.githubusercontent.com/MilhouseVH/bcmstat/master/bcmstat.sh
-    mode: u=rwx,g=rx,o=rx
-
 - name: Autoremove unused packages
   ansible.builtin.apt:
     autoremove: true
@@ -348,34 +314,6 @@
   ansible.posix.authorized_key:
     user: root
     key: "{{ lookup('file', lookup('env', 'HOME') + '/Documents/backups/id_ed25519.pub') }}"
-
-# mkfs.btrfs -L My_Disk_2_TB -f -R free-space-tree /dev/sda1
-- name: Mount USB disk
-  ansible.posix.mount:
-    path: /mnt/usb
-    src: LABEL=My_Disk_2_TB
-    fstype: btrfs
-    opts: noatime,nodiratime,compress=zstd,autodefrag,space_cache=v2
-    state: mounted
-
-- name: Create movies and music directory (/mnt/usb/)
-  ansible.builtin.file:
-    path: /mnt/usb/{{ item }}
-    state: directory
-    mode: u=rwx,g=rx,o=rx
-  loop:
-    - music
-    - movies
-
-- name: Enable hd-idle
-  community.general.ini_file:
-    path: /etc/default/hd-idle
-    no_extra_spaces: true
-    section: null
-    option: HD_IDLE_OPTS
-    value: '"-i 600 -a /dev/sda"'
-    mode: u=rw,g=r,o=r
-  notify: Restart hd-idle
 
 - name: Copy config files for NetworkManager
   ansible.builtin.copy:
