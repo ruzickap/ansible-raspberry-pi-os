@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/ruzickap/ansible-raspberry-pi-os/compare/v0.4.0...v0.5.0) (2024-08-31)
+
+
+### Features
+
+* remove smb, remove disk, qbittorrent, plex, navidrome, disable hass ([#197](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/197)) ([03d3102](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/03d31025c3d38e00a549a1fcd2a4db72f4f4ee41))
+
 ## [0.4.0](https://github.com/ruzickap/ansible-raspberry-pi-os/compare/v0.3.0...v0.4.0) (2024-08-22)
 
 
