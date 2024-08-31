@@ -156,117 +156,106 @@
 # Home Assistant
 #################################################
 
-- name: Check that the directory exists - {{ hass_config_directory }}
-  ansible.builtin.stat:
-    path: "{{ hass_config_directory }}"
-  register: hass_config_dir
+# - name: Check that the directory exists - {{ hass_config_directory }}
+#   ansible.builtin.stat:
+#     path: "{{ hass_config_directory }}"
+#   register: hass_config_dir
 
-- name: Check if there are any HASS backups
-  ansible.builtin.find:
-    paths: "{{ hass_backup_directory }}"
-  register: hass_backups
+# - name: Check if there are any HASS backups
+#   ansible.builtin.find:
+#     paths: "{{ hass_backup_directory }}"
+#   register: hass_backups
 
-- name: Create hass config directory - {{ hass_config_directory }}
-  ansible.builtin.file:
-    path: "{{ hass_config_directory }}"
-    state: directory
-    mode: u=rwx,g=rx,o=rx
+# - name: Create hass config directory - {{ hass_config_directory }}
+#   ansible.builtin.file:
+#     path: "{{ hass_config_directory }}"
+#     state: directory
+#     mode: u=rwx,g=rx,o=rx
 
-- name: Copy config files for Home Assistant to {{ hass_config_directory }}
-  ansible.builtin.copy:
-    src: "{{ item.src }}"
-    dest: "{{ item.dest }}"
-    mode: u=rw,g=r,o=r
-  loop:
-    - dest: /var/lib/hass_config/automations.yaml
-      src: files/var/lib/hass_config/automations.yaml
-    - dest: /var/lib/hass_config/known_devices.yaml
-      src: files/var/lib/hass_config/known_devices.yaml
-  notify: Restart hass
+# - name: Copy config files for Home Assistant to {{ hass_config_directory }}
+#   ansible.builtin.copy:
+#     src: "{{ item.src }}"
+#     dest: "{{ item.dest }}"
+#     mode: u=rw,g=r,o=r
+#   loop:
+#     - dest: /var/lib/hass_config/automations.yaml
+#       src: files/var/lib/hass_config/automations.yaml
+#     - dest: /var/lib/hass_config/known_devices.yaml
+#       src: files/var/lib/hass_config/known_devices.yaml
+#   notify: Restart hass
 
-- name: Create config files for Home Assistant to {{ hass_config_directory }}
-  ansible.builtin.template:
-    src: "{{ item.src }}"
-    dest: "{{ item.dest }}"
-    mode: u=rw,g=r,o=r
-  loop:
-    - dest: /var/lib/hass_config/configuration.yaml
-      src: files/var/lib/hass_config/configuration.yaml.j2
-  notify: Restart hass
+# - name: Create config files for Home Assistant to {{ hass_config_directory }}
+#   ansible.builtin.template:
+#     src: "{{ item.src }}"
+#     dest: "{{ item.dest }}"
+#     mode: u=rw,g=r,o=r
+#   loop:
+#     - dest: /var/lib/hass_config/configuration.yaml
+#       src: files/var/lib/hass_config/configuration.yaml.j2
+#   notify: Restart hass
 
-- name: Create secret file for Home Assistant to {{ hass_config_directory }}
-  ansible.builtin.template:
-    src: "{{ item.src }}"
-    dest: "{{ item.dest }}"
-    mode: u=rw,g=,o=
-  loop:
-    - dest: /var/lib/hass_config/secrets.yaml
-      src: files/var/lib/hass_config/secrets.yaml.j2
-  no_log: true
-  notify: Restart hass
+# - name: Create secret file for Home Assistant to {{ hass_config_directory }}
+#   ansible.builtin.template:
+#     src: "{{ item.src }}"
+#     dest: "{{ item.dest }}"
+#     mode: u=rw,g=,o=
+#   loop:
+#     - dest: /var/lib/hass_config/secrets.yaml
+#       src: files/var/lib/hass_config/secrets.yaml.j2
+#   no_log: true
+#   notify: Restart hass
 
-- name: Restore Home Assistant configuration from backup
-  when: not hass_config_dir.stat.exists and hass_backups.matched > 0
-  notify: Restart hass
-  block:
-    - name: Unpack the tar backup
-      ansible.builtin.unarchive:
-        src: "{{ (hass_backups.files | sort(attribute='mtime') | last).path }}"
-        dest: /tmp/
-        include: "homeassistant.tar.gz"
-        remote_src: true
-      changed_when: false
+# - name: Restore Home Assistant configuration from backup
+#   when: not hass_config_dir.stat.exists and hass_backups.matched > 0
+#   notify: Restart hass
+#   block:
+#     - name: Unpack the tar backup
+#       ansible.builtin.unarchive:
+#         src: "{{ (hass_backups.files | sort(attribute='mtime') | last).path }}"
+#         dest: /tmp/
+#         include: "homeassistant.tar.gz"
+#         remote_src: true
+#       changed_when: false
 
-    - name: Unpack the homeassistant.tar.gz
-      ansible.builtin.unarchive:
-        src: /tmp/homeassistant.tar.gz
-        dest: "{{ hass_config_directory }}"
-        extra_opts:
-          - "--strip-components=1"
-        remote_src: true
-      changed_when: false
+#     - name: Unpack the homeassistant.tar.gz
+#       ansible.builtin.unarchive:
+#         src: /tmp/homeassistant.tar.gz
+#         dest: "{{ hass_config_directory }}"
+#         extra_opts:
+#           - "--strip-components=1"
+#         remote_src: true
+#       changed_when: false
 
-    - name: Delete /tmp/homeassistant.tar.gz
-      ansible.builtin.file:
-        path: /tmp/homeassistant.tar.gz
-        state: absent
-  rescue:
-    - name: Print when errors
-      ansible.builtin.fail:
-        msg: Restore from backup failed
+#     - name: Delete /tmp/homeassistant.tar.gz
+#       ansible.builtin.file:
+#         path: /tmp/homeassistant.tar.gz
+#         state: absent
+#   rescue:
+#     - name: Print when errors
+#       ansible.builtin.fail:
+#         msg: Restore from backup failed
 
-- name: Home Assistant container
-  community.docker.docker_container:
-    name: home-assistant
-    image: ghcr.io/home-assistant/home-assistant:2024.8.2@sha256:b5c4bef2494f84806423c0116bab2a8758c5be386e11af0d3bd7359a18ba77a7
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - /run/dbus:/run/dbus:ro
-      - "{{ hass_config_directory }}:/config"
-      - "{{ hass_backup_directory }}:/config/backups"
-      - /mnt/usb/music:/media/music:ro
-    network_mode: host
-    privileged: true
-    labels:
-      io.containers.autoupdate: registry
-      homepage.group: Containers
-      homepage.name: Home Assistant
-      homepage.icon: https://upload.wikimedia.org/wikipedia/en/4/49/Home_Assistant_logo_%282023%29.svg
-      homepage.href: "{{ hass_url }}"
-      homepage.description: Open source home automation that puts local control and privacy first.
-    restart_policy: always
-    timeout: "{{ docker_container_timeout }}"
-  notify: Restart hass
-
-- name: Install HACS
-  community.docker.docker_container_exec:
-    name: home-assistant
-    argv:
-      - /bin/bash
-      - -c
-      - wget -O - https://get.hacs.xyz | bash -
-  when: not hass_config_dir.stat.exists
-  notify: Restart hass
+# - name: Home Assistant container
+#   community.docker.docker_container:
+#     name: home-assistant
+#     image: ghcr.io/home-assistant/home-assistant:2024.8.2@sha256:b5c4bef2494f84806423c0116bab2a8758c5be386e11af0d3bd7359a18ba77a7
+#     volumes:
+#       - /etc/localtime:/etc/localtime:ro
+#       - /run/dbus:/run/dbus:ro
+#       - "{{ hass_config_directory }}:/config"
+#       - "{{ hass_backup_directory }}:/config/backups"
+#     network_mode: host
+#     privileged: true
+#     labels:
+#       io.containers.autoupdate: registry
+#       homepage.group: Containers
+#       homepage.name: Home Assistant
+#       homepage.icon: https://upload.wikimedia.org/wikipedia/en/4/49/Home_Assistant_logo_%282023%29.svg
+#       homepage.href: "{{ hass_url }}"
+#       homepage.description: Open source home automation that puts local control and privacy first.
+#     restart_policy: always
+#     timeout: "{{ docker_container_timeout }}"
+#   notify: Restart hass
 
 #################################################
 # Homepage
@@ -303,7 +292,6 @@
     image: ghcr.io/gethomepage/homepage:v0.9.6@sha256:e5b2616d17db8961a53c0b7d389d812d31c265d35696d475732f53278c9276f7
     volumes:
       - /var/lib/homepage/config:/app/config
-      - /mnt/usb/music:/mnt/usb/music:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
     network_mode: host
     privileged: true
@@ -321,237 +309,6 @@
   notify: Restart homepage
 
 #################################################
-# Navidrome
-#################################################
-
-- name: Create config directory (/var/lib/navidrome)
-  register: navidrome_config_dir
-  ansible.builtin.file:
-    path: /var/lib/navidrome
-    state: directory
-    owner: pi
-    group: pi
-    recurse: true
-  notify: "Create admin user for Navidrome"
-
-- name: Navidrome container
-  community.docker.docker_container:
-    name: navidrome
-    image: docker.io/deluan/navidrome:0.52.5@sha256:b154aebe8b33bae82c500ad0a3eb743e31da54c3bfb4e7cc3054b9a919b685c7
-    user: 1000:1000
-    volumes:
-      - /var/lib/navidrome:/data
-      - /mnt/usb/music:/music:ro
-    env:
-      ND_RECENTLYADDEDBYMODTIME: "true"
-      ND_SCANSCHEDULE: "@every 6m"
-    ports:
-      - 4533:4533
-    labels:
-      io.containers.autoupdate: registry
-      homepage.group: Containers
-      homepage.name: Navidrome
-      homepage.icon: https://raw.githubusercontent.com/navidrome/navidrome/64e2a0bcd47ae35849ce453285065d54b6d22950/resources/logo-192x192.png
-      homepage.href: https://navidrome-rpi.xvx.cz/
-      homepage.description: Modern Music Server and Streamer compatible with Subsonic/Airsonic
-    restart_policy: always
-    timeout: "{{ docker_container_timeout }}"
-  notify: Restart navidrome
-
-#################################################
-# Plex
-#################################################
-
-- name: Create plex directory (/var/lib/plex/config)
-  ansible.builtin.file:
-    path: /var/lib/plex/config
-    state: directory
-    recurse: true
-
-- name: Plex container
-  community.docker.docker_container:
-    name: plex
-    image: ghcr.io/linuxserver/plex:arm64v8-1.40.4@sha256:9af4b9fe5d215863559796620c4e6ee5acf52c4a8c034d7a8ce90e46059cf4b8
-    volumes:
-      - /var/lib/plex/config:/config
-      - /mnt/usb/movies:/movies:ro
-      - /mnt/usb/music:/music:ro
-    env:
-      PLEX_UID: "1000"
-      PLEX_GID: "1000"
-      TZ: "{{ timezone }}"
-    ports:
-      - 32400:32400
-    labels:
-      io.containers.autoupdate: registry
-      homepage.group: Containers
-      homepage.name: Plex
-      homepage.icon: https://raw.githubusercontent.com/plexinc/plex-media-player/51e2b74367850cb5ab77ac51329dfd8a7a7320e4/resources/images/icon.svg
-      homepage.href: https://plex-rpi.xvx.cz/
-      homepage.description: Plex Media Server (PMS) is free software that allows users to create a client–server for movies, television shows, and music.
-    restart_policy: always
-    timeout: "{{ docker_container_timeout }}"
-  notify: Restart plex
-
-#################################################
-# Samba
-#################################################
-
-- name: Configure Samba (smb.conf)
-  ansible.builtin.template:
-    dest: /etc/samba/smb.conf
-    src: files/etc/samba/smb.conf.j2
-    mode: u=rw,g=r,o=r
-  notify: Restart samba
-
-- name: Create local credential file for smaba
-  delegate_to: localhost
-  ansible.builtin.copy:
-    dest: "{{ lookup('env', 'HOME') }}/Documents/secrets/{{ inventory_hostname }}-cifs-credentials"
-    content: |
-      [{{ inventory_hostname }}]
-      username=pi
-      password={{ samba_pi_password }}
-    mode: u=rw,g=,o=
-    owner: "{{ lookup('env', 'USER') }}"
-
-- name: Set SMB password for pi
-  ansible.builtin.shell: set -o pipefail && ( echo {{ samba_pi_password }} ; echo {{ samba_pi_password }} ) | smbpasswd -a -s pi
-  args:
-    executable: /bin/bash
-  changed_when: false
-
-#################################################
-# qBittorrent
-#################################################
-
-- name: Create qBittorrent group
-  ansible.builtin.group:
-    name: qbittorrent
-
-- name: Create qBittorrent user
-  ansible.builtin.user:
-    name: qbittorrent
-    comment: qBittorrent user
-    shell: /usr/sbin/nologin
-    group: qbittorrent
-
-- name: Create qBittorrent directories
-  ansible.builtin.file:
-    path: "{{ item }}"
-    state: directory
-    recurse: true
-    owner: qbittorrent
-    group: qbittorrent
-  loop:
-    - /home/qbittorrent/.config/qBittorrent
-    - /mnt/usb/torrents
-
-# Note: reload doesn't work for qBittorrent systemd service
-- name: Stop qBittorrent
-  ansible.builtin.systemd_service:
-    name: qbittorrent-nox@qbittorrent
-    state: stopped
-    enabled: true
-  changed_when: false
-
-- name: Configure qBittorrent
-  community.general.ini_file:
-    path: /home/qbittorrent/.config/qBittorrent/qBittorrent.conf
-    no_extra_spaces: true
-    section: "{{ item.section }}"
-    option: "{{ item.option }}"
-    value: "{{ item.value }}"
-    owner: qbittorrent
-    group: qbittorrent
-    mode: u=rw,g=r,o=r
-  loop:
-    - section: BitTorrent
-      option: 'Session\AddExtensionToIncompleteFiles'
-      value: "true"
-    - section: BitTorrent
-      option: 'Session\AddTorrentPaused'
-      value: "false"
-    - section: BitTorrent
-      option: 'Session\AlternativeGlobalDLSpeedLimit'
-      value: 0
-    - section: BitTorrent
-      option: 'Session\AnonymousModeEnabled'
-      value: "true"
-    - section: BitTorrent
-      option: 'Session\BandwidthSchedulerEnabled'
-      value: "true"
-    - section: BitTorrent
-      option: 'Session\DefaultSavePath'
-      value: /mnt/usb/torrents/
-    - section: BitTorrent
-      option: 'Session\GlobalDLSpeedLimit'
-      value: 3000
-    - section: BitTorrent
-      option: 'Session\GlobalMaxSeedingMinutes'
-      value: 1
-    - section: BitTorrent
-      option: 'Session\GlobalUPSpeedLimit'
-      value: 10
-    - section: BitTorrent
-      option: 'Session\MaxRatioAction'
-      value: 1
-    - section: Core
-      option: AutoDeleteAddedTorrentFile
-      value: IfAdded
-    - section: Preferences
-      option: 'MailNotification\email'
-      value: "{{ notification_email }}"
-    - section: Preferences
-      option: 'MailNotification\enabled'
-      value: "true"
-    - section: Preferences
-      option: 'MailNotification\password'
-      value: "{{ smtp_gmail_auth_password }}"
-    - section: Preferences
-      option: 'MailNotification\req_auth'
-      value: "true"
-    - section: Preferences
-      option: 'MailNotification\req_ssl'
-      value: "true"
-    - section: Preferences
-      option: 'MailNotification\smtp_server'
-      value: smtp.gmail.com
-    - section: Preferences
-      option: 'MailNotification\username'
-      value: "{{ smtp_gmail_auth_user }}"
-    - section: Preferences
-      option: 'Scheduler\days'
-      value: EveryDay
-    - section: Preferences
-      option: 'Scheduler\start_time'
-      value: '@Variant(\0\0\0\xf\0\0\0\0)'
-    - section: Preferences
-      option: 'Scheduler\end_time'
-      value: '@Variant(\0\0\0\xf\x1\x12\xa8\x80)'
-    - section: Preferences
-      option: 'WebUI\Address'
-      value: 127.0.0.1
-    - section: Preferences
-      option: 'WebUI\LocalHostAuth'
-      value: "false"
-    - section: Preferences
-      option: 'WebUI\Password_PBKDF2'
-      value: '"{{ qbittorrent_password_hash }}"'
-    - section: Preferences
-      option: WebUI\Port
-      value: 8081
-    - section: Preferences
-      option: WebUI\CSRFProtection
-      value: "false"
-
-- name: Start qBittorrent
-  ansible.builtin.systemd_service:
-    name: qbittorrent-nox@qbittorrent
-    state: started
-  changed_when: false
-
-#################################################
 # Kodi
 #################################################
 
@@ -566,13 +323,6 @@
     shell: /usr/bin/sh
     groups: audio,input,uucp,video
     group: kodi
-
-- name: Create sudoers file for Kodi
-  ansible.builtin.copy:
-    src: etc/sudoers.d/020_kodi
-    dest: /etc/sudoers.d/020_kodi
-    mode: u=rw,g=r,o=r
-  notify: Restart kodi
 
 - name: Create startup script for Kodi
   ansible.builtin.copy:
@@ -622,9 +372,11 @@
     src: "{{ item.src }}"
     mode: u=rw,g=,o=
   loop:
+    # This file is frequently updated by Kodi
     - dest: /home/kodi/.kodi/userdata/guisettings.xml
       src: files/home/kodi/.kodi/userdata/guisettings.xml.j2
-  # This file is frequently updated by Kodi
+    - dest: /home/kodi/.kodi/userdata/sources.xml
+      src: files/home/kodi/.kodi/userdata/sources.xml.j2
   changed_when: false
 
 - name: Chown "/home/kodi"
