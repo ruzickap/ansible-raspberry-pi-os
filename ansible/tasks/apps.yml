@@ -289,7 +289,7 @@
 - name: Homepage container
   community.docker.docker_container:
     name: homepage
-    image: ghcr.io/gethomepage/homepage:v0.9.6@sha256:e5b2616d17db8961a53c0b7d389d812d31c265d35696d475732f53278c9276f7
+    image: ghcr.io/gethomepage/homepage:v0.9.9@sha256:5c264918d2d18a753da8657fee7e0579c8b11581b19275d9a93fde76a8267f3c
     volumes:
       - /var/lib/homepage/config:/app/config
       - /var/run/docker.sock:/var/run/docker.sock:ro
