@@ -149,7 +149,7 @@
 - name: ESPHome container
   community.docker.docker_container:
     name: esphome
-    image: ghcr.io/esphome/esphome:2024.8.3@sha256:c6e7d74af4ba4b6d69ff28d2be582e0731b68e2b2d7ee1c1b0b292822b4e8487
+    image: ghcr.io/esphome/esphome:2024.9.2@sha256:3d1a2a6ad618d8d146ab3731c432a788cb7cdb5ab07abe227bc9315d99cf2e34
     image_name_mismatch: recreate
     volumes:
       - /etc/localtime:/etc/localtime:ro
