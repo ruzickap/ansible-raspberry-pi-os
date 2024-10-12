@@ -16,8 +16,8 @@ alloy_grafana_cloud_password: !vault |
   62333731646265363734616630383764663233346633316635353030616432636562386165613637
   65356337653837646236356365646465353164383438303065356266313435306161353931383833
   61396530373230316435
+# renovate: datasource=github-tags depName=grafana/alloy
 alloy_grafana_version: 1.3.0
-
 
 blackbox_exporter_configuration_modules:
   http_2xx:
@@ -36,6 +36,7 @@ blackbox_exporter_configuration_modules:
       query_response:
         - expect: "^SSH-2.0-"
 blackbox_exporter_web_listen_address: 127.0.0.1:9115
+# renovate: datasource=github-tags depName=prometheus/blackbox_exporter
 blackbox_exporter_version: 0.25.0
 
 boot_config_parameters: |
@@ -55,6 +56,7 @@ cadvisor_enable_metrics:
   - oom_event
 cadvisor_listen_ip: 127.0.0.1
 cadvisor_port: 8085
+# renovate: datasource=github-tags depName=google/cadvisor
 cadvisor_version: 0.50.0
 
 cloudflared_tunnel_token: !vault |
@@ -157,6 +159,7 @@ grafana_smtp:
   user: "{{ smtp_gmail_auth_user }}"
   password: "{{ smtp_gmail_auth_password }}"
 grafana_url: https://grafana-rpi.xvx.cz
+# renovate: datasource=github-tags depName=grafana/grafana
 grafana_version: 11.1.4
 
 fw_allowed_tcp_ports:
@@ -232,6 +235,7 @@ node_exporter_enabled_collectors:
   - systemd
   - tcpstat
 node_exporter_web_listen_address: 127.0.0.1:9100
+# renovate: datasource=github-tags depName=prometheus/node_exporter
 node_exporter_version: 1.8.2
 
 notification_email: petr.ruzicka@gmail.com
@@ -302,7 +306,6 @@ prometheus_scrape_configs:
           - http://192.168.1.1:9091/web/
           # uzg-01.xvx.cz
           - http://192.168.1.3/login
-
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target
@@ -356,6 +359,7 @@ prometheus_scrape_configs:
       - targets:
           - 127.0.0.1:9558
 prometheus_storage_retention_size: 1GB
+# renovate: datasource=github-tags depName=prometheus/prometheus
 prometheus_version: 2.54.0
 prometheus_web_external_url: https://prometheus-rpi.xvx.cz
 prometheus_web_listen_address: 127.0.0.1:9090
@@ -401,6 +405,7 @@ smtp_gmail_auth_password: !vault |
   32613061646137646163643864356537616236626534373533323833333465393537
 
 systemd_exporter_web_listen_address: 127.0.0.1:9558
+# renovate: datasource=github-tags depName=prometheus-community/systemd_exporter
 systemd_exporter_version: 0.6.0
 
 timezone: Europe/Prague
