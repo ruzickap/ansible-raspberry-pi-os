@@ -161,7 +161,7 @@ grafana_smtp:
   password: "{{ smtp_gmail_auth_password }}"
 grafana_url: https://grafana-rpi.xvx.cz
 # renovate: datasource=github-tags depName=grafana/grafana
-grafana_version: 11.1.4
+grafana_version: 11.1.7
 
 fw_allowed_tcp_ports:
   - 22 # SSH
