@@ -17,7 +17,7 @@ alloy_grafana_cloud_password: !vault |
   65356337653837646236356365646465353164383438303065356266313435306161353931383833
   61396530373230316435
 # renovate: datasource=github-tags depName=grafana/alloy
-alloy_grafana_version: 1.3.0
+alloy_grafana_version: 1.3.4
 
 blackbox_exporter_configuration_modules:
   http_2xx:
