@@ -1,4 +1,45 @@
 #################################################
+# Backup / Restore
+#################################################
+
+- name: Ensure /root/.ssh directory exists
+  ansible.builtin.file:
+    dest: /root/.ssh
+    mode: u=rw,g=,o=
+    owner: root
+    state: directory
+
+- name: Install ssh key id_ed25519-backup_raspi.xvx.cz{.pub}
+  ansible.builtin.copy:
+    src: files/{{ item }}
+    dest: "{{ item }}"
+    mode: u=rw,g=,o=
+    owner: root
+  loop:
+    - /root/.ssh/id_ed25519-backup_raspi.xvx.cz
+    - /root/.ssh/id_ed25519-backup_raspi.xvx.cz.pub
+
+- name: Creates Backup Prometheus file /etc/cron.d/backup-prometheus
+  ansible.builtin.cron:
+    name: Backup Prometheus
+    weekday: "*"
+    minute: "0"
+    hour: "3"
+    user: root
+    job: PROMETHEUS_SNAPSHOT_DIR=$(curl -s -X POST http://127.0.0.1:9090/api/v1/admin/tsdb/snapshot | jq -r '.data.name') && rsync -az --delete-after -e "ssh -i /root/.ssh/id_ed25519-backup_raspi.xvx.cz -o StrictHostKeyChecking=no" /var/lib/prometheus/snapshots/${PROMETHEUS_SNAPSHOT_DIR}/ {{ backup_user }}@{{ backup_server }}:{{ backup_directory }}/prometheus/ && rm -rf /var/lib/prometheus/snapshots
+    cron_file: backup-prometheus
+
+- name: Creates Backup HASS file /etc/cron.d/backup-hass
+  ansible.builtin.cron:
+    name: Backup Home Assistant
+    weekday: "*"
+    minute: "0"
+    hour: "3"
+    user: root
+    job: rsync -az --delete-after -e "ssh -i /root/.ssh/id_ed25519-backup_raspi.xvx.cz -o StrictHostKeyChecking=no" /var/lib/hass_config {{ backup_user }}@{{ backup_server }}:{{ backup_directory }}/
+    cron_file: backup-hass
+
+#################################################
 # Cloudflared
 #################################################
 

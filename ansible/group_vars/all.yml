@@ -19,6 +19,10 @@ alloy_grafana_cloud_password: !vault |
 # renovate: datasource=github-tags depName=grafana/alloy
 alloy_grafana_version: 1.4.2
 
+backup_directory: /mnt/backups/raspi
+backup_server: 192.168.1.1
+backup_user: root
+
 blackbox_exporter_configuration_modules:
   http_2xx:
     prober: http
@@ -260,6 +264,8 @@ openwrt_luci_password: !vault |
   3066616463613265390a346137636634636163383630666533363433636536333938323139386361
   3861
 
+prometheus_config_flags_extra:
+  web.enable-admin-api:
 prometheus_global:
   scrape_interval: 5m
 prometheus_scrape_configs:
@@ -359,7 +365,7 @@ prometheus_scrape_configs:
     static_configs:
       - targets:
           - 127.0.0.1:9558
-prometheus_storage_retention_size: 1GB
+prometheus_storage_retention_size: 5GB
 # renovate: datasource=github-tags depName=prometheus/prometheus
 prometheus_version: 2.54.1
 prometheus_web_external_url: https://prometheus-rpi.xvx.cz
