@@ -30,11 +30,13 @@
       vars:
         alloy_user_groups: ["adm", "docker"]
         config: "{{ lookup('ansible.builtin.template', 'files/etc/alloy/config.alloy.j2') }}"
-        version: 1.3.0
+        version: "{{ alloy_grafana_version }}"
     - role: oefenweb.fail2ban
     - role: prometheus.prometheus.prometheus
     - role: prometheus.prometheus.blackbox_exporter
     - role: prometheus.prometheus.cadvisor
+      vars:
+        cadvisor_docker_only: true
     - role: prometheus.prometheus.node_exporter
     - role: prometheus.prometheus.systemd_exporter
 

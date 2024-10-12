@@ -1,6 +1,6 @@
 # M-MT912CY9MQ
 cc_08_fa_aa_a1_02:
-  name: Petr's MacBook Air
+  name: Petr's MacBook Air - M-MT912CY9MQ
   mac: CC:08:FA:AA:A1:02
   icon: mdi:laptop
   picture: https://raw.githubusercontent.com/simple-icons/simple-icons/521c96fd04b0ea93034db8715eda5a4de27a58bb/icons/apple.svg
@@ -8,7 +8,7 @@ cc_08_fa_aa_a1_02:
 
 # LAPTOP-5OVKG7VB
 2c_6d_c1_c8_15_95:
-  name: Andy's Laptop
+  name: Andy's Laptop - LAPTOP-5OVKG7VB
   mac: 2C:6D:C1:C8:15:95
   icon: mdi:laptop
   picture:
@@ -16,7 +16,7 @@ cc_08_fa_aa_a1_02:
 
 # Galaxy-S10e
 42_95_18_df_36_e9:
-  name: Andy's Phone
+  name: Andy's Phone - Galaxy-S10e
   mac: 42:95:18:DF:36:E9
   icon: mdi:cellphone-basic
   picture:
@@ -24,8 +24,29 @@ cc_08_fa_aa_a1_02:
 
 # JVC-TV
 48_6d_bb_f4_02_14:
-  name: TV in the living room
+  name: TV in the living room - JVC-TV
   mac: 48:6D:BB:F4:02:14
   icon: mdi:television
+  picture:
+  track: true
+
+cc_db_a7_36_45_17:
+  name: Universal ZigBee Gateway
+  mac: CC:DB:A7:36:45:17
+  icon: mdi:zigbee
+  picture:
+  track: true
+
+f0_f5_bd_f5_85_f4:
+  name: Apollo MSR-2
+  mac: F0:F5:BD:F5:85:F4
+  icon: mdi:motion-sensor
+  picture:
+  track: true
+
+dc_a6_32_0e_bd_14:
+  name: Raspberry Pi 4
+  mac: DC:A6:32:0E:BD:14
+  icon: mdi:raspberry-pi
   picture:
   track: true

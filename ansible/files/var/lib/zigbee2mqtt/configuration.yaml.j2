@@ -1,17 +1,27 @@
 advanced:
-  transmit_power: 20
+  legacy_availability_payload: false
   log_output:
     - console
+  transmit_power: 20
+
+availability:
+  active:
+    timeout: 10
+  passive:
+    timeout: 1500
 
 devices:
+  '0x58e45b83342d585a':
+    friendly_name: Qingping CGDK2-z PetrR (0x58e45b83342d585a)
+    description: Temp & RH Monitor Lite (pvxx/ZigbeeTLc)
+  '0x0ceff6fffe6a5404':
+    friendly_name: SNZB-06P PetrR (0x0ceff6fffe6a5404)
+    description: Zigbee occupancy sensor
   '0xa4c138bc7ea071c3':
     friendly_name: Tuya WSD500A PetrR (0xa4c138bc7ea071c3)
     description: >-
       Temperature & humidity sensor which exposes battery, temperature,
       humidity, voltage, linkquality
-  '0x58e45b83342d585a':
-    friendly_name: Qingping CGDK2 PetrR (0x58e45b83342d585a)
-    description: Temp & RH Monitor Lite (pvxx/ZigbeeTLc)
   '0x881a14fffe95bb7c':
     friendly_name: IKEA LED2201G8 PetrR (0x881a14fffe95bb7c)
     description: TRADFRI bulb E26/27, white spectrum, globe, opal, 1055/1100 lm
@@ -31,7 +41,7 @@ mqtt:
   # MQTT server authentication, uncomment if required:
   user: {{ mqtt_clients.zigbee2mqtt.user }}
   password: {{ mqtt_clients.zigbee2mqtt.password }}
-  # version: 5
+  version: 5
 
 serial:
   port: tcp://{{ zigbee_coordinator_ip }}:6638
