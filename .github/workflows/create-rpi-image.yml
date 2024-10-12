@@ -36,7 +36,6 @@ jobs:
           uuid=5a62d13a-fdf8-4737-8f7d-f43764685207
           type=wifi
           interface-name=wlan0
-          autoconnect=true
 
           [wifi]
           mode=infrastructure
@@ -47,10 +46,12 @@ jobs:
           key-mgmt=wpa-psk
           psk=${WIFI_PASSWORD}
 
-          # [ipv4]
-          # method=manual
-          # address1=192.168.1.2/24,192.168.1.1
-          # dns=8.8.8.8;1.1.1.1;
+          [ipv4]
+          method=auto
+
+          [ipv6]
+          addr-gen-mode=default
+          method=auto
           EOF2
           chmod 600 "/etc/NetworkManager/system-connections/${WIFI_SSID}.nmconnection"
           EOF

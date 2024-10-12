@@ -67,13 +67,17 @@
       protocol      mqtt
       password_file /etc/mosquitto/password_file
     mode: u=rw,g=,o=
+    owner: mosquitto
+    group: mosquitto
   notify: Restart mosquitto
 
 - name: Create '/etc/mosquitto/password_file' file
   ansible.builtin.template:
     dest: /etc/mosquitto/password_file
     src: files/etc/mosquitto/password_file.j2
-    mode: u=rw,g=r,o=r
+    mode: u=rw,g=,o=
+    owner: mosquitto
+    group: mosquitto
   no_log: true
   notify: Restart mosquitto
 
@@ -91,7 +95,15 @@
   ansible.builtin.template:
     dest: /var/lib/zigbee2mqtt/configuration.yaml
     src: files/var/lib/zigbee2mqtt/configuration.yaml.j2
-    mode: u=rwx,g=r,o=r
+    mode: u=rw,g=r,o=r
+  no_log: true
+  notify: Restart zigbee2mqtt
+
+- name: Copy the Zigbee2MQTT database (/var/lib/zigbee2mqtt/database.db)
+  ansible.builtin.copy:
+    dest: /var/lib/zigbee2mqtt/database.db
+    src: files/var/lib/zigbee2mqtt/database.db
+    mode: u=rw,g=r,o=r
   no_log: true
   notify: Restart zigbee2mqtt
 
@@ -99,6 +111,7 @@
   community.docker.docker_container:
     name: zigbee2mqtt
     image: docker.io/koenkk/zigbee2mqtt:1.40.2@sha256:40dca7e6ee816c84d6220daeb92cf20a52cf35446ec1d3ef0c2965a87cd397cc
+    image_name_mismatch: recreate
     volumes:
       - /run/dbus:/run/dbus:ro
       - /var/lib/zigbee2mqtt:/app/data
@@ -130,13 +143,14 @@
   ansible.builtin.template:
     dest: /var/lib/esphome/config/xiaomi-miija-lywsd03mmc.yaml
     src: files/var/lib/esphome/config/xiaomi-miija-lywsd03mmc.yaml
-    mode: u=rwx,g=r,o=r
+    mode: u=rw,g=r,o=r
   notify: Restart esphome
 
 - name: ESPHome container
   community.docker.docker_container:
     name: esphome
     image: ghcr.io/esphome/esphome:2024.8.3@sha256:c6e7d74af4ba4b6d69ff28d2be582e0731b68e2b2d7ee1c1b0b292822b4e8487
+    image_name_mismatch: recreate
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /var/lib/esphome/config:/config
@@ -239,6 +253,7 @@
 #   community.docker.docker_container:
 #     name: home-assistant
 #     image: ghcr.io/home-assistant/home-assistant:2024.8.2@sha256:b5c4bef2494f84806423c0116bab2a8758c5be386e11af0d3bd7359a18ba77a7
+#     image_name_mismatch: recreate
 #     volumes:
 #       - /etc/localtime:/etc/localtime:ro
 #       - /run/dbus:/run/dbus:ro
@@ -290,6 +305,7 @@
   community.docker.docker_container:
     name: homepage
     image: ghcr.io/gethomepage/homepage:v0.9.10@sha256:671c2ed1a61b5dfbb9a1998c8738c3aeb1acf11adbc12563f81fcf4fd9802198
+    image_name_mismatch: recreate
     volumes:
       - /var/lib/homepage/config:/app/config
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -321,7 +337,7 @@
     name: kodi
     comment: Kodi
     shell: /usr/bin/sh
-    groups: audio,input,uucp,video
+    groups: audio,input,uucp,video,plugdev
     group: kodi
 
 - name: Create startup script for Kodi
