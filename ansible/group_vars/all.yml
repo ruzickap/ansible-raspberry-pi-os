@@ -42,6 +42,7 @@ blackbox_exporter_version: 0.25.0
 boot_config_parameters: |
   hdmi_ignore_cec_init=1
 
+# https://thesmarthomejourney.com/2022/08/01/fixing-cadvisor-cpu/
 # https://github.com/docker/for-linux/issues/1112 - Grafana -> Cadvisor exprter -> Memory
 boot_cmdline_parameters: cgroup_enable=cpuset cgroup_enable=memory
 
@@ -163,17 +164,17 @@ grafana_url: https://grafana-rpi.xvx.cz
 grafana_version: 11.1.4
 
 fw_allowed_tcp_ports:
-  - 22          # SSH
-  - 22222       # SSH
-  - 1883        # MQTT
+  - 22 # SSH
+  - 22222 # SSH
+  - 1883 # MQTT
 
 fw_forwarded_tcp_ports:
   - src: 22222
     dest: 22
 
 fw_allowed_udp_ports:
-  - 1883        # MQTT
-  - 5353        # mDNS - avahi-daemon
+  - 1883 # MQTT
+  - 5353 # mDNS - avahi-daemon
 
 hass_url: https://hass-rpi.xvx.cz
 hass_backup_directory: /mnt/usb/backups/rpi/hass-backups/
