@@ -123,16 +123,6 @@
     line: '\1 {{ boot_cmdline_parameters }}'
   notify: Reboot
 
-- name: Enable watchdog
-  community.general.ini_file:
-    path: /etc/systemd/system.conf
-    no_extra_spaces: true
-    section: "Manager"
-    option: "RuntimeWatchdogSec"
-    value: "10"
-    mode: u=rw,g=r,o=r
-  notify: Reload systemd
-
 - name: Update all packages
   ansible.builtin.apt:
     name: "*"

@@ -5,7 +5,7 @@
 - name: Ensure /root/.ssh directory exists
   ansible.builtin.file:
     dest: /root/.ssh
-    mode: u=rw,g=,o=
+    mode: u=rwx,g=,o=
     owner: root
     state: directory
 
@@ -18,6 +18,7 @@
   loop:
     - /root/.ssh/id_ed25519-backup_raspi.xvx.cz
     - /root/.ssh/id_ed25519-backup_raspi.xvx.cz.pub
+  no_log: true
 
 - name: Creates Backup Prometheus file /etc/cron.d/backup-prometheus
   ansible.builtin.cron:
@@ -26,7 +27,7 @@
     minute: "0"
     hour: "3"
     user: root
-    job: PROMETHEUS_SNAPSHOT_DIR=$(curl -s -X POST http://127.0.0.1:9090/api/v1/admin/tsdb/snapshot | jq -r '.data.name') && rsync -az --delete-after -e "ssh -i /root/.ssh/id_ed25519-backup_raspi.xvx.cz -o StrictHostKeyChecking=no" /var/lib/prometheus/snapshots/${PROMETHEUS_SNAPSHOT_DIR}/ {{ backup_user }}@{{ backup_server }}:{{ backup_directory }}/prometheus/ && rm -rf /var/lib/prometheus/snapshots
+    job: PROMETHEUS_SNAPSHOT_DIR=$(curl -s -X POST http://127.0.0.1:9090/api/v1/admin/tsdb/snapshot | jq -r '.data.name') && rsync -av --delete-after -e "ssh -i /root/.ssh/id_ed25519-backup_raspi.xvx.cz -o StrictHostKeyChecking=no" /var/lib/prometheus/snapshots/${PROMETHEUS_SNAPSHOT_DIR}/ {{ backup_user }}@{{ backup_server }}:{{ backup_directory }}/prometheus/ &> /tmp/backup-prometheus.log && rm -rf /var/lib/prometheus/snapshots
     cron_file: backup-prometheus
 
 - name: Creates Backup HASS file /etc/cron.d/backup-hass
@@ -36,8 +37,36 @@
     minute: "0"
     hour: "3"
     user: root
-    job: rsync -az --delete-after -e "ssh -i /root/.ssh/id_ed25519-backup_raspi.xvx.cz -o StrictHostKeyChecking=no" /var/lib/hass_config {{ backup_user }}@{{ backup_server }}:{{ backup_directory }}/
+    job: rsync -av --delete-after -e "ssh -i /root/.ssh/id_ed25519-backup_raspi.xvx.cz -o StrictHostKeyChecking=no" /var/lib/hass_config {{ backup_user }}@{{ backup_server }}:{{ backup_directory }}/ &> /tmp/backup-hass.log
     cron_file: backup-hass
+
+- name: Check if /var/log/restore-prometheus.log exists
+  ansible.builtin.stat:
+    path: /var/log/restore-prometheus.log
+  register: prometheus_restore_log
+
+- name: Restore Prometheus from backup
+  when: not prometheus_restore_log.stat.exists
+  block:
+    - name: Stop Prometheus
+      ansible.builtin.systemd_service:
+        name: prometheus
+        state: stopped
+
+    - name: Restore Prometheus from backup # noqa: command-instead-of-module
+      ansible.builtin.shell:
+        cmd: |
+          rsync -av --delete-after -e 'ssh -i /root/.ssh/id_ed25519-backup_raspi.xvx.cz -o StrictHostKeyChecking=no' {{ backup_user }}@{{ backup_server }}:{{ backup_directory }}/prometheus/* /var/lib/prometheus/ &> /var/log/restore-prometheus.log
+      changed_when: false
+
+    - name: Start Prometheus
+      ansible.builtin.systemd_service:
+        name: prometheus
+        state: started
+  rescue:
+    - name: Print when errors
+      ansible.builtin.fail:
+        msg: Restore from backup failed
 
 #################################################
 # Cloudflared
@@ -121,6 +150,7 @@
     group: mosquitto
   no_log: true
   notify: Restart mosquitto
+  changed_when: false
 
 #################################################
 # Zigbee2MQTT
@@ -161,7 +191,6 @@
     env:
       TZ: "{{ timezone }}"
     labels:
-      io.containers.autoupdate: registry
       homepage.group: Containers
       homepage.name: Zigbee2MQTT
       homepage.icon: https://raw.githubusercontent.com/Koenkk/zigbee2mqtt.io/bfd27df45e931d18675eb5aba8bdcbaf688a608f/docs/images/logo.png
@@ -198,7 +227,6 @@
     ports:
       - 6052:6052
     labels:
-      io.containers.autoupdate: registry
       homepage.group: Containers
       homepage.name: ESPHome
       homepage.icon: https://raw.githubusercontent.com/esphome/esphome-docs/e28345cd8f1c9380bc25dd977fcf443ba5c8612c/images/logo.svg
@@ -211,54 +239,54 @@
 # Home Assistant
 #################################################
 
-# - name: Check that the directory exists - {{ hass_config_directory }}
-#   ansible.builtin.stat:
-#     path: "{{ hass_config_directory }}"
-#   register: hass_config_dir
+- name: Check that the directory exists - {{ hass_config_directory }}
+  ansible.builtin.stat:
+    path: "{{ hass_config_directory }}"
+  register: hass_config_dir
 
 # - name: Check if there are any HASS backups
 #   ansible.builtin.find:
 #     paths: "{{ hass_backup_directory }}"
 #   register: hass_backups
 
-# - name: Create hass config directory - {{ hass_config_directory }}
-#   ansible.builtin.file:
-#     path: "{{ hass_config_directory }}"
-#     state: directory
-#     mode: u=rwx,g=rx,o=rx
+- name: Create hass config directory - {{ hass_config_directory }}
+  ansible.builtin.file:
+    path: "{{ hass_config_directory }}"
+    state: directory
+    mode: u=rwx,g=rx,o=rx
 
-# - name: Copy config files for Home Assistant to {{ hass_config_directory }}
-#   ansible.builtin.copy:
-#     src: "{{ item.src }}"
-#     dest: "{{ item.dest }}"
-#     mode: u=rw,g=r,o=r
-#   loop:
-#     - dest: /var/lib/hass_config/automations.yaml
-#       src: files/var/lib/hass_config/automations.yaml
-#     - dest: /var/lib/hass_config/known_devices.yaml
-#       src: files/var/lib/hass_config/known_devices.yaml
-#   notify: Restart hass
+- name: Copy config files for Home Assistant to {{ hass_config_directory }}
+  ansible.builtin.copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: u=rw,g=r,o=r
+  loop:
+    - dest: /var/lib/hass_config/automations.yaml
+      src: files/var/lib/hass_config/automations.yaml
+    - dest: /var/lib/hass_config/known_devices.yaml
+      src: files/var/lib/hass_config/known_devices.yaml
+  notify: Restart hass
 
-# - name: Create config files for Home Assistant to {{ hass_config_directory }}
-#   ansible.builtin.template:
-#     src: "{{ item.src }}"
-#     dest: "{{ item.dest }}"
-#     mode: u=rw,g=r,o=r
-#   loop:
-#     - dest: /var/lib/hass_config/configuration.yaml
-#       src: files/var/lib/hass_config/configuration.yaml.j2
-#   notify: Restart hass
+- name: Create config files for Home Assistant to {{ hass_config_directory }}
+  ansible.builtin.template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: u=rw,g=r,o=r
+  loop:
+    - dest: /var/lib/hass_config/configuration.yaml
+      src: files/var/lib/hass_config/configuration.yaml.j2
+  notify: Restart hass
 
-# - name: Create secret file for Home Assistant to {{ hass_config_directory }}
-#   ansible.builtin.template:
-#     src: "{{ item.src }}"
-#     dest: "{{ item.dest }}"
-#     mode: u=rw,g=,o=
-#   loop:
-#     - dest: /var/lib/hass_config/secrets.yaml
-#       src: files/var/lib/hass_config/secrets.yaml.j2
-#   no_log: true
-#   notify: Restart hass
+- name: Create secret file for Home Assistant to {{ hass_config_directory }}
+  ansible.builtin.template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: u=rw,g=,o=
+  loop:
+    - dest: /var/lib/hass_config/secrets.yaml
+      src: files/var/lib/hass_config/secrets.yaml.j2
+  no_log: true
+  notify: Restart hass
 
 # - name: Restore Home Assistant configuration from backup
 #   when: not hass_config_dir.stat.exists and hass_backups.matched > 0
@@ -290,28 +318,27 @@
 #       ansible.builtin.fail:
 #         msg: Restore from backup failed
 
-# - name: Home Assistant container
-#   community.docker.docker_container:
-#     name: home-assistant
-#     image: ghcr.io/home-assistant/home-assistant:2024.8.2@sha256:b5c4bef2494f84806423c0116bab2a8758c5be386e11af0d3bd7359a18ba77a7
-#     image_name_mismatch: recreate
-#     volumes:
-#       - /etc/localtime:/etc/localtime:ro
-#       - /run/dbus:/run/dbus:ro
-#       - "{{ hass_config_directory }}:/config"
-#       - "{{ hass_backup_directory }}:/config/backups"
-#     network_mode: host
-#     privileged: true
-#     labels:
-#       io.containers.autoupdate: registry
-#       homepage.group: Containers
-#       homepage.name: Home Assistant
-#       homepage.icon: https://upload.wikimedia.org/wikipedia/en/4/49/Home_Assistant_logo_%282023%29.svg
-#       homepage.href: "{{ hass_url }}"
-#       homepage.description: Open source home automation that puts local control and privacy first.
-#     restart_policy: always
-#     timeout: "{{ docker_container_timeout }}"
-#   notify: Restart hass
+- name: Home Assistant container
+  community.docker.docker_container:
+    name: home-assistant
+    image: ghcr.io/home-assistant/home-assistant:2024.8.2@sha256:b5c4bef2494f84806423c0116bab2a8758c5be386e11af0d3bd7359a18ba77a7
+    image_name_mismatch: recreate
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /run/dbus:/run/dbus:ro
+      - "{{ hass_config_directory }}:/config"
+      - "{{ hass_backup_directory }}:/config/backups"
+    network_mode: host
+    privileged: true
+    labels:
+      homepage.group: Containers
+      homepage.name: Home Assistant
+      homepage.icon: https://upload.wikimedia.org/wikipedia/en/4/49/Home_Assistant_logo_%282023%29.svg
+      homepage.href: "{{ hass_url }}"
+      homepage.description: Open source home automation that puts local control and privacy first.
+    restart_policy: always
+    timeout: "{{ docker_container_timeout }}"
+  notify: Restart hass
 
 #################################################
 # Homepage
@@ -355,7 +382,6 @@
     env:
       LOG_TARGETS: stdout
     labels:
-      io.containers.autoupdate: registry
       homepage.group: Containers
       homepage.name: Homepage
       homepage.icon: https://raw.githubusercontent.com/gethomepage/homepage/47765ee05e633c87fcf8fca8ee1293bf0ef6bb3e/docs/assets/light_squircle%402x.png

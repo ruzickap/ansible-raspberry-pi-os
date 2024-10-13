@@ -61,37 +61,37 @@ notify:
     timeout: 15
     username: !secret smtp_gmail_auth_user
 
-panel_iframe:
-  esphome:
-    title: ESPHome
-    icon: mdi:chip
-    url: https://esphome-rpi.xvx.cz
-    require_admin: true
-  grafana:
-    title: Grafana
-    icon: mdi:chart-timeline
-    url: {{ grafana_url }}
-    require_admin: true
-  prometheus:
-    title: Prometheus
-    icon: mdi:chart-pie
-    url: {{ prometheus_web_external_url }}
-    require_admin: true
-  uzg_01:
-    title: UZG-01
-    url: https://uzg-01.xvx.cz
-    icon: mdi:zigbee
-    require_admin: true
-  msr-2:
-    title: Apollo MSR-2
-    url: http://192.168.1.3
-    icon: mdi:motion-sensor
-    require_admin: true
-  zigbee2mqtt:
-    title: Zigbee2Mqtt
-    url: https://zigbee2mqtt-rpi.xvx.cz
-    icon: mdi:graphql
-    require_admin: true
+# panel_iframe:
+#   esphome:
+#     title: ESPHome
+#     icon: mdi:chip
+#     url: https://esphome-rpi.xvx.cz
+#     require_admin: true
+#   grafana:
+#     title: Grafana
+#     icon: mdi:chart-timeline
+#     url: {{ grafana_url }}
+#     require_admin: true
+#   prometheus:
+#     title: Prometheus
+#     icon: mdi:chart-pie
+#     url: {{ prometheus_web_external_url }}
+#     require_admin: true
+#   uzg_01:
+#     title: UZG-01
+#     url: https://uzg-01.xvx.cz
+#     icon: mdi:zigbee
+#     require_admin: true
+#   msr-2:
+#     title: Apollo MSR-2
+#     url: http://192.168.1.3
+#     icon: mdi:motion-sensor
+#     require_admin: true
+#   zigbee2mqtt:
+#     title: Zigbee2Mqtt
+#     url: https://zigbee2mqtt-rpi.xvx.cz
+#     icon: mdi:graphql
+#     require_admin: true
 
 recorder:
   purge_keep_days: 7

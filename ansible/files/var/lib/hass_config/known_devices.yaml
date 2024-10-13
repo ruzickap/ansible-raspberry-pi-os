@@ -50,3 +50,17 @@ dc_a6_32_0e_bd_14:
   icon: mdi:raspberry-pi
   picture:
   track: true
+
+32_c2_6d_a8_32_54:
+  name: Bozena's Phone - Galaxy A20e
+  mac: 32:C2:6D:A8:32:54
+  icon: mdi:cellphone-basic
+  picture:
+  track: true
+
+3e_44_85_e2_81_0c:
+  name: Petr's Phone - iPhone 15
+  mac: 3E:44:85:E2:81:0C
+  icon: mdi:cellphone-basic
+  picture:
+  track: true
