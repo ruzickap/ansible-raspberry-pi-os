@@ -27,7 +27,7 @@
     minute: "0"
     hour: "3"
     user: root
-    job: PROMETHEUS_SNAPSHOT_DIR=$(curl -s -X POST http://127.0.0.1:9090/api/v1/admin/tsdb/snapshot | jq -r '.data.name') && rsync -av --delete-after -e "ssh -i /root/.ssh/id_ed25519-backup_raspi.xvx.cz -o StrictHostKeyChecking=no" /var/lib/prometheus/snapshots/${PROMETHEUS_SNAPSHOT_DIR}/ {{ backup_user }}@{{ backup_server }}:{{ backup_directory }}/prometheus/ &> /tmp/backup-prometheus.log && rm -rf /var/lib/prometheus/snapshots
+    job: PROMETHEUS_SNAPSHOT_DIR=$(curl -s -X POST http://127.0.0.1:9090/api/v1/admin/tsdb/snapshot | jq -r '.data.name') && rsync --archive --verbose --delete --log-file=/tmp/backup-prometheus.log -e 'ssh -i /root/.ssh/id_ed25519-backup_raspi.xvx.cz -o StrictHostKeyChecking=no' /var/lib/prometheus/snapshots/${PROMETHEUS_SNAPSHOT_DIR}/ {{ backup_user }}@{{ backup_server }}:{{ backup_directory }}/prometheus/ && rm -rf /var/lib/prometheus/snapshots
     cron_file: backup-prometheus
 
 - name: Creates Backup HASS file /etc/cron.d/backup-hass
@@ -37,7 +37,7 @@
     minute: "0"
     hour: "3"
     user: root
-    job: rsync -av --delete-after -e "ssh -i /root/.ssh/id_ed25519-backup_raspi.xvx.cz -o StrictHostKeyChecking=no" /var/lib/hass_config {{ backup_user }}@{{ backup_server }}:{{ backup_directory }}/ &> /tmp/backup-hass.log
+    job: rsync --archive --verbose --delete --log-file=/tmp/backup-hass.log -e "ssh -i /root/.ssh/id_ed25519-backup_raspi.xvx.cz -o StrictHostKeyChecking=no" /var/lib/hass_config {{ backup_user }}@{{ backup_server }}:{{ backup_directory }}/
     cron_file: backup-hass
 
 - name: Check if /var/log/restore-prometheus.log exists
@@ -56,8 +56,8 @@
     - name: Restore Prometheus from backup # noqa: command-instead-of-module
       ansible.builtin.shell:
         cmd: |
-          rsync -av --delete-after -e 'ssh -i /root/.ssh/id_ed25519-backup_raspi.xvx.cz -o StrictHostKeyChecking=no' {{ backup_user }}@{{ backup_server }}:{{ backup_directory }}/prometheus/* /var/lib/prometheus/ &> /var/log/restore-prometheus.log
-      changed_when: false
+          rsync --archive --verbose --delete --log-file=/var/log/restore-prometheus.log --rsh='ssh -i /root/.ssh/id_ed25519-backup_raspi.xvx.cz -o StrictHostKeyChecking=no' {{ backup_user }}@{{ backup_server }}:{{ backup_directory }}/prometheus/ /var/lib/prometheus/
+      changed_when: true
 
     - name: Start Prometheus
       ansible.builtin.systemd_service:
