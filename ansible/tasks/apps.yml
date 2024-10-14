@@ -321,7 +321,7 @@
 - name: Home Assistant container
   community.docker.docker_container:
     name: home-assistant
-    image: ghcr.io/home-assistant/home-assistant:2024.8.2@sha256:b5c4bef2494f84806423c0116bab2a8758c5be386e11af0d3bd7359a18ba77a7
+    image: ghcr.io/home-assistant/home-assistant:2024.8.3@sha256:49501c175b6108e94d20a723e6a991a14389454374eba06b2c6833b1315e34b5
     image_name_mismatch: recreate
     volumes:
       - /etc/localtime:/etc/localtime:ro
