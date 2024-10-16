@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.6.0](https://github.com/ruzickap/ansible-raspberry-pi-os/compare/v0.5.0...v0.6.0) (2024-10-14)
+
+
+### Features
+
+* add msr-2, transmission, zigbee2mqtt database, cmdline.txt ([#199](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/199)) ([96e2006](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/96e20066f545eec9b50d8e5219db8de7e1cbb513))
+* add prometheus and hass backups ([#203](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/203)) ([42dca09](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/42dca0905c1fb4d6b85666424a3907ca9e037f1d))
+* add renovate to group_vars app versions ([#201](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/201)) ([449898c](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/449898ce886a31383d85accc224958be5479eedd))
+* add rpi os artifact encryption ([#204](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/204)) ([6af6c9d](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/6af6c9d8dad03d765cd9af196d50143dcad23b4d))
+* fix rsync backup commands ([#205](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/205)) ([bf10317](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/bf103171e5d2ec95c6e4b3aa660b87c77fb452d7))
+
 ## [0.5.0](https://github.com/ruzickap/ansible-raspberry-pi-os/compare/v0.4.0...v0.5.0) (2024-08-31)
 
 
