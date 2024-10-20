@@ -27,7 +27,7 @@
     minute: "0"
     hour: "3"
     user: root
-    job: PROMETHEUS_SNAPSHOT_DIR=$(curl -s -X POST http://127.0.0.1:9090/api/v1/admin/tsdb/snapshot | jq -r '.data.name') && rsync --archive --verbose --delete --log-file=/tmp/backup-prometheus.log -e 'ssh -i /root/.ssh/id_ed25519-backup_raspi.xvx.cz -o StrictHostKeyChecking=no' /var/lib/prometheus/snapshots/${PROMETHEUS_SNAPSHOT_DIR}/ {{ backup_user }}@{{ backup_server }}:{{ backup_directory }}/prometheus/ && rm -rf /var/lib/prometheus/snapshots
+    job: PROMETHEUS_SNAPSHOT_DIR=$(curl -s -X POST http://127.0.0.1:9090/api/v1/admin/tsdb/snapshot | jq -r '.data.name') && rsync --archive --verbose --delete --log-file=/tmp/backup-prometheus.log -e 'ssh -i /root/.ssh/id_ed25519-backup_raspi.xvx.cz -o StrictHostKeyChecking=no' /var/lib/prometheus/snapshots/${PROMETHEUS_SNAPSHOT_DIR}/ {{ backup_user }}@{{ backup_server }}:{{ backup_directory }}/prometheus/ > /dev/null && rm -rf /var/lib/prometheus/snapshots
     cron_file: backup-prometheus
 
 - name: Creates Backup HASS file /etc/cron.d/backup-hass
@@ -37,7 +37,7 @@
     minute: "0"
     hour: "3"
     user: root
-    job: rsync --archive --verbose --delete --log-file=/tmp/backup-hass.log -e "ssh -i /root/.ssh/id_ed25519-backup_raspi.xvx.cz -o StrictHostKeyChecking=no" /var/lib/hass_config {{ backup_user }}@{{ backup_server }}:{{ backup_directory }}/
+    job: HASS_BACKUP_FILE=$(ls -t {{ hass_config_directory }}/backups/*.tar | head -1) && rsync --archive --verbose --delete --log-file=/tmp/backup-hass.log --rsh='ssh -i /root/.ssh/id_ed25519-backup_raspi.xvx.cz -o StrictHostKeyChecking=no' "${HASS_BACKUP_FILE}" "{{ backup_user }}@{{ backup_server }}:{{ backup_directory }}/hass_config/hass_config_latest_backup.tar" > /dev/null && rm {{ hass_config_directory }}/backups/*.tar
     cron_file: backup-hass
 
 - name: Check if /var/log/restore-prometheus.log exists
@@ -54,9 +54,8 @@
         state: stopped
 
     - name: Restore Prometheus from backup # noqa: command-instead-of-module
-      ansible.builtin.shell:
-        cmd: |
-          rsync --archive --verbose --delete --log-file=/var/log/restore-prometheus.log --rsh='ssh -i /root/.ssh/id_ed25519-backup_raspi.xvx.cz -o StrictHostKeyChecking=no' {{ backup_user }}@{{ backup_server }}:{{ backup_directory }}/prometheus/ /var/lib/prometheus/
+      ansible.builtin.shell: |
+        rsync --archive --verbose --delete --log-file=/var/log/restore-prometheus.log --rsh='ssh -i /root/.ssh/id_ed25519-backup_raspi.xvx.cz -o StrictHostKeyChecking=no' {{ backup_user }}@{{ backup_server }}:{{ backup_directory }}/prometheus/ /var/lib/prometheus/
       changed_when: true
 
     - name: Start Prometheus
@@ -67,6 +66,27 @@
     - name: Print when errors
       ansible.builtin.fail:
         msg: Restore from backup failed
+
+- name: Check if /var/log/restore-hass.log exists
+  ansible.builtin.stat:
+    path: /var/log/restore-hass.log
+  register: hass_restore_log
+
+- name: Create HASS directory (/var/lib/hass_config)
+  when: not hass_restore_log.stat.exists
+  ansible.builtin.file:
+    path: /var/lib/hass_config
+    state: directory
+    recurse: true
+
+- name: Restore HASS from backup # noqa: command-instead-of-module
+  when: not hass_restore_log.stat.exists
+  ansible.builtin.shell: |
+    set -o pipefail
+    ssh -i /root/.ssh/id_ed25519-backup_raspi.xvx.cz -o StrictHostKeyChecking=no {{ backup_user }}@{{ backup_server }} 'cat {{ backup_directory }}/hass_config/hass_config_latest_backup.tar' | tar -xf - homeassistant.tar.gz --to-stdout | tar xvzf - -C "{{ hass_config_directory }}" --wildcards "data/home-assistant*" --strip-components=1 > /var/log/restore-hass.log
+  args:
+    executable: /bin/bash
+  changed_when: true
 
 #################################################
 # Cloudflared
@@ -182,7 +202,10 @@
   community.docker.docker_container:
     name: zigbee2mqtt
     image: docker.io/koenkk/zigbee2mqtt:1.40.2@sha256:40dca7e6ee816c84d6220daeb92cf20a52cf35446ec1d3ef0c2965a87cd397cc
-    image_name_mismatch: recreate
+    comparisons:
+      image: strict
+      labels: allow_more_present
+      volumes: allow_more_present
     volumes:
       - /run/dbus:/run/dbus:ro
       - /var/lib/zigbee2mqtt:/app/data
@@ -209,10 +232,10 @@
     state: directory
     recurse: true
 
-- name: Configure ESPHome (/var/lib/esphome/config/xiaomi-miija-lywsd03mmc.yaml)
+- name: Configure ESPHome (/var/lib/esphome/config/apollo-msr-2.yaml)
   ansible.builtin.template:
-    dest: /var/lib/esphome/config/xiaomi-miija-lywsd03mmc.yaml
-    src: files/var/lib/esphome/config/xiaomi-miija-lywsd03mmc.yaml
+    dest: /var/lib/esphome/config/apollo-msr-2.yaml
+    src: files/var/lib/esphome/config/apollo-msr-2.yaml.j2
     mode: u=rw,g=r,o=r
   notify: Restart esphome
 
@@ -220,7 +243,10 @@
   community.docker.docker_container:
     name: esphome
     image: ghcr.io/esphome/esphome:2024.9.2@sha256:3d1a2a6ad618d8d146ab3731c432a788cb7cdb5ab07abe227bc9315d99cf2e34
-    image_name_mismatch: recreate
+    comparisons:
+      image: strict
+      labels: allow_more_present
+      volumes: allow_more_present
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /var/lib/esphome/config:/config
@@ -239,32 +265,16 @@
 # Home Assistant
 #################################################
 
-- name: Check that the directory exists - {{ hass_config_directory }}
-  ansible.builtin.stat:
-    path: "{{ hass_config_directory }}"
-  register: hass_config_dir
-
-# - name: Check if there are any HASS backups
-#   ansible.builtin.find:
-#     paths: "{{ hass_backup_directory }}"
-#   register: hass_backups
-
-- name: Create hass config directory - {{ hass_config_directory }}
-  ansible.builtin.file:
-    path: "{{ hass_config_directory }}"
-    state: directory
-    mode: u=rwx,g=rx,o=rx
-
-- name: Copy config files for Home Assistant to {{ hass_config_directory }}
+- name: Copy config files for Home Assistant to {{ hass_config_directory }}/
   ansible.builtin.copy:
-    src: "{{ item.src }}"
-    dest: "{{ item.dest }}"
+    src: "{{ item }}"
+    dest: "{{ hass_config_directory }}/"
     mode: u=rw,g=r,o=r
   loop:
-    - dest: /var/lib/hass_config/automations.yaml
-      src: files/var/lib/hass_config/automations.yaml
-    - dest: /var/lib/hass_config/known_devices.yaml
-      src: files/var/lib/hass_config/known_devices.yaml
+    - files/{{ hass_config_directory }}/.storage
+    - files/{{ hass_config_directory }}/lovelace
+    - files/{{ hass_config_directory }}/known_devices.yaml
+    - files/{{ hass_config_directory }}/automations.yaml
   notify: Restart hass
 
 - name: Create config files for Home Assistant to {{ hass_config_directory }}
@@ -273,8 +283,8 @@
     dest: "{{ item.dest }}"
     mode: u=rw,g=r,o=r
   loop:
-    - dest: /var/lib/hass_config/configuration.yaml
-      src: files/var/lib/hass_config/configuration.yaml.j2
+    - dest: "{{ hass_config_directory }}/configuration.yaml"
+      src: files/{{ hass_config_directory }}/configuration.yaml.j2
   notify: Restart hass
 
 - name: Create secret file for Home Assistant to {{ hass_config_directory }}
@@ -283,51 +293,23 @@
     dest: "{{ item.dest }}"
     mode: u=rw,g=,o=
   loop:
-    - dest: /var/lib/hass_config/secrets.yaml
-      src: files/var/lib/hass_config/secrets.yaml.j2
+    - dest: "{{ hass_config_directory }}/secrets.yaml"
+      src: files/{{ hass_config_directory }}/secrets.yaml.j2
   no_log: true
   notify: Restart hass
-
-# - name: Restore Home Assistant configuration from backup
-#   when: not hass_config_dir.stat.exists and hass_backups.matched > 0
-#   notify: Restart hass
-#   block:
-#     - name: Unpack the tar backup
-#       ansible.builtin.unarchive:
-#         src: "{{ (hass_backups.files | sort(attribute='mtime') | last).path }}"
-#         dest: /tmp/
-#         include: "homeassistant.tar.gz"
-#         remote_src: true
-#       changed_when: false
-
-#     - name: Unpack the homeassistant.tar.gz
-#       ansible.builtin.unarchive:
-#         src: /tmp/homeassistant.tar.gz
-#         dest: "{{ hass_config_directory }}"
-#         extra_opts:
-#           - "--strip-components=1"
-#         remote_src: true
-#       changed_when: false
-
-#     - name: Delete /tmp/homeassistant.tar.gz
-#       ansible.builtin.file:
-#         path: /tmp/homeassistant.tar.gz
-#         state: absent
-#   rescue:
-#     - name: Print when errors
-#       ansible.builtin.fail:
-#         msg: Restore from backup failed
 
 - name: Home Assistant container
   community.docker.docker_container:
     name: home-assistant
     image: ghcr.io/home-assistant/home-assistant:2024.10.2@sha256:a6b2a25a4ae7d747506ad3a24bcaf1ee2290fb82811f077447b8847eecd29c56
-    image_name_mismatch: recreate
+    comparisons:
+      image: strict
+      labels: allow_more_present
+      volumes: allow_more_present
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /run/dbus:/run/dbus:ro
       - "{{ hass_config_directory }}:/config"
-      - "{{ hass_backup_directory }}:/config/backups"
     network_mode: host
     privileged: true
     labels:
@@ -338,6 +320,19 @@
       homepage.description: Open source home automation that puts local control and privacy first.
     restart_policy: always
     timeout: "{{ docker_container_timeout }}"
+  notify: Restart hass
+
+- name: Wait for HASS to be started
+  when: not hass_restore_log.stat.exists
+  ansible.builtin.wait_for:
+    port: 8123
+
+- name: Install HACS
+  when: not hass_restore_log.stat.exists
+  community.docker.docker_container_exec:
+    container: home-assistant
+    command: bash -c "wget -O - https://get.hacs.xyz | bash -"
+    chdir: /config
   notify: Restart hass
 
 #################################################
@@ -352,28 +347,22 @@
 
 - name: Copy config files for homepage to /var/lib/homepage/config
   ansible.builtin.template:
-    src: "{{ item.src }}"
-    dest: "{{ item.dest }}"
+    src: "{{ item }}"
+    dest: "/var/lib/homepage/config/{{ item | basename | regex_replace('\\.j2$', '') }}"
     mode: u=rw,g=r,o=r
+  with_fileglob:
+    - files/var/lib/homepage/config/*.j2
   no_log: true
-  loop:
-    - dest: /var/lib/homepage/config/bookmarks.yaml
-      src: files/var/lib/homepage/config/bookmarks.yaml.j2
-    - dest: /var/lib/homepage/config/docker.yaml
-      src: files/var/lib/homepage/config/docker.yaml.j2
-    - dest: /var/lib/homepage/config/widgets.yaml
-      src: files/var/lib/homepage/config/widgets.yaml.j2
-    - dest: /var/lib/homepage/config/services.yaml
-      src: files/var/lib/homepage/config/services.yaml.j2
-    - dest: /var/lib/homepage/config/settings.yaml
-      src: files/var/lib/homepage/config/settings.yaml.j2
   notify: Restart homepage
 
 - name: Homepage container
   community.docker.docker_container:
     name: homepage
     image: ghcr.io/gethomepage/homepage:v0.9.10@sha256:671c2ed1a61b5dfbb9a1998c8738c3aeb1acf11adbc12563f81fcf4fd9802198
-    image_name_mismatch: recreate
+    comparisons:
+      image: strict
+      labels: allow_more_present
+      volumes: allow_more_present
     volumes:
       - /var/lib/homepage/config:/app/config
       - /var/run/docker.sock:/var/run/docker.sock:ro
