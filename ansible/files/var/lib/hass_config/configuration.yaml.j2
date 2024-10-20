@@ -4,9 +4,9 @@
 
 homeassistant:
   name: Home, Sweet Home...
-  latitude: {{ hass_latitude }}
-  longitude: {{ hass_longitude}}
-  elevation: {{ hass_elevation}}
+  latitude: 49.2078594
+  longitude: 16.5492591
+  elevation: 240
   currency: CZK
   country: CZ
   time_zone: {{ timezone }}
@@ -34,6 +34,46 @@ http:
     - ::1
     - {{ ansible_default_ipv4.address }}
 
+lovelace:
+  mode: yaml
+  dashboards:
+    lovelace-rpi-xvx-cz:
+      mode: yaml
+      filename: lovelace/sidebar_url_rpi_xvx_cz.yaml
+      title: RPi
+      icon: mdi:home-outline
+      show_in_sidebar: true
+    lovelace-esphome-xvx-cz:
+      mode: yaml
+      filename: lovelace/sidebar_url_esphome_xvx_cz.yaml
+      title: ESPHome
+      icon: mdi:chip
+      show_in_sidebar: true
+    lovelace-grafana-xvx-cz:
+      mode: yaml
+      filename: lovelace/sidebar_url_grafana_xvx_cz.yaml
+      title: Grafana
+      icon: mdi:chart-timeline
+      show_in_sidebar: true
+    lovelace-prometheus-xvx-cz:
+      mode: yaml
+      filename: lovelace/sidebar_url_prometheus_xvx_cz.yaml
+      title: Prometheus
+      icon: mdi:chart-pie
+      show_in_sidebar: true
+    lovelace-uzg-01-xvx-cz:
+      mode: yaml
+      filename: lovelace/sidebar_url_uzg-01_xvx_cz.yaml
+      title: UZG Gateway
+      icon: mdi:zigbee
+      show_in_sidebar: true
+    lovelace-zigbee2mqtt-xvx-cz:
+      mode: yaml
+      filename: lovelace/sidebar_url_zigbee2mqtt_xvx_cz.yaml
+      title: Zigbee2MQTT
+      icon: mdi:graphql
+      show_in_sidebar: true
+
 logger:
   default: warn
   filters:
@@ -60,38 +100,6 @@ notify:
     server: smtp.gmail.com
     timeout: 15
     username: !secret smtp_gmail_auth_user
-
-# panel_iframe:
-#   esphome:
-#     title: ESPHome
-#     icon: mdi:chip
-#     url: https://esphome-rpi.xvx.cz
-#     require_admin: true
-#   grafana:
-#     title: Grafana
-#     icon: mdi:chart-timeline
-#     url: {{ grafana_url }}
-#     require_admin: true
-#   prometheus:
-#     title: Prometheus
-#     icon: mdi:chart-pie
-#     url: {{ prometheus_web_external_url }}
-#     require_admin: true
-#   uzg_01:
-#     title: UZG-01
-#     url: https://uzg-01.xvx.cz
-#     icon: mdi:zigbee
-#     require_admin: true
-#   msr-2:
-#     title: Apollo MSR-2
-#     url: http://192.168.1.3
-#     icon: mdi:motion-sensor
-#     require_admin: true
-#   zigbee2mqtt:
-#     title: Zigbee2Mqtt
-#     url: https://zigbee2mqtt-rpi.xvx.cz
-#     icon: mdi:graphql
-#     require_admin: true
 
 recorder:
   purge_keep_days: 7

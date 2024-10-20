@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "minor_version": 7,
+  "key": "core.area_registry",
+  "data": {
+    "areas": [
+      {
+        "aliases": [],
+        "floor_id": null,
+        "icon": "mdi:sofa",
+        "id": "living_room",
+        "labels": [],
+        "name": "Living Room",
+        "picture": null,
+        "created_at": "2024-10-13T19:39:14.879317+00:00",
+        "modified_at": "2024-10-20T12:35:38.864021+00:00"
+      },
+      {
+        "aliases": [],
+        "floor_id": null,
+        "icon": "mdi:table-chair",
+        "id": "kitchen",
+        "labels": [],
+        "name": "Kitchen",
+        "picture": null,
+        "created_at": "2024-10-13T19:39:14.879599+00:00",
+        "modified_at": "2024-10-20T12:35:23.018982+00:00"
+      },
+      {
+        "aliases": [],
+        "floor_id": null,
+        "icon": "mdi:bed",
+        "id": "bedroom",
+        "labels": [],
+        "name": "Bedroom",
+        "picture": null,
+        "created_at": "2024-10-13T19:39:14.879708+00:00",
+        "modified_at": "2024-10-20T12:34:59.059091+00:00"
+      },
+      {
+        "aliases": [],
+        "floor_id": null,
+        "icon": "mdi:shoe-formal",
+        "id": "hall",
+        "labels": [],
+        "name": "Hall",
+        "picture": null,
+        "created_at": "2024-10-20T12:33:33.221228+00:00",
+        "modified_at": "2024-10-20T12:36:25.867362+00:00"
+      }
+    ]
+  }
+}

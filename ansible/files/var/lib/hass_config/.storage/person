@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "minor_version": 1,
+  "key": "person",
+  "data": {
+    "items": [
+      {
+        "id": "petr_ruzicka",
+        "name": "Petr Ruzicka",
+        "user_id": "7eda3566cf7b4cf499d7796692626f7b",
+        "device_trackers": []
+      }
+    ]
+  }
+}
