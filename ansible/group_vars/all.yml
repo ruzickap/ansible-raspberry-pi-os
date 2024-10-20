@@ -17,7 +17,7 @@ alloy_grafana_cloud_password: !vault |
   65356337653837646236356365646465353164383438303065356266313435306161353931383833
   61396530373230316435
 # renovate: datasource=github-tags depName=grafana/alloy
-alloy_grafana_version: 1.4.2
+alloy_grafana_version: 1.4.3
 
 backup_directory: /mnt/backups/raspi
 backup_server: 192.168.1.1
