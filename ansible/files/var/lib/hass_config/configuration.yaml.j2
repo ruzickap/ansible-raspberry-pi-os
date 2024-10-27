@@ -82,12 +82,6 @@ logger:
     py.warnings:
       - "InsecureRequestWarning: Unverified HTTPS request is being made to host.*"
 
-# mqtt:
-#   broker: 127.0.0.1
-#   port: 1883
-#   username: {{ mqtt_clients.homeassistant.user }}
-#   password: {{ mqtt_clients.homeassistant.password }}
-
 notify:
   - name: notify_smtp_gmail
     encryption: starttls
@@ -100,6 +94,9 @@ notify:
     server: smtp.gmail.com
     timeout: 15
     username: !secret smtp_gmail_auth_user
+
+prometheus:
+  namespace: hass
 
 recorder:
   purge_keep_days: 7

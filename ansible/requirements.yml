@@ -17,6 +17,3 @@ roles:
   - name: geerlingguy.firewall
     src: https://github.com/geerlingguy/ansible-role-firewall.git
     version: master
-  - name: oefenweb.fail2ban
-    src: https://github.com/Oefenweb/ansible-fail2ban.git
-    version: master

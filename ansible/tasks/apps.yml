@@ -75,7 +75,7 @@
 - name: Create HASS directory (/var/lib/hass_config)
   when: not hass_restore_log.stat.exists
   ansible.builtin.file:
-    path: /var/lib/hass_config
+    path: /var/lib/hass_config/blueprints/automation/homeassistant
     state: directory
     recurse: true
 
@@ -87,6 +87,28 @@
   args:
     executable: /bin/bash
   changed_when: true
+
+#################################################
+# Prometheus
+#################################################
+
+- name: Create HASS scape config for Prometheus (/etc/prometheus/scrapes/hass.yml)
+  ansible.builtin.copy:
+    dest: /etc/prometheus/scrapes/hass.yml
+    content: |
+      scrape_configs:
+        - job_name: hass
+          scrape_interval: 60s
+          metrics_path: /api/prometheus
+          bearer_token: "{{ prometheus_hass_bearer_token }}"
+          static_configs:
+            - targets:
+                - 127.0.0.1:8123
+    mode: u=rw,g=,o=
+    owner: prometheus
+    group: prometheus
+  no_log: true
+  notify: Restart prometheus
 
 #################################################
 # Cloudflared
@@ -265,6 +287,16 @@
 # Home Assistant
 #################################################
 
+- name: Download automation/blueprints files
+  ansible.builtin.get_url:
+    url: "{{ item }}"
+    dest: "{{ hass_config_directory }}/blueprints/automation/homeassistant/{{ item }}"
+    mode: u=rw,g=r,o=r
+  loop:
+    - https://raw.githubusercontent.com/home-assistant/core/refs/heads/dev/homeassistant/components/automation/blueprints/motion_light.yaml
+    - https://raw.githubusercontent.com/home-assistant/core/refs/heads/dev/homeassistant/components/automation/blueprints/notify_leaving_zone.yaml
+  notify: Restart hass
+
 - name: Copy config files for Home Assistant to {{ hass_config_directory }}/
   ansible.builtin.copy:
     src: "{{ item }}"
@@ -410,26 +442,6 @@
     dest: /etc/systemd/system/default.target
     state: link
 
-- name: Create Kodi addon directory (/home/kodi/.kodi/addons)
-  ansible.builtin.file:
-    path: /home/kodi/.kodi/addons
-    state: directory
-    recurse: true
-    owner: kodi
-    group: kodi
-
-- name: Get the latest version of YouTube Kodi plugin
-  ansible.builtin.uri:
-    url: https://api.github.com/repos/anxdpanic/plugin.video.youtube/releases/latest
-  register: github_api_youtube_kodi_plugin
-
-- name: Download and unpack the YouTube Kodi plugin
-  ansible.builtin.unarchive:
-    src: "{{ github_api_youtube_kodi_plugin.json.assets[0].browser_download_url }}"
-    dest: /home/kodi/.kodi/addons/
-    remote_src: true
-    creates: /home/kodi/.kodi/addons/plugin.video.youtube
-
 - name: Copy Kodi configuration files
   ansible.posix.synchronize:
     src: home/kodi/.kodi
@@ -471,13 +483,6 @@
 - name: Wait for Kodi to be started
   ansible.builtin.wait_for:
     port: 8080
-
-- name: Enable YouTube Kodi plugin in database
-  ansible.builtin.command: sqlite3 /home/kodi/.kodi/userdata/Database/Addons33.db "UPDATE installed SET enabled = 1 WHERE addonID = 'plugin.video.youtube'"
-  register: result
-  until: result is succeeded
-  delay: 10
-  changed_when: false
 
 - name: Enable Kodi Visualization addon spectrum
   ansible.builtin.command: sqlite3 /home/kodi/.kodi/userdata/Database/Addons33.db "UPDATE installed SET enabled = 1 WHERE addonID = '{{ item }}'"
