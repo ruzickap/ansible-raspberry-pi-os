@@ -41,11 +41,21 @@
       matchUpdateTypes: ["minor"],
       schedule: ["* * * * 0"],
     },
+    {
+      automerge: true,
+      commitBody: "[skip ci]",
+      description: "Automerge all patch, pin and digest updates for custom.regex without running any tests",
+      ignoreTests: true,
+      matchManagers: ["custom.regex"],
+      matchUpdateTypes: ["patch", "pin", "digest"],
+    },
   ],
   prBodyTemplate: "{{{table}}}{{{notes}}}{{{changelogs}}}",
   rebaseWhen: "behind-base-branch",
-  regexManagers: [
+  customManagers: [
     {
+      description: 'Regular expressions inside md, YAML, Dockerfile or entrypoint.sh looking for "# renovate:" comments',
+      customType: 'regex',
       extractVersionTemplate: "{{#if extractVersion}}{{{extractVersion}}}{{else}}^v?(?<version>.+)${{/if}}",
       fileMatch: ["\\.ya?ml$", "\\.md$", "^Dockerfile$", "^entrypoint\\.sh$"],
       matchStrings: [

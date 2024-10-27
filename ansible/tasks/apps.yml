@@ -290,7 +290,7 @@
 - name: Download automation/blueprints files
   ansible.builtin.get_url:
     url: "{{ item }}"
-    dest: "{{ hass_config_directory }}/blueprints/automation/homeassistant/{{ item }}"
+    dest: "{{ hass_config_directory }}/blueprints/automation/homeassistant/{{ item | basename }}"
     mode: u=rw,g=r,o=r
   loop:
     - https://raw.githubusercontent.com/home-assistant/core/refs/heads/dev/homeassistant/components/automation/blueprints/motion_light.yaml
