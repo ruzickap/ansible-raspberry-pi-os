@@ -8,7 +8,7 @@
       action: backup.create
 
 - alias: "ERRORs in System Log - Counter"
-  id: 3b8230a5-49d5-437b-8bd9-d3f72f95425f
+  id: errors_in_system_log
   trigger:
     platform: event
     event_type: system_log_event
@@ -21,7 +21,7 @@
       entity_id: counter.syslog_errors
 
 - alias: "WARNINGs in System Log - Counter"
-  id: acdf3489-b611-445c-bd24-2efc9c431124
+  id: warnings_in_system_log
   trigger:
     platform: event
     event_type: system_log_event
@@ -32,3 +32,18 @@
   action:
     - service: counter.increment
       entity_id: counter.syslog_warnings
+
+- alias: Turn on the light when motion is detected in the living room
+  id: turn_on_light_when_motion_detected_in_living_room
+  description: Turn on the light when motion is detected in the living room using Sonoff SNZB-06P and Ikea TRADFRI bulb
+  condition:
+    - condition: sun
+      before: sunrise
+      after: sunset
+  use_blueprint:
+    path: homeassistant/motion_light.yaml
+    input:
+      motion_entity: binary_sensor.sonoff_snzb_06p_occupancy
+      light_target:
+        device_id: 34f42b798b861194e358e400a59ca1e5
+      no_motion_wait: 20
