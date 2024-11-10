@@ -92,9 +92,9 @@
 # Prometheus
 #################################################
 
-- name: Create HASS scape config for Prometheus (/etc/prometheus/scrapes/hass.yml)
+- name: Create HASS scape config for Prometheus (/etc/prometheus/scrape_configs/hass.yml)
   ansible.builtin.copy:
-    dest: /etc/prometheus/scrapes/hass.yml
+    dest: /etc/prometheus/scrape_configs/hass.yml
     content: |
       scrape_configs:
         - job_name: hass
@@ -256,9 +256,23 @@
 
 - name: Configure ESPHome (/var/lib/esphome/config/apollo-msr-2.yaml)
   ansible.builtin.template:
-    dest: /var/lib/esphome/config/apollo-msr-2.yaml
-    src: files/var/lib/esphome/config/apollo-msr-2.yaml.j2
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
     mode: u=rw,g=r,o=r
+  loop:
+    - dest: /var/lib/esphome/config/apollo-msr-2-f585f4.yaml
+      src: files/var/lib/esphome/config/apollo-msr-2-f585f4.yaml.j2
+  notify: Restart esphome
+
+- name: Create secret file for ESPHome
+  ansible.builtin.template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: u=rw,g=,o=
+  loop:
+    - dest: /var/lib/esphome/config/secrets.yaml
+      src: files/var/lib/esphome/config/secrets.yaml.j2
+  no_log: true
   notify: Restart esphome
 
 - name: ESPHome container
@@ -272,8 +286,8 @@
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /var/lib/esphome/config:/config
-    ports:
-      - 6052:6052
+    # This is needed for the mDNS - no autodiscovery without it
+    network_mode: host
     labels:
       homepage.group: Containers
       homepage.name: ESPHome

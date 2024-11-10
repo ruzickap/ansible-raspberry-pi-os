@@ -29,8 +29,8 @@
     - role: grafana.grafana.alloy
       vars:
         alloy_user_groups: ["adm", "docker"]
-        config: "{{ lookup('ansible.builtin.template', 'files/etc/alloy/config.alloy.j2') }}"
-        version: "{{ alloy_grafana_version }}"
+        alloy_config: "{{ lookup('ansible.builtin.template', 'files/etc/alloy/config.alloy.j2') }}"
+        alloy_version: "{{ alloy_grafana_version }}"
     - role: prometheus.prometheus.prometheus
     - role: prometheus.prometheus.blackbox_exporter
     - role: prometheus.prometheus.cadvisor
