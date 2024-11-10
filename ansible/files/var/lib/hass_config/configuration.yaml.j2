@@ -16,6 +16,7 @@ homeassistant:
 # Features
 #################################################
 
+# keep-sorted start newline_separated=yes
 automation: !include automations.yaml
 
 default_config:
@@ -33,6 +34,14 @@ http:
     - 127.0.0.1
     - ::1
     - {{ ansible_default_ipv4.address }}
+
+logger:
+  default: warn
+  filters:
+    homeassistant.loader:
+      - "We found a custom integration .* which has not been tested by Home Assistant.*"
+    py.warnings:
+      - "InsecureRequestWarning: Unverified HTTPS request is being made to host.*"
 
 lovelace:
   mode: yaml
@@ -74,14 +83,6 @@ lovelace:
       icon: mdi:graphql
       show_in_sidebar: true
 
-logger:
-  default: warn
-  filters:
-    homeassistant.loader:
-      - "We found a custom integration .* which has not been tested by Home Assistant.*"
-    py.warnings:
-      - "InsecureRequestWarning: Unverified HTTPS request is being made to host.*"
-
 notify:
   - name: notify_smtp_gmail
     encryption: starttls
@@ -100,3 +101,4 @@ prometheus:
 
 recorder:
   purge_keep_days: 7
+# keep-sorted end

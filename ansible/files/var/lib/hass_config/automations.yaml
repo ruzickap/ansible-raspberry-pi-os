@@ -1,12 +1,4 @@
-- alias: Backup Home Assistant every night at 2 AM
-  id: system_backup_home_assistant_nightly
-  triggers:
-    - trigger: time
-      at: "02:00:00"
-  actions:
-    - alias: "Create backup {{ now().strftime('%Y-%m-%d') }}"
-      action: backup.create
-
+# keep-sorted start newline_separated=yes
 - alias: "ERRORs in System Log - Counter"
   id: errors_in_system_log
   trigger:
@@ -33,6 +25,15 @@
     - service: counter.increment
       entity_id: counter.syslog_warnings
 
+- alias: Backup Home Assistant every night at 2 AM
+  id: system_backup_home_assistant_nightly
+  triggers:
+    - trigger: time
+      at: "02:00:00"
+  actions:
+    - alias: "Create backup {{ now().strftime('%Y-%m-%d') }}"
+      action: backup.create
+
 - alias: Turn on the light when motion is detected in the living room
   id: turn_on_light_when_motion_detected_in_living_room
   description: Turn on the light when motion is detected in the living room using Sonoff SNZB-06P and Ikea TRADFRI bulb
@@ -47,3 +48,4 @@
       light_target:
         device_id: 34f42b798b861194e358e400a59ca1e5
       no_motion_wait: 20
+# keep-sorted end

@@ -1,50 +1,9 @@
-cc_08_fa_aa_a1_02:
-  name: Petr's MacBook Air - M-MT912CY9MQ
-  mac: CC:08:FA:AA:A1:02
-  icon: mdi:laptop
-  picture: https://raw.githubusercontent.com/simple-icons/simple-icons/521c96fd04b0ea93034db8715eda5a4de27a58bb/icons/apple.svg
-  track: true
-
+# keep-sorted start newline_separated=yes
 2c_6d_c1_c8_15_95:
   name: Andy's Laptop - LAPTOP-5OVKG7VB
   mac: 2C:6D:C1:C8:15:95
   icon: mdi:laptop
   picture:
-  track: true
-
-9a_42_12_45_1e_12:
-  name: Andy's Phone - Galaxy-S10e
-  mac: 9A:42:12:45:1E:12
-  icon: mdi:cellphone-basic
-  picture:
-  track: true
-
-48_6d_bb_f4_02_14:
-  name: TV in the living room - JVC-TV
-  mac: 48:6D:BB:F4:02:14
-  icon: mdi:television
-  picture:
-  track: true
-
-cc_db_a7_36_45_17:
-  name: Universal ZigBee Gateway
-  mac: CC:DB:A7:36:45:17
-  icon: mdi:zigbee
-  picture: https://avatars.githubusercontent.com/u/5508130?v=4
-  track: true
-
-f0_f5_bd_f5_85_f4:
-  name: Apollo MSR-2
-  mac: F0:F5:BD:F5:85:F4
-  icon: mdi:motion-sensor
-  picture: https://raw.githubusercontent.com/ApolloAutomation/docs/7c110c74481441d464acffb3785c5e6c75230944/docs/assets/favicon.png
-  track: true
-
-dc_a6_32_0e_bd_14:
-  name: Raspberry Pi 4
-  mac: DC:A6:32:0E:BD:14
-  icon: mdi:raspberry-pi
-  picture: https://raw.githubusercontent.com/simple-icons/simple-icons/55d2e2aa414d7e8fd341d8f323069eb5c582f75a/icons/raspberrypi.svg
   track: true
 
 32_c2_6d_a8_32_54:
@@ -61,9 +20,52 @@ dc_a6_32_0e_bd_14:
   picture:
   track: true
 
+48_6d_bb_f4_02_14:
+  name: TV in the living room - JVC-TV
+  mac: 48:6D:BB:F4:02:14
+  icon: mdi:television
+  picture:
+  track: true
+
+9a_42_12_45_1e_12:
+  name: Andy's Phone - Galaxy-S10e
+  mac: 9A:42:12:45:1E:12
+  icon: mdi:cellphone-basic
+  picture:
+  track: true
+
 a0_f3_c1_1b_de_a6:
   name: Bozena's Laptop
   mac: A0:F3:C1:1B:DE:A6
   icon:
   picture:
   track: true
+
+cc_08_fa_aa_a1_02:
+  name: Petr's MacBook Air - M-MT912CY9MQ
+  mac: CC:08:FA:AA:A1:02
+  icon: mdi:laptop
+  picture: https://raw.githubusercontent.com/simple-icons/simple-icons/521c96fd04b0ea93034db8715eda5a4de27a58bb/icons/apple.svg
+  track: true
+
+cc_db_a7_36_45_17:
+  name: Universal ZigBee Gateway
+  mac: CC:DB:A7:36:45:17
+  icon: mdi:zigbee
+  picture: https://avatars.githubusercontent.com/u/5508130?v=4
+  track: true
+
+dc_a6_32_0e_bd_14:
+  name: Raspberry Pi 4
+  mac: DC:A6:32:0E:BD:14
+  icon: mdi:raspberry-pi
+  picture: https://raw.githubusercontent.com/simple-icons/simple-icons/55d2e2aa414d7e8fd341d8f323069eb5c582f75a/icons/raspberrypi.svg
+  track: true
+
+f0_f5_bd_f5_85_f4:
+  name: Apollo MSR-2
+  mac: F0:F5:BD:F5:85:F4
+  icon: mdi:motion-sensor
+  picture: https://raw.githubusercontent.com/ApolloAutomation/docs/7c110c74481441d464acffb3785c5e6c75230944/docs/assets/favicon.png
+  track: true
+# keep-sorted end
