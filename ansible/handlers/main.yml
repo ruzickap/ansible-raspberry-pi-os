@@ -1,6 +1,15 @@
+# keep-sorted start newline_separated=yes
+- name: Reboot
+  ansible.builtin.reboot:
+
 - name: Reload systemd
   ansible.builtin.systemd_service:
     daemon_reload: true
+
+- name: Restart NetworkManager
+  ansible.builtin.systemd_service:
+    name: NetworkManager
+    state: restarted
 
 - name: Restart cadvisor
   community.docker.docker_container:
@@ -49,19 +58,10 @@
     name: mosquitto
     state: restarted
 
-- name: Restart NetworkManager
-  ansible.builtin.systemd_service:
-    name: NetworkManager
-    state: restarted
-
 - name: Restart prometheus
   ansible.builtin.systemd_service:
     name: prometheus
     state: restarted
-
-- name: Reload systemd
-  ansible.builtin.systemd_service:
-    daemon_reload: true
 
 - name: Restart sshd
   ansible.builtin.systemd_service:
@@ -73,6 +73,4 @@
     name: zigbee2mqtt
     restart: true
     state: started
-
-- name: Reboot
-  ansible.builtin.reboot:
+# keep-sorted end

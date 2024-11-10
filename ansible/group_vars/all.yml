@@ -1,6 +1,5 @@
-alloy_grafana_cloud_prometheus_url: "https://prometheus-prod-24-prod-eu-west-2.grafana.net/api/prom/push"
+# keep-sorted start
 alloy_grafana_cloud_loki_url: "https://logs-prod-012.grafana.net/loki/api/v1/push"
-alloy_grafana_cloud_prometheus_username: 1623667
 alloy_grafana_cloud_loki_username: 911770
 alloy_grafana_cloud_password: !vault |
   $ANSIBLE_VAULT;1.1;AES256
@@ -16,13 +15,13 @@ alloy_grafana_cloud_password: !vault |
   62333731646265363734616630383764663233346633316635353030616432636562386165613637
   65356337653837646236356365646465353164383438303065356266313435306161353931383833
   61396530373230316435
+alloy_grafana_cloud_prometheus_url: "https://prometheus-prod-24-prod-eu-west-2.grafana.net/api/prom/push"
+alloy_grafana_cloud_prometheus_username: 1623667
 # renovate: datasource=github-tags depName=grafana/alloy
 alloy_grafana_version: 1.4.3
-
 backup_directory: /mnt/backups/raspi
 backup_server: 192.168.1.1
 backup_user: root
-
 blackbox_exporter_configuration_modules:
   http_2xx:
     prober: http
@@ -39,17 +38,14 @@ blackbox_exporter_configuration_modules:
     tcp:
       query_response:
         - expect: "^SSH-2.0-"
-blackbox_exporter_web_listen_address: 127.0.0.1:9115
 # renovate: datasource=github-tags depName=prometheus/blackbox_exporter
 blackbox_exporter_version: 0.25.0
-
-boot_config_parameters: |
-  hdmi_ignore_cec_init=1
-
+blackbox_exporter_web_listen_address: 127.0.0.1:9115
 # https://thesmarthomejourney.com/2022/08/01/fixing-cadvisor-cpu/
 # https://github.com/docker/for-linux/issues/1112 - Grafana -> Cadvisor exprter -> Memory
 boot_cmdline_parameters: cgroup_enable=cpuset cgroup_enable=memory
-
+boot_config_parameters: |
+  hdmi_ignore_cec_init=1
 # https://github.com/google/cadvisor/blob/master/docs/storage/prometheus.md
 cadvisor_enable_metrics:
   - cpu
@@ -63,7 +59,6 @@ cadvisor_listen_ip: 127.0.0.1
 cadvisor_port: 8085
 # renovate: datasource=github-tags depName=google/cadvisor
 cadvisor_version: 0.50.0
-
 cloudflared_tunnel_token: !vault |
   $ANSIBLE_VAULT;1.1;AES256
   61386264633135323137636536353563393864653738383665643535393637633262653132336435
@@ -79,11 +74,9 @@ cloudflared_tunnel_token: !vault |
   35313233366131366561663262323739643837333337373232313538366232653566353530646564
   34353230353638643139623238646237313961333966383164653036656339346436363730616164
   38663333653834396562353535363131353031636539653130643134373437626338
-
 docker_config:
   metrics-addr: 127.0.0.1:9323
 docker_container_timeout: 500
-
 esphome_api_encryption_key: !vault |
   $ANSIBLE_VAULT;1.1;AES256
   35666264643066363966666162656436333232663039306239653164646637646264306164323734
@@ -99,7 +92,6 @@ esphome_ota_password: !vault |
   35303937663366333661626662623239336536646363376635616639623032383862333133363836
   3330663064626461640a353662383031623866663630303833326631383238363163326265636235
   3837
-esphome_web_server_username: admin
 esphome_web_server_password: !vault |
   $ANSIBLE_VAULT;1.1;AES256
   32653634643863333930306135363138336432313433613638613635663936643061376335613036
@@ -107,15 +99,24 @@ esphome_web_server_password: !vault |
   65376664356633656434393065636266396439633762633563623435613837663435343165306637
   6634663431373061620a396638633134323436663336643665636466346464343762643235666435
   3033
-
-firewall_log_dropped_packets: false
-firewall_allowed_tcp_ports: "{{ fw_allowed_tcp_ports }}"
-firewall_allowed_udp_ports: "{{ fw_allowed_udp_ports }}"
-firewall_forwarded_tcp_ports: "{{ fw_forwarded_tcp_ports }}"
+esphome_web_server_username: admin
 firewall_additional_rules:
   - "iptables -A INPUT -m pkttype --pkt-type multicast -j ACCEPT"
   - "iptables -t nat -A POSTROUTING -o {{ ansible_default_ipv4.interface }} -j MASQUERADE"
-
+firewall_allowed_tcp_ports: "{{ fw_allowed_tcp_ports }}"
+firewall_allowed_udp_ports: "{{ fw_allowed_udp_ports }}"
+firewall_forwarded_tcp_ports: "{{ fw_forwarded_tcp_ports }}"
+firewall_log_dropped_packets: false
+fw_allowed_tcp_ports:
+  - 22 # SSH
+  - 22222 # SSH
+  - 1883 # MQTT
+fw_allowed_udp_ports:
+  - 1883 # MQTT
+  - 5353 # mDNS - avahi-daemon
+fw_forwarded_tcp_ports:
+  - src: 22222
+    dest: 22
 grafana_address: 127.0.0.1
 grafana_auth:
   disable_login_form: true
@@ -187,22 +188,8 @@ grafana_smtp:
 grafana_url: https://grafana-rpi.xvx.cz
 # renovate: datasource=github-tags depName=grafana/grafana
 grafana_version: 11.3.0
-
-fw_allowed_tcp_ports:
-  - 22 # SSH
-  - 22222 # SSH
-  - 1883 # MQTT
-
-fw_forwarded_tcp_ports:
-  - src: 22222
-    dest: 22
-
-fw_allowed_udp_ports:
-  - 1883 # MQTT
-  - 5353 # mDNS - avahi-daemon
-
-hass_url: https://hass-rpi.xvx.cz
 hass_config_directory: /var/lib/hass_config
+hass_url: https://hass-rpi.xvx.cz
 hass_user_password: !vault |
   $ANSIBLE_VAULT;1.1;AES256
   36383761353565313761323366353930616534613838613735633633363033383030396133643835
@@ -210,10 +197,8 @@ hass_user_password: !vault |
   66393035343037636638643933353939313464323333336163633765653764363563653435393830
   3635363639363234300a376261343464316232363230393131393239623637353433313330623266
   6330
-
 kernel_modules:
   - nf_conntrack
-
 kodi_guisettings_services_webserverpassword: !vault |
   $ANSIBLE_VAULT;1.1;AES256
   38653764613033376437363965616337613533393763393030393939623063393862663930393237
@@ -221,7 +206,6 @@ kodi_guisettings_services_webserverpassword: !vault |
   62663962323935663061396362306636643864313963336136303263643736393936643334653831
   6431633335363932380a636264393537646664613734326231306262396536366334386431393464
   3430
-
 mqtt_clients:
   zigbee2mqtt:
     user: zigbee2mqtt
@@ -241,20 +225,16 @@ mqtt_clients:
       63623263643735373938613736623266643566393366383032353939343131646636643636366134
       3866393337393363360a316465663163363133623034646330396132366466656637313837373630
       3064
-
 node_exporter_enabled_collectors:
   - interrupts
   - processes
   - systemd
   - tcpstat
-node_exporter_web_listen_address: 127.0.0.1:9100
 # renovate: datasource=github-tags depName=prometheus/node_exporter
 node_exporter_version: 1.8.2
-
+node_exporter_web_listen_address: 127.0.0.1:9100
 notification_email: petr.ruzicka@gmail.com
-
 ntp_server: ntp.nic.cz
-
 openwrt_homepage_password: !vault |
   $ANSIBLE_VAULT;1.1;AES256
   39376338353166656232346336363530626162653966646332646338343366666233623462333834
@@ -263,7 +243,6 @@ openwrt_homepage_password: !vault |
   3539656331623863610a346161356665383135326561306165633233313263616162326133393830
   39353731313037303732643034346165623037666239636333346231313539373731
 openwrt_ip: 192.168.1.1
-openwrt_luci_user: root
 openwrt_luci_password: !vault |
   $ANSIBLE_VAULT;1.1;AES256
   31353335376662303038633537356637663461303963396433653738303239323761616235353664
@@ -271,7 +250,7 @@ openwrt_luci_password: !vault |
   30363332313963616137386434393338653736643634356432323361373565306634623062333165
   3066616463613265390a346137636634636163383630666533363433636536333938323139386361
   3861
-
+openwrt_luci_user: root
 prometheus_config_flags_extra:
   web.enable-admin-api:
 prometheus_global:
@@ -400,14 +379,12 @@ prometheus_storage_retention_size: 5GB
 prometheus_version: 2.55.1
 prometheus_web_external_url: https://prometheus-rpi.xvx.cz
 prometheus_web_listen_address: 127.0.0.1:9090
-
 rpi_disable_boot_services:
   - console-setup
   - dnsmasq
   - hciuart
   - ModemManager
   - triggerhappy
-
 rpi_packages:
   - bsd-mailx
   - dma
@@ -424,7 +401,6 @@ rpi_packages:
   - telnet
   - unattended-upgrades
   - vim
-
 rpi_password: !vault |
   $ANSIBLE_VAULT;1.1;AES256
   64396630623531333366363238336262323836616539343733376566376235363531626436323766
@@ -432,8 +408,6 @@ rpi_password: !vault |
   34633631376264663737316632343431366634393963653231343033343736663666356164323266
   3966613839626662300a326336306163353738656265383662656466656530383830373461623531
   3234
-
-smtp_gmail_auth_user: my.user.mbox@gmail.com
 smtp_gmail_auth_password: !vault |
   $ANSIBLE_VAULT;1.1;AES256
   30383831616336336365303963343030386233646130313239633937666662393234316538396432
@@ -441,13 +415,11 @@ smtp_gmail_auth_password: !vault |
   34346237616238313630613965313462336131356664353632613733333439663864303139326335
   3862666238383439660a383065633337663734343633636635323763393132306164303662323864
   32613061646137646163643864356537616236626534373533323833333465393537
-
-systemd_exporter_web_listen_address: 127.0.0.1:9558
+smtp_gmail_auth_user: my.user.mbox@gmail.com
 # renovate: datasource=github-tags depName=prometheus-community/systemd_exporter
 systemd_exporter_version: 0.6.0
-
+systemd_exporter_web_listen_address: 127.0.0.1:9558
 timezone: Europe/Prague
-
 transmission_ip: 192.168.1.1
 transmission_rpc_password: !vault |
   $ANSIBLE_VAULT;1.1;AES256
@@ -456,7 +428,6 @@ transmission_rpc_password: !vault |
   61393234643738643262613733666464643931383238643866623538343031313562646232376238
   3238336533316436610a393336313136626434663366393035363963653438656132653835336265
   3831
-
 uptimerobot_api_key: !vault |
   $ANSIBLE_VAULT;1.1;AES256
   63653537633163616634336138303665393361383434333435343765646434653361303461653137
@@ -465,7 +436,6 @@ uptimerobot_api_key: !vault |
   6132663364643333640a666431393930353437313436396132306539666265633665643832643063
   33616537663334323532346534623438646432383461646663386331626365626137626664356635
   3037343030383237313463643638366562636562626237316665
-
 wifi_24ghz_ssid: !vault |
   $ANSIBLE_VAULT;1.1;AES256
   61383962633066336661323739653137323539313036393337316230633161613363383264643432
@@ -480,8 +450,6 @@ wifi_password: !vault |
   62386430376535333439616336663133373963663063656462636665326431376234316435333438
   6430343733306465360a623335356632356131363832366637646439343739356163633734646433
   3861
-
-zigbee_coordinator_ip: 192.168.1.3
 zigbee2mqtt_network_key: !vault |
   $ANSIBLE_VAULT;1.1;AES256
   65383331363035613365313433306138396637616434356230643236646235353230313234333133
@@ -492,3 +460,5 @@ zigbee2mqtt_network_key: !vault |
   62623836343134363638393330616561316166303863666361306333373230653539353861616530
   38633862623236636265326133333764613635393361343234303435633364313033393339656338
   65613336323634336430
+zigbee_coordinator_ip: 192.168.1.3
+# keep-sorted end

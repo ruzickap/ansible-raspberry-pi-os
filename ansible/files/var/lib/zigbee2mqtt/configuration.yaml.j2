@@ -12,20 +12,22 @@ availability:
     timeout: 1500
 
 devices:
-  '0x58e45b83342d585a':
-    friendly_name: Qingping CGDK2-z PetrR (0x58e45b83342d585a)
-    description: Temp & RH Monitor Lite (pvxx/ZigbeeTLc)
+  # keep-sorted start
   '0x0ceff6fffe6a5404':
     friendly_name: SNZB-06P PetrR (0x0ceff6fffe6a5404)
     description: Zigbee occupancy sensor
+  '0x58e45b83342d585a':
+    friendly_name: Qingping CGDK2-z PetrR (0x58e45b83342d585a)
+    description: Temp & RH Monitor Lite (pvxx/ZigbeeTLc)
+  '0x881a14fffe95bb7c':
+    friendly_name: IKEA LED2201G8 PetrR (0x881a14fffe95bb7c)
+    description: TRADFRI bulb E26/27, white spectrum, globe, opal, 1055/1100 lm
   '0xa4c138bc7ea071c3':
     friendly_name: Tuya WSD500A PetrR (0xa4c138bc7ea071c3)
     description: >-
       Temperature & humidity sensor which exposes battery, temperature,
       humidity, voltage, linkquality
-  '0x881a14fffe95bb7c':
-    friendly_name: IKEA LED2201G8 PetrR (0x881a14fffe95bb7c)
-    description: TRADFRI bulb E26/27, white spectrum, globe, opal, 1055/1100 lm
+  # keep-sorted end
 
 frontend:
   url: 'https://zigbee2mqtt-rpi.xvx.cz'

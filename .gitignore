@@ -1,11 +1,13 @@
-# pre-commit config file
-.pre-commit-config.yaml
-
-# Ansible vault password file
-vault-*.password
-
+# keep-sorted start newline_separated=yes
 # Lychee cache
 .lycheecache
 
+# pre-commit config file
+.pre-commit-config.yaml
+
 # Byte-compiled / optimized
 __pycache__/
+
+# Ansible vault password file
+vault-*.password
+# keep-sorted end
