@@ -5,7 +5,7 @@ collections:
   - name: community.docker
     version: 4.0.0
   - name: community.general
-    version: 9.5.0
+    version: 9.5.1
   - name: ericsysmin.docker
     version: 1.0.0
   - name: grafana.grafana
