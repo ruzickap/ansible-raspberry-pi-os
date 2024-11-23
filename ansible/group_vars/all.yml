@@ -187,7 +187,7 @@ grafana_smtp:
   password: "{{ smtp_gmail_auth_password }}"
 grafana_url: https://grafana-rpi.xvx.cz
 # renovate: datasource=github-tags depName=grafana/grafana
-grafana_version: 11.3.0
+grafana_version: 11.3.1
 hass_config_directory: /var/lib/hass_config
 hass_url: https://hass-rpi.xvx.cz
 hass_user_password: !vault |
