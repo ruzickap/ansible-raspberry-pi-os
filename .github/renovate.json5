@@ -1,5 +1,9 @@
 {
   $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  // # keep-sorted start block=yes
+  "git-submodules": {
+    enabled: true,
+  },
   // Keep the extends started with ":" at the end of the list to allow overriding
   extends: [
     "config:recommended",
@@ -12,9 +16,6 @@
     ":enableVulnerabilityAlertsWithLabel(security)",
     ":pinSkipCi",
   ],
-  "git-submodules": {
-    enabled: true,
-  },
   labels: [
     "renovate",
     "renovate/{{replace '.*/' '' depName}}",
@@ -41,21 +42,11 @@
       matchUpdateTypes: ["minor"],
       schedule: ["* * * * 0"],
     },
-    {
-      automerge: true,
-      commitBody: "[skip ci]",
-      description: "Automerge all patch, pin and digest updates for custom.regex without running any tests",
-      ignoreTests: true,
-      matchManagers: ["custom.regex"],
-      matchUpdateTypes: ["patch", "pin", "digest"],
-    },
   ],
   prBodyTemplate: "{{{table}}}{{{notes}}}{{{changelogs}}}",
   rebaseWhen: "behind-base-branch",
-  customManagers: [
+  regexManagers: [
     {
-      description: 'Regular expressions inside md, YAML, Dockerfile or entrypoint.sh looking for "# renovate:" comments',
-      customType: 'regex',
       extractVersionTemplate: "{{#if extractVersion}}{{{extractVersion}}}{{else}}^v?(?<version>.+)${{/if}}",
       fileMatch: ["\\.ya?ml$", "\\.md$", "^Dockerfile$", "^entrypoint\\.sh$"],
       matchStrings: [
@@ -65,4 +56,5 @@
     },
   ],
   separateMinorPatch: true,
+  // # keep-sorted end
 }
