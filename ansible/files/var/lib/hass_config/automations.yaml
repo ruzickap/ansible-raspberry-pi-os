@@ -34,10 +34,27 @@
     - alias: "Create backup {{ now().strftime('%Y-%m-%d') }}"
       action: backup.create
 
+- alias: Turn on the light when motion is detected in the hall
+  id: turn_on_light_when_motion_detected_in_hall
+  description: Turn on the light when motion is detected in the hall using Apollo MSR-2
+  conditions:
+    - condition: sun
+      after: sunset
+      before: sunrise
+      after_offset: "+00:30:00"
+      before_offset: "-00:30:00"
+  use_blueprint:
+    path: homeassistant/motion_light.yaml
+    input:
+      motion_entity: binary_sensor.apollo_msr_2_f585f4_radar_zone_3_occupancy
+      light_target:
+        area_id: hall
+      no_motion_wait: 5
+
 - alias: Turn on the light when motion is detected in the living room
   id: turn_on_light_when_motion_detected_in_living_room
   description: Turn on the light when motion is detected in the living room using Sonoff SNZB-06P and Ikea TRADFRI bulb
-  condition:
+  conditions:
     - condition: sun
       before: sunrise
       after: sunset
@@ -46,6 +63,6 @@
     input:
       motion_entity: binary_sensor.sonoff_snzb_06p_occupancy
       light_target:
-        device_id: 34f42b798b861194e358e400a59ca1e5
-      no_motion_wait: 20
+        area_id: living_room
+      no_motion_wait: 0
 # keep-sorted end
