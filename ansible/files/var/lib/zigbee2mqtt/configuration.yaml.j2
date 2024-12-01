@@ -1,4 +1,5 @@
 advanced:
+  last_seen: ISO_8601
   legacy_availability_payload: false
   log_output:
     - console
@@ -7,7 +8,7 @@ advanced:
 
 availability:
   active:
-    timeout: 10
+    timeout: 30
   passive:
     timeout: 1500
 
@@ -22,12 +23,19 @@ devices:
   '0x881a14fffe95bb7c':
     friendly_name: IKEA LED2201G8 PetrR (0x881a14fffe95bb7c)
     description: TRADFRI bulb E26/27, white spectrum, globe, opal, 1055/1100 lm
+    availability:
+      timeout: 1
   '0xa4c138bc7ea071c3':
     friendly_name: Tuya WSD500A PetrR (0xa4c138bc7ea071c3)
     description: >-
       Temperature & humidity sensor which exposes battery, temperature,
       humidity, voltage, linkquality
   # keep-sorted end
+
+device_options:
+  homeassistant:
+    last_seen:
+      enabled_by_default: true
 
 frontend:
   url: 'https://zigbee2mqtt-rpi.xvx.cz'

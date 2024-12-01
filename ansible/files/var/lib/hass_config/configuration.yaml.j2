@@ -46,12 +46,7 @@ logger:
 lovelace:
   mode: yaml
   dashboards:
-    lovelace-rpi-xvx-cz:
-      mode: yaml
-      filename: lovelace/sidebar_url_rpi_xvx_cz.yaml
-      title: RPi
-      icon: mdi:home-outline
-      show_in_sidebar: true
+    # keep-sorted start
     lovelace-esphome-xvx-cz:
       mode: yaml
       filename: lovelace/sidebar_url_esphome_xvx_cz.yaml
@@ -70,6 +65,12 @@ lovelace:
       title: Prometheus
       icon: mdi:chart-pie
       show_in_sidebar: true
+    lovelace-rpi-xvx-cz:
+      mode: yaml
+      filename: lovelace/sidebar_url_rpi_xvx_cz.yaml
+      title: RPi
+      icon: mdi:home-outline
+      show_in_sidebar: true
     lovelace-uzg-01-xvx-cz:
       mode: yaml
       filename: lovelace/sidebar_url_uzg-01_xvx_cz.yaml
@@ -82,6 +83,7 @@ lovelace:
       title: Zigbee2MQTT
       icon: mdi:graphql
       show_in_sidebar: true
+    # keep-sorted end
 
 notify:
   - name: notify_smtp_gmail
