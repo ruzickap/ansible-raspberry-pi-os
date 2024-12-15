@@ -278,7 +278,7 @@
 - name: ESPHome container
   community.docker.docker_container:
     name: esphome
-    image: ghcr.io/esphome/esphome:2024.10.3@sha256:90f5ea3767d2ff69c696e8bdbc3539a00bbcc9aae2636a0eb3f748ac7e353610
+    image: ghcr.io/esphome/esphome:2024.11.3@sha256:26a3b54a42c110640bd72bc7c6302ae2607404b89206be07c90410a8677a5002
     comparisons:
       image: strict
       labels: allow_more_present
