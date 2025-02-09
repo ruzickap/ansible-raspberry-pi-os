@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.6.0](https://github.com/ruzickap/ansible-raspberry-pi-os/compare/v0.5.0...v0.6.0) (2025-02-09)
+
+
+### Features
+
+* add keep-sorted ([#213](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/213)) ([7f1b8fb](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/7f1b8fb2bfd4bd31332f79cb1c32951106c1cb62))
+* add msr-2, transmission, zigbee2mqtt database, cmdline.txt ([#199](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/199)) ([96e2006](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/96e20066f545eec9b50d8e5219db8de7e1cbb513))
+* add prometheus and hass backups ([#203](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/203)) ([42dca09](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/42dca0905c1fb4d6b85666424a3907ca9e037f1d))
+* add renovate to group_vars app versions ([#201](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/201)) ([449898c](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/449898ce886a31383d85accc224958be5479eedd))
+* add rpi os artifact encryption ([#204](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/204)) ([6af6c9d](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/6af6c9d8dad03d765cd9af196d50143dcad23b4d))
+* fix esphome + add msr-2 ([#212](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/212)) ([fd416c5](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/fd416c57caafd18371d96041222363bda04d9172))
+* fix rsync backup commands ([#205](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/205)) ([bf10317](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/bf103171e5d2ec95c6e4b3aa660b87c77fb452d7))
+* **gh:** add default github repo files ([#215](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/215)) ([9c3ed88](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/9c3ed88aed43acb9e7cea141941a2d2d68a3235c))
+* improve motion detection in hall ([#216](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/216)) ([4f29a9a](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/4f29a9adeae3943556e789fc61445ac14aa1a791))
+* redesign hass, enable ipv6 ([#206](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/206)) ([0e877e6](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/0e877e6ccf357331bb0eab12ce967a17b19789e9))
+* remove kodi yt plugin and fail2ban, add hass+prometheus ([#208](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/208)) ([05beaa5](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/05beaa5702536393c1968834bc8ff6d2f602fb6a))
+
+
+### Bug Fixes
+
+* use basename for hass get_url downloads ([#209](https://github.com/ruzickap/ansible-raspberry-pi-os/issues/209)) ([27f391b](https://github.com/ruzickap/ansible-raspberry-pi-os/commit/27f391bece1f701fe80862e3f828cff523a37089))
+
 ## [0.5.0](https://github.com/ruzickap/ansible-raspberry-pi-os/compare/v0.4.0...v0.5.0) (2024-08-31)
 
 
