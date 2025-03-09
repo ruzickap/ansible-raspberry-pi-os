@@ -58,7 +58,7 @@ cadvisor_enable_metrics:
 cadvisor_listen_ip: 127.0.0.1
 cadvisor_port: 8085
 # renovate: datasource=github-tags depName=google/cadvisor
-cadvisor_version: 0.50.0
+cadvisor_version: 0.52.1
 cloudflared_tunnel_token: !vault |
   $ANSIBLE_VAULT;1.1;AES256
   61386264633135323137636536353563393864653738383665643535393637633262653132336435
