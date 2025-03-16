@@ -417,7 +417,7 @@ smtp_gmail_auth_password: !vault |
   32613061646137646163643864356537616236626534373533323833333465393537
 smtp_gmail_auth_user: my.user.mbox@gmail.com
 # renovate: datasource=github-tags depName=prometheus-community/systemd_exporter
-systemd_exporter_version: 0.6.0
+systemd_exporter_version: 0.7.0
 systemd_exporter_web_listen_address: 127.0.0.1:9558
 timezone: Europe/Prague
 transmission_ip: 192.168.1.1
