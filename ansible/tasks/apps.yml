@@ -347,7 +347,7 @@
 - name: Home Assistant container
   community.docker.docker_container:
     name: home-assistant
-    image: ghcr.io/home-assistant/home-assistant:2025.1.4@sha256:a8aab945aec2f43eb1b1fde4d19e25ef952fab9c10f49e40d3b3ce7d24cedc19
+    image: ghcr.io/home-assistant/home-assistant:2025.3.4@sha256:5d510569a2ceaa2fa8f8a34b91bddd36f5f7f03e4cb23e942f245e4a5a98bbef
     comparisons:
       image: strict
       labels: allow_more_present
