@@ -404,7 +404,7 @@
 - name: Homepage container
   community.docker.docker_container:
     name: homepage
-    image: ghcr.io/gethomepage/homepage:v1.0.4@sha256:78a34acb9ca1e63eecf12919fc9fb6c91f5dea748395172d7c1904db4c5bc973
+    image: ghcr.io/gethomepage/homepage:v1.2.0@sha256:5e6bcbb595c4e857540577135e0f8b3ffc2e97c23d6e0ddc7df183de5bfdd442
     comparisons:
       image: strict
       labels: allow_more_present
