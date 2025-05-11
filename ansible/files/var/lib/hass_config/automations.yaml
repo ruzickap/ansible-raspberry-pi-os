@@ -43,6 +43,11 @@
       before: sunrise
       after_offset: "+00:30:00"
       before_offset: "-00:30:00"
+    - condition: device
+      type: is_not_occupied
+      device_id: b054be36ef97a8fa6d68c0c195d5fefb
+      entity_id: 1db565bf77dbe86a3e787259aa59d56b
+      domain: binary_sensor
   use_blueprint:
     path: homeassistant/motion_light.yaml
     input:

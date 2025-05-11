@@ -282,7 +282,6 @@ prometheus_scrape_configs:
     static_configs:
       - targets:
           - 192.168.1.1:22
-          - gate-bracha.xvx.cz:22222
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target
