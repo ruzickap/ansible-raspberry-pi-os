@@ -1,1 +1,3 @@
-https://pkg.cloudflare.com/cloudflared
+.*rpi\.xvx\.cz
+https://.*\.grafana\.net/.*
+https://pkg\.cloudflare\.com/cloudflared
