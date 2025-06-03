@@ -1,6 +1,6 @@
 [Unit]
-Description=cloudflared
-After=network.target
+Description=Cloudflare with DNS over HTTPS proxy
+After=syslog.target network-online.target
 
 [Service]
 Type=simple

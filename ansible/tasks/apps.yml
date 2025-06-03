@@ -288,6 +288,9 @@
       - /var/lib/esphome/config:/config
     # This is needed for the mDNS - no autodiscovery without it
     network_mode: host
+    env:
+      USERNAME: "{{ esphome_web_server_username }}"
+      PASSWORD: "{{ esphome_web_server_password }}"
     labels:
       homepage.group: Containers
       homepage.name: ESPHome
@@ -416,6 +419,7 @@
     privileged: true
     env:
       LOG_TARGETS: stdout
+      HOMEPAGE_ALLOWED_HOSTS: "*"
     labels:
       homepage.group: Containers
       homepage.name: Homepage

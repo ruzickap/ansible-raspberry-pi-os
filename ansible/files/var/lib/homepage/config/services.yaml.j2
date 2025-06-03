@@ -25,6 +25,8 @@
         widget:
           type: esphome
           url: http://127.0.0.1:6052
+          username: {{ esphome_web_server_username }}
+          password: {{ esphome_web_server_password }}
 
     - Grafana Alloy:
         description: OpenTelemetry Collector distribution with programmable pipelines.
@@ -71,19 +73,13 @@
 
     - My Status Page:
         description: My Status Page is a status page for monitoring the status of my services.
-        href: https://status.xvx.cz
+        href: https://stats.xvx.cz
         icon: https://raw.githubusercontent.com/gilbarbara/logos/ee038548b93789076d01d889e684d8c518c937fe/logos/statuspage.svg
-        siteMonitor: https://status.xvx.cz
+        siteMonitor: https://stats.xvx.cz
         widget:
           type: uptimerobot
           url: https://api.uptimerobot.com
           key: {{ uptimerobot_api_key }}
-
-    - OpenSSH - gate:
-        description: Connectivity tool for remote login with the SSH protocol.
-        href: https://gate.xvx.cz/
-        icon: https://upload.wikimedia.org/wikipedia/commons/0/00/Unofficial_SSH_Logo.svg
-        siteMonitor: https://gate.xvx.cz/
 
     - Openwrt:
         description: OpenWrt is an open-source project for embedded operating systems based on Linux, primarily used on embedded devices to route network traffic.
