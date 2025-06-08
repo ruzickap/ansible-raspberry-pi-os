@@ -10,7 +10,7 @@ collections:
   - name: ericsysmin.docker
     version: 1.0.0
   - name: grafana.grafana
-    version: 5.6.0
+    version: 5.7.0
   - name: prometheus.prometheus
     version: 0.26.2
   # keep-sorted end
