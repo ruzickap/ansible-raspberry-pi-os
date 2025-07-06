@@ -39,7 +39,7 @@ blackbox_exporter_configuration_modules:
       query_response:
         - expect: "^SSH-2.0-"
 # renovate: datasource=github-tags depName=prometheus/blackbox_exporter
-blackbox_exporter_version: 0.26.0
+blackbox_exporter_version: 0.27.0
 blackbox_exporter_web_listen_address: 127.0.0.1:9115
 # https://thesmarthomejourney.com/2022/08/01/fixing-cadvisor-cpu/
 # https://github.com/docker/for-linux/issues/1112 - Grafana -> Cadvisor exprter -> Memory
