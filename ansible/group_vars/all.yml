@@ -373,7 +373,7 @@ prometheus_scrape_configs:
           - 127.0.0.1:9558
 prometheus_storage_retention_size: 5GB
 # renovate: datasource=github-tags depName=prometheus/prometheus
-prometheus_version: 3.4.2
+prometheus_version: 3.5.0
 prometheus_web_external_url: https://prometheus-rpi.xvx.cz
 prometheus_web_listen_address: 127.0.0.1:9090
 rpi_disable_boot_services:
