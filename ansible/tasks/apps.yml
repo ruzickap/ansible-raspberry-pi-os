@@ -223,7 +223,7 @@
 - name: Zigbee2MQTT container
   community.docker.docker_container:
     name: zigbee2mqtt
-    image: docker.io/koenkk/zigbee2mqtt:2.5.1@sha256:1e639d3144960f246dcecc21d993169fd6844b5817e939bca498b2abf2c23159
+    image: docker.io/koenkk/zigbee2mqtt:2.6.0@sha256:472f4f5ed5d4258056093ea5745bc0ada37628b667d7db4fb12c2ffea74b2703
     comparisons:
       image: strict
       labels: allow_more_present
