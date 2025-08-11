@@ -155,7 +155,7 @@
 - name: Add Mosquitto apt signing keys
   # checkov:skip=CKV2_ANSIBLE_2:Ensure that HTTPS url is used with get_url
   ansible.builtin.get_url:
-    url: http://repo.mosquitto.org/debian/mosquitto-repo.gpg.key
+    url: https://repo.mosquitto.org/debian/mosquitto-repo.gpg
     dest: /etc/apt/trusted.gpg.d/mosquitto-repo.asc
     mode: u=rw,g=r,o=r
 
