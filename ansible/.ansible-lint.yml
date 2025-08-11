@@ -1,8 +1,8 @@
+# Ansible Lint configuration file
+# Defines rules to skip during linting to avoid common issues
 ---
 skip_list:
   - package-latest
   - yaml[comments]
   - yaml[document-start]
   - yaml[line-length]
-  # Needed for alloy
-  - var-naming[no-role-prefix]
