@@ -13,6 +13,9 @@ env:
 jobs:
   create-rpi-image:
     runs-on: ubuntu-latest
+    env:
+      WIFI_SSID: ${{ secrets.WIFI_SSID }}
+      WIFI_PASSWORD: ${{ secrets.WIFI_PASSWORD }}
     steps:
       - name: Generate Raspberry Pi OS
         uses: usimd/pi-gen-action@cec66cba86bdcd23984e6a79ea4e9251d90bc798 #v1.11.0
