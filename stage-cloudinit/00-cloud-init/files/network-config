@@ -4,7 +4,5 @@ wifis:
     dhcp6: true
     # optional: true
     access-points:
-      SSID:
-        password: "${WIFI_SSID}"
-      SSID2:
+      "${WIFI_SSID}":
         password: "${WIFI_PASSWORD}"

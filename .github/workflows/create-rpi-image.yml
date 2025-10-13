@@ -68,9 +68,6 @@ jobs:
           # System timezone.
           timezone: Europe/Prague
 
-          # Name of the initial user account.
-          username: pi
-
           # Wifi country code of default network to connect to.
           wpa-country: CZ
           verbose-output: true
