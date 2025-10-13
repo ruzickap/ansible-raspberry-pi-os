@@ -13,12 +13,15 @@ env:
 jobs:
   create-rpi-image:
     runs-on: ubuntu-latest
-    env:
-      WIFI_SSID: ${{ secrets.WIFI_SSID }}
-      WIFI_PASSWORD: ${{ secrets.WIFI_PASSWORD }}
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
       - name: Generate Raspberry Pi OS
         uses: usimd/pi-gen-action@cec66cba86bdcd23984e6a79ea4e9251d90bc798 #v1.11.0
+        env:
+          WIFI_SSID: ${{ secrets.WIFI_SSID }}
+          WIFI_PASSWORD: ${{ secrets.WIFI_PASSWORD }}
         id: build
         with:
           # Compression to apply on final image (either "none", "zip", "xz" or "gz").
