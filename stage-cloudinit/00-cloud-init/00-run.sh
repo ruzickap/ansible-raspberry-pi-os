@@ -5,13 +5,16 @@ set -euxo pipefail
 mkdir -p "${ROOTFS_DIR}/etc/cloud/cloud.cfg.d"
 install -m 644 files/99_nocloud.cfg "${ROOTFS_DIR}/etc/cloud/cloud.cfg.d/99_nocloud.cfg"
 
+ls -la "${ROOTFS_DIR}"
+ls -la "${ROOTFS_DIR}/boot/"
+
 # Install cloud-init user-data and meta-data to boot partition
-install -m 600 files/user-data "${BOOTFS_DIR}/user-data"
-install -m 600 files/meta-data "${BOOTFS_DIR}/meta-data"
+install -m 600 files/user-data "${ROOTFS_DIR}/boot/firmware/user-data"
+install -m 600 files/meta-data "${ROOTFS_DIR}/boot/firmware/meta-data"
 
 # Generate network-config with WiFi credentials
 : "${WIFI_SSID:?WIFI_SSID not set}"
 : "${WIFI_PASSWORD:?WIFI_PASSWORD not set}"
 export WIFI_PSK="${WIFI_PASSWORD}"
-envsubst < files/network-config > "${BOOTFS_DIR}/network-config"
-chmod 600 "${BOOTFS_DIR}/network-config"
+envsubst < files/network-config > "${ROOTFS_DIR}/boot/firmware/network-config"
+chmod 600 "${ROOTFS_DIR}/boot/firmware/network-config"
