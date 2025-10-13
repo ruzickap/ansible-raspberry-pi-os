@@ -14,72 +14,6 @@ jobs:
   create-rpi-image:
     runs-on: ubuntu-latest
     steps:
-      - name: Prepare stage2/04-cloud-init/files for pi-gen
-        run: |
-          mkdir -p stage2/04-cloud-init/files
-          cat > stage2/04-cloud-init/files/user-data << EOF
-          package_update: true
-          package_upgrade: true
-          EOF
-
-          cat > stage2/04-cloud-init/files/network-config << EOF
-          version: 2
-          wifis:
-            wlan0:
-              dhcp4: true
-              dhcp6: true
-              # optional: true
-              access-points:
-                SSID:
-                  password: "${WIFI_SSID}"
-                SSID2:
-                  password: "${WIFI_PASSWORD}"
-          EOF
-
-      # - name: Prepare stage4 for pi-gen
-      #   run: |
-      #     mkdir -p stage-wifi/00-networkmanager-config
-
-      #     cat > stage-wifi/prerun.sh << \EOF
-      #     #!/bin/bash -e
-
-      #     if [ ! -d "${ROOTFS_DIR}" ]; then
-      #       copy_previous
-      #     fi
-      #     EOF
-      #     chmod +x stage-wifi/prerun.sh
-
-      #     cat >> stage-wifi/00-networkmanager-config/00-run-chroot.sh << EOF
-      #     #!/bin/bash -e
-
-      #     cat > "/etc/NetworkManager/system-connections/${WIFI_SSID}.nmconnection" << EOF2
-      #     [connection]
-      #     id=${WIFI_SSID}
-      #     uuid=5a62d13a-fdf8-4737-8f7d-f43764685207
-      #     type=wifi
-      #     interface-name=wlan0
-      #     autoconnect-retries=0
-
-      #     [wifi]
-      #     mode=infrastructure
-      #     ssid=${WIFI_SSID}
-
-      #     [wifi-security]
-      #     auth-alg=open
-      #     key-mgmt=wpa-psk
-      #     psk=${WIFI_PASSWORD}
-
-      #     [ipv4]
-      #     method=auto
-
-      #     [ipv6]
-      #     addr-gen-mode=default
-      #     method=auto
-      #     EOF2
-      #     chmod 600 "/etc/NetworkManager/system-connections/${WIFI_SSID}.nmconnection"
-      #     EOF
-      #     chmod a+x stage-wifi/00-networkmanager-config/00-run-chroot.sh
-
       - name: Generate Raspberry Pi OS
         uses: usimd/pi-gen-action@cec66cba86bdcd23984e6a79ea4e9251d90bc798 #v1.11.0
         id: build
@@ -123,7 +57,7 @@ jobs:
           # images in stage2 (lite), stage4 and stage5. You probably want to hook in custom
           # stages before one of the exported stages. Otherwise, the action will make sure
           # any custom stage will include an image export directive.
-          # stage-list: stage0 stage1 stage2 ./stage-wifi
+          stage-list: stage0 stage1 stage2 ./stage-cloudinit
 
           # System timezone.
           timezone: Europe/Prague
