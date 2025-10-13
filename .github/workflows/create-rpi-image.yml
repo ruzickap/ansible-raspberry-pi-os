@@ -19,9 +19,6 @@ jobs:
 
       - name: Generate Raspberry Pi OS
         uses: usimd/pi-gen-action@cec66cba86bdcd23984e6a79ea4e9251d90bc798 #v1.11.0
-        env:
-          WIFI_SSID: ${{ secrets.WIFI_SSID }}
-          WIFI_PASSWORD: ${{ secrets.WIFI_PASSWORD }}
         id: build
         with:
           # Compression to apply on final image (either "none", "zip", "xz" or "gz").
@@ -70,11 +67,16 @@ jobs:
 
           # Wifi country code of default network to connect to.
           wpa-country: CZ
+
+          # SSID of a default wifi network to connect to.
+          wpa-essid: ${{ secrets.WIFI_SSID }}
+
+          # Password of default wifi network to connect to.
+          wpa-password: ${{ secrets.WIFI_PASSWORD }}
           verbose-output: true
 
       - name: Encrypt build artifact
         env:
-          WIFI_PASSWORD: ${{ secrets.WIFI_PASSWORD }}
           RASPBERRY_PI_OS_IMAGE: ${{ steps.build.outputs.image-path }}
         run: |
           set -euxo pipefail
