@@ -2,6 +2,7 @@
 set -euxo pipefail
 
 # Install cloud-init configuration
+mkdir -p "${ROOTFS_DIR}/etc/cloud/cloud.cfg.d"
 install -m 644 files/99_nocloud.cfg "${ROOTFS_DIR}/etc/cloud/cloud.cfg.d/99_nocloud.cfg"
 
 # Install cloud-init user-data and meta-data to boot partition
