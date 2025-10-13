@@ -111,6 +111,7 @@ jobs:
 
           # Wifi country code of default network to connect to.
           wpa-country: CZ
+          verbose-output: true
 
       - name: Encrypt build artifact
         env:
