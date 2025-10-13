@@ -142,9 +142,9 @@ jobs:
         run: |
           set -euxo pipefail
           cd "${RASPBERRY_PI_OS_IMAGE}" || exit 1
-          # zip -9 --junk-paths --password "${WIFI_PASSWORD}" "${RASPBERRY_PI_OS_IMAGE}.zip" "${RASPBERRY_PI_OS_IMAGE}"
-          7z a -tzip "../${RASPBERRY_PI_OS_IMAGE}.zip" *.img -mmt -mx=9 -p${WIFI_PASSWORD}
-          ls -sh ../${RASPBERRY_PI_OS_IMAGE}.zip
+          time zip -9 --junk-paths --password "${WIFI_PASSWORD}" "${RASPBERRY_PI_OS_IMAGE}-1.zip" "${RASPBERRY_PI_OS_IMAGE}"
+          time 7z a -tzip "../${RASPBERRY_PI_OS_IMAGE}-2.zip" *.img -mmt -mx=9 -p${WIFI_PASSWORD}
+          ls -sh ../${RASPBERRY_PI_OS_IMAGE}*.zip
 
       - name: Upload build artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
