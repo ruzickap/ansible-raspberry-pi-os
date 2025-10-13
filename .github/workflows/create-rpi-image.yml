@@ -144,7 +144,7 @@ jobs:
           time zip -9 --password "${WIFI_PASSWORD}" "${RASPBERRY_PI_OS_IMAGE}.zip" "${RASPBERRY_PI_OS_IMAGE}"
           ls -sh "${RASPBERRY_PI_OS_IMAGE}.zip"
           # rm "${RASPBERRY_PI_OS_IMAGE}.zip"
-          time 7z a -tzip -mmt -mx=7 -p"${WIFI_PASSWORD}" "${RASPBERRY_PI_OS_IMAGE}-1.zip" "${RASPBERRY_PI_OS_IMAGE}"
+          time 7z a -tzip -mmt -mx=5 -p"${WIFI_PASSWORD}" "${RASPBERRY_PI_OS_IMAGE}-1.zip" "${RASPBERRY_PI_OS_IMAGE}"
           ls -sh "${RASPBERRY_PI_OS_IMAGE}-1.zip"
 
       - name: Upload build artifact
