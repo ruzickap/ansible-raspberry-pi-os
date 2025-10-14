@@ -1,8 +1,10 @@
-wifis:
-  wlan0:
-    dhcp4: true
-    dhcp6: true
-    # optional: true
-    access-points:
-      "test12345":
-        password: "test12345"
+network:
+  version: 2
+  wifis:
+    wlan0:
+      dhcp4: true
+      dhcp6: true
+      # optional: true
+      access-points:
+        "test12345":
+          password: "test12345"
