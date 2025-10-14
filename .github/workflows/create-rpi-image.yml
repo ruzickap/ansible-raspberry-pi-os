@@ -18,7 +18,7 @@ jobs:
           WIFI_SSID: ${{ secrets.WIFI_SSID }}
           WIFI_PASSWORD: ${{ secrets.WIFI_PASSWORD }}
         run: |
-          envsubst < stage-cloudinit/00-cloud-init/files/network-config.template > stage-cloudinit/00-cloud-init/files/network-config
+          envsubst < stage-my/00-networkmanager-config/files/wifi.nmconnection.template > "stage-my/00-networkmanager-config/files/${WIFI_SSID}.nmconnection"
 
       - name: Generate Raspberry Pi OS
         uses: usimd/pi-gen-action@cec66cba86bdcd23984e6a79ea4e9251d90bc798 #v1.11.0
@@ -48,7 +48,7 @@ jobs:
           # Default locale of the system image.
           locale: en_US.UTF-8
 
-          # Password of the intial user account, locked if empty.
+          # Password of the initial user account, locked if empty.
           # kics-scan ignore-line
           password: raspberry
 
@@ -63,7 +63,7 @@ jobs:
           # images in stage2 (lite), stage4 and stage5. You probably want to hook in custom
           # stages before one of the exported stages. Otherwise, the action will make sure
           # any custom stage will include an image export directive.
-          stage-list: stage0 stage1 stage2 stage-cloudinit
+          stage-list: stage0 stage1 stage2 stage-my
 
           # System timezone.
           timezone: Europe/Prague
