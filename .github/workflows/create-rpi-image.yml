@@ -8,7 +8,6 @@ permissions: read-all
 
 jobs:
   create-rpi-image:
-    # runs-on: ubuntu-latest
     runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout Code
@@ -40,7 +39,7 @@ jobs:
           keyboard-layout: English (US)
 
           # Default locale of the system image.
-          locale: en_US.UTF-8
+          locale: en_US.UTF-8 UTF-8
 
           # Password of the intial user account, locked if empty.
           # kics-scan ignore-line
@@ -63,13 +62,13 @@ jobs:
           timezone: Europe/Prague
 
           # Wifi country code of default network to connect to.
-          wpa-country: CZ
+          # wpa-country: CZ
 
           # SSID of a default wifi network to connect to.
-          wpa-essid: ${{ secrets.WIFI_SSID }}
+          # wpa-essid: ${{ secrets.WIFI_SSID }}
 
           # Password of default wifi network to connect to.
-          wpa-password: ${{ secrets.WIFI_PASSWORD }}
+          # wpa-password: ${{ secrets.WIFI_PASSWORD }}
           verbose-output: true
 
       - name: Encrypt build artifact
@@ -78,7 +77,7 @@ jobs:
           WIFI_PASSWORD: ${{ secrets.WIFI_PASSWORD }}
         run: |
           set -euxo pipefail
-          zip -9 --password "${WIFI_PASSWORD}" "${RASPBERRY_PI_OS_IMAGE}.zip" "${RASPBERRY_PI_OS_IMAGE}"
+          zip -9 --junk-paths --password "${WIFI_PASSWORD}" "${RASPBERRY_PI_OS_IMAGE}.zip" "${RASPBERRY_PI_OS_IMAGE}"
           ls -sh "${RASPBERRY_PI_OS_IMAGE}.zip"
 
       - name: Upload build artifact
