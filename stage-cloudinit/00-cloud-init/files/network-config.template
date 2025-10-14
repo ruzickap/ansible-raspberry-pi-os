@@ -6,5 +6,5 @@ network:
       dhcp6: true
       # optional: true
       access-points:
-        "test12345":
-          password: "test12345"
+        "${WIFI_SSID}":
+          password: "${WIFI_PASSWORD}"
