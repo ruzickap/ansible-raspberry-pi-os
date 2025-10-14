@@ -1,8 +1,8 @@
-# wifis:
-#   wlan0:
-#     dhcp4: true
-#     dhcp6: true
-#     # optional: true
-#     access-points:
-#       "${WIFI_SSID}":
-#         password: "${WIFI_PASSWORD}"
+wifis:
+  wlan0:
+    dhcp4: true
+    dhcp6: true
+    # optional: true
+    access-points:
+      "${WIFI_SSID}":
+        password: "${WIFI_PASSWORD}"

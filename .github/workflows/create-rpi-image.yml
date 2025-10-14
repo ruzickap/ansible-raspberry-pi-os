@@ -12,10 +12,18 @@ env:
 
 jobs:
   create-rpi-image:
-    runs-on: ubuntu-latest
+    # runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout Code
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Set config file used by pi-gen
+        run: |
+          cat > config <<EOF
+          export WIFI_SSID="${WIFI_SSID}"
+          export WIFI_PASSWORD="${WIFI_PASSWORD}"
+          EOF
 
       - name: Generate Raspberry Pi OS
         uses: usimd/pi-gen-action@cec66cba86bdcd23984e6a79ea4e9251d90bc798 #v1.11.0

@@ -10,8 +10,8 @@ mkdir -p "${ROOTFS_DIR}/boot/firmware"
 install -m 600 files/user-data "${ROOTFS_DIR}/boot/firmware/user-data"
 
 # Generate network-config with WiFi credentials
-# : "${WIFI_SSID:?WIFI_SSID not set}"
-# : "${WIFI_PASSWORD:?WIFI_PASSWORD not set}"
-# export WIFI_PSK="${WIFI_PASSWORD}"
-# envsubst < files/network-config > "${ROOTFS_DIR}/boot/firmware/network-config"
-# chmod 600 "${ROOTFS_DIR}/boot/firmware/network-config"
+: "${WIFI_SSID:?WIFI_SSID not set}"
+: "${WIFI_PASSWORD:?WIFI_PASSWORD not set}"
+export WIFI_PSK="${WIFI_PASSWORD}"
+envsubst < files/network-config > "${ROOTFS_DIR}/boot/firmware/network-config"
+chmod 600 "${ROOTFS_DIR}/boot/firmware/network-config"
