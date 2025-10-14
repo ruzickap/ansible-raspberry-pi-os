@@ -63,7 +63,8 @@ jobs:
           # images in stage2 (lite), stage4 and stage5. You probably want to hook in custom
           # stages before one of the exported stages. Otherwise, the action will make sure
           # any custom stage will include an image export directive.
-          stage-list: stage0 stage1 stage2 stage-my
+          stage-list: stage0 stage1 stage2
+          # stage-my
 
           # System timezone.
           timezone: Europe/Prague
@@ -72,10 +73,10 @@ jobs:
           wpa-country: CZ
 
           # SSID of a default wifi network to connect to.
-          # wpa-essid: ${{ secrets.WIFI_SSID }}
+          wpa-essid: ${{ secrets.WIFI_SSID }}
 
           # Password of default wifi network to connect to.
-          # wpa-password: ${{ secrets.WIFI_PASSWORD }}
+          wpa-password: ${{ secrets.WIFI_PASSWORD }}
           verbose-output: true
 
       - name: Encrypt build artifact
