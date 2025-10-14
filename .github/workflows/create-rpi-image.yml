@@ -69,7 +69,7 @@ jobs:
           timezone: Europe/Prague
 
           # Wifi country code of default network to connect to.
-          # wpa-country: CZ
+          wpa-country: CZ
 
           # SSID of a default wifi network to connect to.
           # wpa-essid: ${{ secrets.WIFI_SSID }}
