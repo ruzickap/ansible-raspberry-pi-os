@@ -39,7 +39,7 @@ jobs:
           keyboard-layout: English (US)
 
           # Default locale of the system image.
-          locale: en_US.UTF-8 UTF-8
+          locale: en_US.UTF-8
 
           # Password of the intial user account, locked if empty.
           # kics-scan ignore-line
