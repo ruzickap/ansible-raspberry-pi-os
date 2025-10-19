@@ -21,7 +21,11 @@ jobs:
           envsubst < stage-my/00-networkmanager-config/files/wifi.nmconnection.template > "stage-my/00-networkmanager-config/files/${WIFI_SSID}.nmconnection"
 
       - name: Generate Raspberry Pi OS
+<<<<<<< HEAD
         uses: usimd/pi-gen-action@cec66cba86bdcd23984e6a79ea4e9251d90bc798 #v1.11.0
+=======
+        uses: usimd/pi-gen-action@cec66cba86bdcd23984e6a79ea4e9251d90bc798 # v1.11.0
+>>>>>>> 4055194 (chore(deps): update usimd/pi-gen-action action to v1.11.0)
         id: build
         with:
           # Compression to apply on final image (either "none", "zip", "xz" or "gz").
