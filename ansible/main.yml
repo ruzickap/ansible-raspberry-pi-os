@@ -23,7 +23,6 @@
         - root
 
   roles:
-    - role: ericsysmin.docker.docker
     - role: geerlingguy.firewall
     - role: grafana.grafana.grafana
     - role: grafana.grafana.alloy
