@@ -6,57 +6,19 @@ on:
 
 permissions: read-all
 
-env:
-  WIFI_SSID: ${{ secrets.WIFI_SSID }}
-  WIFI_PASSWORD: ${{ secrets.WIFI_PASSWORD }}
-
 jobs:
   create-rpi-image:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     steps:
-      - name: Prepare stage4 for pi-gen
+      - name: Checkout Code
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Generate network-config
+        env:
+          WIFI_SSID: ${{ secrets.WIFI_SSID }}
+          WIFI_PASSWORD: ${{ secrets.WIFI_PASSWORD }}
         run: |
-          mkdir -p stage-wifi/00-networkmanager-config
-
-          cat > stage-wifi/prerun.sh << \EOF
-          #!/bin/bash -e
-
-          if [ ! -d "${ROOTFS_DIR}" ]; then
-            copy_previous
-          fi
-          EOF
-          chmod +x stage-wifi/prerun.sh
-
-          cat >> stage-wifi/00-networkmanager-config/00-run-chroot.sh << EOF
-          #!/bin/bash -e
-
-          cat > "/etc/NetworkManager/system-connections/${WIFI_SSID}.nmconnection" << EOF2
-          [connection]
-          id=${WIFI_SSID}
-          uuid=5a62d13a-fdf8-4737-8f7d-f43764685207
-          type=wifi
-          interface-name=wlan0
-          autoconnect-retries=0
-
-          [wifi]
-          mode=infrastructure
-          ssid=${WIFI_SSID}
-
-          [wifi-security]
-          auth-alg=open
-          key-mgmt=wpa-psk
-          psk=${WIFI_PASSWORD}
-
-          [ipv4]
-          method=auto
-
-          [ipv6]
-          addr-gen-mode=default
-          method=auto
-          EOF2
-          chmod 600 "/etc/NetworkManager/system-connections/${WIFI_SSID}.nmconnection"
-          EOF
-          chmod a+x stage-wifi/00-networkmanager-config/00-run-chroot.sh
+          envsubst < stage-my/00-netplan/files/01-wifi.yaml.template > stage-my/00-netplan/files/01-wifi.yaml
 
       - name: Generate Raspberry Pi OS
         uses: usimd/pi-gen-action@cec66cba86bdcd23984e6a79ea4e9251d90bc798 # v1.11.0
@@ -69,47 +31,20 @@ jobs:
           # 'username' stays activated. 'username' must be set for this to work. Please be
           # aware of the implied security risk of defining a default username and password
           # for your devices.
-          disable-first-boot-user-rename: true
+          disable-first-boot-user-rename: 1
 
-          # Additional options to include in PIGEN_DOCKER_OPTS
-          docker-opts: ""
-
-          # Set whether a NOOBS image should be built as well. If enabled, the output
-          # directory containing the NOOBS files will be saved as output variable
-          # 'image-noobs-path'.
-          enable-noobs: false
+          # If set to `1`, cloud-init and netplan will be installed and configured. This
+          # will allow you to configure your Raspberry Pi using cloud-init configuration
+          # files. The cloud-init configuration files should be placed in the bootfs or by
+          # editing the files in `stage2/04-cloud-init/files`. Cloud-init will be configured
+          # to read them on first boot.
+          enable-cloud-init: 0
 
           # Enable SSH access to Pi.
           enable-ssh: 1
 
-          # If this feature is enabled, the action will configure pi-gen to not export any
-          # stage as image but the last one defined in property 'stage-list'. This is
-          # helpful when building a single image flavor (in contrast to building a
-          # lite/server and full-blown desktop image), since it speeds up the build process
-          # significantly.
-          export-last-stage-only: true
-
-          # Comma or whitespace separated list of additional packages to install on host
-          # before running pi-gen. Use this list to add any packages your custom stages may
-          # require. Note that this is not affecting the final image. In order to add
-          # additional packages, you need to add a respective 'XX-packages' file in your
-          # custom stage.
-          extra-host-dependencies: ""
-
-          # Comma or whitespace separated list of additional modules to load on host before
-          # running pi-gen. If your custom stage requires additional software or kernel
-          # modules to be loaded, add them here. Note that this is not meant to configure
-          # modules to be loaded in the target image.
-          extra-host-modules: ""
-
-          # Token to use for checking out pi-gen repo.
-          github-token: ${{ github.token }}
-
-          # Host name of the image.
-          hostname: raspberrypi
-
           # Final image name.
-          image-name: raspios-bookworm-arm64-lite-modified
+          image-name: raspios-trixie-arm64-lite-modified
 
           # Default keyboard keymap.
           keyboard-keymap: us
@@ -120,29 +55,9 @@ jobs:
           # Default locale of the system image.
           locale: en_US.UTF-8
 
-          # Password of the intial user account, locked if empty.
+          # Password of the initial user account, locked if empty.
           # kics-scan ignore-line
           password: raspberry
-
-          # Path where selected pi-gen ref will be checked out to. If the path does not yet
-          # exist, it will be created (including its parents).
-          pi-gen-dir: pi-gen
-
-          # The release name to use in `/etc/issue.txt`. The default should only be used for
-          # official Raspberry Pi builds.
-          pi-gen-release: Raspberry Pi reference
-
-          # GitHub repository to fetch pi-gen from, must be a fork from RPi-Distro/pi-gen.
-          pi-gen-repository: RPi-Distro/pi-gen
-
-          # Release version of pi-gen to use. This can both be a branch or tag name known in
-          # the pi-gen repository.
-          pi-gen-version: arm64
-
-          # Setting to `1` will disable password authentication for SSH and enable public
-          # key authentication. Note that if SSH is not enabled this will take effect when
-          # SSH becomes enabled.
-          pubkey-only-ssh: 0
 
           # Setting this to a value will make that value the contents of the
           # FIRST_USER_NAME's ~/.ssh/authorized_keys. Obviously the value should therefore
@@ -150,54 +65,32 @@ jobs:
           # SSH.
           pubkey-ssh-first-user: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF58juRs3gDSCFXARSXBBSegOmmBxXln9MVk2Zcq3HGh petr.ruzicka@gmail.com"
 
-          # The release version to build images against. Valid values are jessie, stretch,
-          # buster, bullseye, bookworm, and testing.
-          release: bookworm
-
-          # Setting to `1` will prevent pi-gen from dropping the "capabilities" feature.
-          # Generating the root filesystem with capabilities enabled and running it from a
-          # filesystem that does not support capabilities (like NFS) can cause issues. Only
-          # enable this if you understand what it is.
-          setfcap: ""
-
           # List of stage name to execute in given order. Relative and absolute paths to
           # custom stage directories are allowed here. Note that by default pi-gen exports
           # images in stage2 (lite), stage4 and stage5. You probably want to hook in custom
           # stages before one of the exported stages. Otherwise, the action will make sure
           # any custom stage will include an image export directive.
-          stage-list: stage0 stage1 stage2 ./stage-wifi
+          stage-list: stage0 stage1 stage2 stage-my
 
           # System timezone.
           timezone: Europe/Prague
 
-          # Name of the initial user account.
-          username: pi
-
-          # Print all output from pi-gen.
-          verbose-output: false
-
           # Wifi country code of default network to connect to.
           wpa-country: CZ
 
-          # SSID of a default wifi network to connect to.
-          wpa-essid: ""
-
-          # Password of default wifi network to connect to.
-          wpa-password: ""
-
       - name: Encrypt build artifact
         env:
-          WIFI_PASSWORD: ${{ secrets.WIFI_PASSWORD }}
           RASPBERRY_PI_OS_IMAGE: ${{ steps.build.outputs.image-path }}
+          WIFI_PASSWORD: ${{ secrets.WIFI_PASSWORD }}
         run: |
           set -euxo pipefail
           zip -9 --junk-paths --password "${WIFI_PASSWORD}" "${RASPBERRY_PI_OS_IMAGE}.zip" "${RASPBERRY_PI_OS_IMAGE}"
-          ls -sh "${RASPBERRY_PI_OS_IMAGE}"*
+          ls -sh "${RASPBERRY_PI_OS_IMAGE}.zip"
 
       - name: Upload build artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: raspios-bookworm-arm64-lite-modified.img.zip
+          name: raspios-trixie-arm64-lite-modified.img.zip
           path: ${{ steps.build.outputs.image-path }}.zip
           if-no-files-found: error
           retention-days: 1
