@@ -1,0 +1,10 @@
+network:
+  version: 2
+  renderer: NetworkManager
+  wifis:
+    wlan0:
+      dhcp4: yes
+      dhcp6: yes
+      access-points:
+        "${WIFI_SSID}":
+          password: "${WIFI_PASSWORD}"
