@@ -2,7 +2,7 @@
 id=${WIFI_SSID}
 uuid=5a62d13a-fdf8-4737-8f7d-f43764685207
 type=wifi
-interface-name=wlan0
+#interface-name=wlan0
 autoconnect-retries=0
 
 [wifi]
@@ -10,7 +10,7 @@ mode=infrastructure
 ssid=${WIFI_SSID}
 
 [wifi-security]
-auth-alg=open
+#auth-alg=open
 key-mgmt=wpa-psk
 psk=${WIFI_PASSWORD}
 
