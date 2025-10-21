@@ -18,7 +18,7 @@ jobs:
           WIFI_SSID: ${{ secrets.WIFI_SSID }}
           WIFI_PASSWORD: ${{ secrets.WIFI_PASSWORD }}
         run: |
-          envsubst < stage-my/00-networkmanager-config/files/wifi.nmconnection.template > "stage-my/00-networkmanager-config/files/${WIFI_SSID}.nmconnection"
+          envsubst < stage-my/00-netplan/files/01-wifi.yaml.template > stage-my/00-netplan/files/01-wifi.yaml
 
       - name: Generate Raspberry Pi OS
         uses: usimd/pi-gen-action@cec66cba86bdcd23984e6a79ea4e9251d90bc798 # v1.11.0
