@@ -7,4 +7,6 @@ network:
       dhcp6: yes
       access-points:
         "${WIFI_SSID}":
-          password: "${WIFI_PASSWORD}"
+          auth:
+            key-management: psk
+            password: "${WIFI_PASSWORD}"
