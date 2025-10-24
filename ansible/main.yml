@@ -3,6 +3,11 @@
   hosts: all
   become: true
   force_handlers: true
+  collections:
+    - ansible.posix
+    - community.docker
+    - community.general
+    - grafana.grafana
 
   pre_tasks:
     - name: Set authorized key for pi and root
@@ -24,19 +29,23 @@
 
   roles:
     - role: geerlingguy.firewall
-    - role: grafana.grafana.grafana
     - role: grafana.grafana.alloy
       vars:
-        alloy_user_groups: ["adm", "docker"]
-        alloy_config: "{{ lookup('ansible.builtin.template', 'files/etc/alloy/config.alloy.j2') }}"
         alloy_version: "{{ alloy_grafana_version }}"
-    - role: prometheus.prometheus.prometheus
-    - role: prometheus.prometheus.blackbox_exporter
-    - role: prometheus.prometheus.cadvisor
-      vars:
-        cadvisor_docker_only: true
-    - role: prometheus.prometheus.node_exporter
-    - role: prometheus.prometheus.systemd_exporter
+        alloy_config: "{{ lookup('ansible.builtin.template', 'files/etc/alloy/config.alloy.j2') }}"
+        alloy_systemd_override: |
+          [Service]
+          User=root
+    # https://github.com/grafana/grafana-ansible-collection/issues/446
+    # - role: grafana.grafana.grafana
+    # https://github.com/prometheus-community/ansible/issues/667
+    # - role: prometheus.prometheus.prometheus
+    # - role: prometheus.prometheus.blackbox_exporter                  # <<< Replace by alloy
+    # - role: prometheus.prometheus.cadvisor                           # <<< Replace by alloy
+    #   vars:
+    #     cadvisor_docker_only: true
+    # - role: prometheus.prometheus.node_exporter                      # <<< Replace by alloy
+    # - role: prometheus.prometheus.systemd_exporter
 
   tasks:
     - name: Install and configure system-defaults

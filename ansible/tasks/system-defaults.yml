@@ -61,52 +61,10 @@
       source /usr/share/doc/fzf/examples/key-bindings.bash
       alias ll='ls -l --color=auto'
 
-- name: Switch keyboard layout to US
-  community.general.ini_file:
-    path: /etc/default/keyboard
-    section: null
-    no_extra_spaces: true
-    option: XKBLAYOUT
-    value: us
-    mode: u=rw,g=r,o=r
-
-- name: Configure locale (/etc/default/locale)
-  community.general.ini_file:
-    path: /etc/default/locale
-    no_extra_spaces: true
-    section: null
-    option: "{{ item.option }}"
-    value: "{{ item.value }}"
-    mode: u=rw,g=r,o=r
-  loop:
-    - option: LANG
-      value: en_US.UTF-8
-    - option: LC_ALL
-      value: en_US.UTF-8
-    - option: LANGUAGE
-      value: en_US.UTF-8
-
-- name: Replace before the expression till the begin of the file
-  ansible.builtin.replace:
-    path: /etc/locale.gen
-    regexp: "^# en_US.UTF-8 UTF-8$"
-    replace: "en_US.UTF-8 UTF-8"
-
-- name: Generate locale for en_US.UTF-8
-  community.general.locale_gen:
-    name: en_US.UTF-8
-
 - name: Add the modules module
   community.general.modprobe:
     name: "{{ item }}"
-  loop: "{{ kernel_modules }}"
-
-- name: Load modules during boot
-  ansible.builtin.copy:
-    dest: /etc/modules-load.d/{{ item }}.conf
-    content: |
-      {{ item }}
-    mode: u=rw,g=r,o=r
+    persistent: present
   loop: "{{ kernel_modules }}"
 
 - name: Change params in /boot/firmware/config.txt
@@ -268,8 +226,8 @@
   loop:
     - regexp: '^//Unattended-Upgrade::Mail "";'
       replace: 'Unattended-Upgrade::Mail "root";'
-    - regexp: '^//Unattended-Upgrade::MailOnlyOnError "false";'
-      replace: 'Unattended-Upgrade::MailOnlyOnError "true";'
+    - regexp: '^//Unattended-Upgrade::MailReport "on-change";'
+      replace: '//Unattended-Upgrade::MailReport "only-on-error";'
     - regexp: '^//Unattended-Upgrade::Remove-Unused-Dependencies "false";'
       replace: 'Unattended-Upgrade::Remove-Unused-Dependencies "true";'
     - regexp: '^//Unattended-Upgrade::Automatic-Reboot "false";'
