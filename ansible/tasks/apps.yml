@@ -263,21 +263,21 @@
     state: directory
     recurse: true
 
-# - name: Configure Zigbee2MQTT (/var/lib/zigbee2mqtt/configuration.yaml)
-#   ansible.builtin.template:
-#     dest: /var/lib/zigbee2mqtt/configuration.yaml
-#     src: files/var/lib/zigbee2mqtt/configuration.yaml.j2
-#     mode: u=rw,g=r,o=r
-#   no_log: true
-#   notify: Restart zigbee2mqtt
+- name: Configure Zigbee2MQTT (/var/lib/zigbee2mqtt/configuration.yaml)
+  ansible.builtin.template:
+    dest: /var/lib/zigbee2mqtt/configuration.yaml
+    src: files/var/lib/zigbee2mqtt/configuration.yaml.j2
+    mode: u=rw,g=r,o=r
+  no_log: true
+  notify: Restart zigbee2mqtt
 
-# - name: Copy the Zigbee2MQTT database (/var/lib/zigbee2mqtt/database.db)
-#   ansible.builtin.copy:
-#     dest: /var/lib/zigbee2mqtt/database.db
-#     src: files/var/lib/zigbee2mqtt/database.db
-#     mode: u=rw,g=r,o=r
-#   no_log: true
-#   notify: Restart zigbee2mqtt
+- name: Copy the Zigbee2MQTT database (/var/lib/zigbee2mqtt/database.db)
+  ansible.builtin.copy:
+    dest: /var/lib/zigbee2mqtt/database.db
+    src: files/var/lib/zigbee2mqtt/database.db
+    mode: u=rw,g=r,o=r
+  no_log: true
+  notify: Restart zigbee2mqtt
 
 - name: Zigbee2MQTT container
   community.docker.docker_container:
@@ -313,26 +313,26 @@
     state: directory
     recurse: true
 
-# - name: Configure ESPHome (/var/lib/esphome/config/apollo-msr-2.yaml)
-#   ansible.builtin.template:
-#     src: "{{ item.src }}"
-#     dest: "{{ item.dest }}"
-#     mode: u=rw,g=r,o=r
-#   loop:
-#     - dest: /var/lib/esphome/config/apollo-msr-2-f585f4.yaml
-#       src: files/var/lib/esphome/config/apollo-msr-2-f585f4.yaml.j2
-#   notify: Restart esphome
+- name: Configure ESPHome (/var/lib/esphome/config/apollo-msr-2.yaml)
+  ansible.builtin.template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: u=rw,g=r,o=r
+  loop:
+    - dest: /var/lib/esphome/config/apollo-msr-2-f585f4.yaml
+      src: files/var/lib/esphome/config/apollo-msr-2-f585f4.yaml.j2
+  notify: Restart esphome
 
-# - name: Create secret file for ESPHome
-#   ansible.builtin.template:
-#     src: "{{ item.src }}"
-#     dest: "{{ item.dest }}"
-#     mode: u=rw,g=,o=
-#   loop:
-#     - dest: /var/lib/esphome/config/secrets.yaml
-#       src: files/var/lib/esphome/config/secrets.yaml.j2
-#   no_log: true
-#   notify: Restart esphome
+- name: Create secret file for ESPHome
+  ansible.builtin.template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: u=rw,g=,o=
+  loop:
+    - dest: /var/lib/esphome/config/secrets.yaml
+      src: files/var/lib/esphome/config/secrets.yaml.j2
+  no_log: true
+  notify: Restart esphome
 
 - name: ESPHome container
   community.docker.docker_container:
