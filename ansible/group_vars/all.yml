@@ -121,75 +121,92 @@ fw_allowed_udp_ports:
 fw_forwarded_tcp_ports:
   - src: 22222
     dest: 22
-grafana_address: 127.0.0.1
-grafana_auth:
-  disable_login_form: true
-  anonymous:
-    enabled: true
-    org_role: Admin
-grafana_dashboards:
-  # 1617-systemd-service-dashboard
-  - dashboard_id: 1617
-    revision_id: 1
-    datasource: prometheus
-  # 1860-node-exporter-full
-  - dashboard_id: 1860
-    revision_id: 37
-    datasource: prometheus
-  # 11147-openwrt
-  - dashboard_id: 11147
-    revision_id: 1
-    datasource: prometheus
-  # 16124-blackbox-exporter
-  - dashboard_id: 16124
-    revision_id: 2
-    datasource: prometheus
-  # 18153-openwrt
-  - dashboard_id: 18153
-    revision_id: 3
-    datasource: prometheus
-  # 18538-blackbox-exporter
-  - dashboard_id: 18538
-    revision_id: 1
-    datasource: prometheus
-  # 19268-prometheus
-  - dashboard_id: 19268
-    revision_id: 1
-    datasource: prometheus
-  # 19908-docker-container-monitoring-with-prometheus-and-cadvisor
-  - dashboard_id: 19908
-    revision_id: 1
-    datasource: prometheus
-  # 21040-docker-daemons
-  - dashboard_id: 21040
-    revision_id: 1
-    datasource: prometheus
-grafana_datasources:
-  - name: prometheus
-    type: prometheus
-    access: proxy
-    url: http://127.0.0.1:9090
-    basicAuth: false
-    isDefault: true
-grafana_port: 3001
-grafana_security:
-  admin_user: admin
-  admin_password: !vault |
-    $ANSIBLE_VAULT;1.1;AES256
-    66616133396633383138643238383734656230663038663562373936616466396636663566633639
-    3566383935643765343638323738363166396235383434320a346135353736663734386438613939
-    61346135356565363035613261663837636564613232396464623036356637303336616236373435
-    6565326435366132660a366461303865326631343338653231616564653331303064353265333763
-    61326435303537313636323666323230653337363263636661633137303838333235
-  allow_embedding: true
-  cookie_samesite: none
-grafana_smtp:
-  host: smtp.gmail.com:587
-  user: "{{ smtp_gmail_auth_user }}"
-  password: "{{ smtp_gmail_auth_password }}"
-grafana_url: https://grafana-rpi.xvx.cz
+# grafana_ini:
+#   auth:
+#     disable_login_form: true
+#     anonymous:
+#       enabled: true
+#       org_role: Admin
+#   security:
+#     admin_user: admin
+#     admin_password: !vault |
+#       $ANSIBLE_VAULT;1.1;AES256
+#       66616133396633383138643238383734656230663038663562373936616466396636663566633639
+#       3566383935643765343638323738363166396235383434320a346135353736663734386438613939
+#       61346135356565363035613261663837636564613232396464623036356637303336616236373435
+#       6565326435366132660a366461303865326631343338653231616564653331303064353265333763
+#       61326435303537313636323666323230653337363263636661633137303838333235
+#     allow_embedding: true
+#     cookie_samesite: none
 # renovate: datasource=github-tags depName=grafana/grafana
-grafana_version: 12.2.0
+# grafana_version: 12.2.0
+# grafana_address: 127.0.0.1
+# grafana_auth:
+#   disable_login_form: true
+#   anonymous:
+#     enabled: true
+#     org_role: Admin
+# grafana_dashboards:
+#   # 1617-systemd-service-dashboard
+#   - dashboard_id: 1617
+#     revision_id: 1
+#     datasource: prometheus
+#   # 1860-node-exporter-full
+#   - dashboard_id: 1860
+#     revision_id: 37
+#     datasource: prometheus
+#   # 11147-openwrt
+#   - dashboard_id: 11147
+#     revision_id: 1
+#     datasource: prometheus
+#   # 16124-blackbox-exporter
+#   - dashboard_id: 16124
+#     revision_id: 2
+#     datasource: prometheus
+#   # 18153-openwrt
+#   - dashboard_id: 18153
+#     revision_id: 3
+#     datasource: prometheus
+#   # 18538-blackbox-exporter
+#   - dashboard_id: 18538
+#     revision_id: 1
+#     datasource: prometheus
+#   # 19268-prometheus
+#   - dashboard_id: 19268
+#     revision_id: 1
+#     datasource: prometheus
+#   # 19908-docker-container-monitoring-with-prometheus-and-cadvisor
+#   - dashboard_id: 19908
+#     revision_id: 1
+#     datasource: prometheus
+#   # 21040-docker-daemons
+#   - dashboard_id: 21040
+#     revision_id: 1
+#     datasource: prometheus
+# grafana_datasources:
+#   - name: prometheus
+#     type: prometheus
+#     access: proxy
+#     url: http://127.0.0.1:9090
+#     basicAuth: false
+#     isDefault: true
+# grafana_port: 3001
+# grafana_security:
+#   admin_user: admin
+#   admin_password: !vault |
+#     $ANSIBLE_VAULT;1.1;AES256
+#     66616133396633383138643238383734656230663038663562373936616466396636663566633639
+#     3566383935643765343638323738363166396235383434320a346135353736663734386438613939
+#     61346135356565363035613261663837636564613232396464623036356637303336616236373435
+#     6565326435366132660a366461303865326631343338653231616564653331303064353265333763
+#     61326435303537313636323666323230653337363263636661633137303838333235
+#   allow_embedding: true
+#   cookie_samesite: none
+# grafana_smtp:
+#   host: smtp.gmail.com:587
+#   user: "{{ smtp_gmail_auth_user }}"
+#   password: "{{ smtp_gmail_auth_password }}"
+# grafana_url: https://grafana-rpi.xvx.cz
 hass_config_directory: /var/lib/hass_config
 hass_url: https://hass-rpi.xvx.cz
 hass_user_password: !vault |
@@ -381,23 +398,30 @@ prometheus_version: 3.7.1
 prometheus_web_external_url: https://prometheus-rpi.xvx.cz
 prometheus_web_listen_address: 127.0.0.1:9090
 rpi_disable_boot_services:
+  - cloud-config.service
+  - cloud-final.service
+  - cloud-init-local.service
+  - cloud-init-main.service
+  - cloud-init-network.service
   - console-setup
   - dnsmasq
-  - hciuart
+  - keyboard-setup
   - ModemManager
-  - triggerhappy
+  - regenerate_ssh_host_keys
+  - sshd-keygen
+  - sshswitch
 rpi_packages:
   - bsd-mailx
   - dma
   - dnsmasq
-  - dnsutils
   - fzf
   - htop
   - jq
+  - knot-dnsutils
   - kodi
-  - libgl1-mesa-dri
   - mc
-  - rsync
+  - python3-debian
+  - smartmontools
   - sqlite3
   - telnet
   - unattended-upgrades

@@ -6,16 +6,13 @@ collections:
   - name: community.docker
     version: 4.8.1
   - name: community.general
-    version: 10.7.5
-  - name: ericsysmin.docker
-    version: 1.0.0
+    version: 11.4.0
   - name: grafana.grafana
-    version: 5.7.0
+    version: 6.0.5
   - name: prometheus.prometheus
     version: 0.27.3
   # keep-sorted end
 
 roles:
   - name: geerlingguy.firewall
-    src: https://github.com/geerlingguy/ansible-role-firewall.git
-    version: master
+    version: 2.7.0
