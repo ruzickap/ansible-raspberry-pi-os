@@ -139,7 +139,7 @@ fw_forwarded_tcp_ports:
 #     allow_embedding: true
 #     cookie_samesite: none
 # renovate: datasource=github-tags depName=grafana/grafana
-# grafana_version: 12.2.0
+# grafana_version: 12.2.1
 # grafana_address: 127.0.0.1
 # grafana_auth:
 #   disable_login_form: true
