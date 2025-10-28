@@ -502,8 +502,68 @@
     name: kodi
     comment: Kodi
     shell: /usr/bin/sh
-    groups: audio,input,uucp,video,plugdev
+    groups: audio,bluetooth,input,uucp,video,plugdev
     group: kodi
+  register: created_user_kodi
+
+- name: Create /home/kodi/.config/wireplumber/wireplumber.conf.d directory
+  ansible.builtin.file:
+    path: /var/lib/bluetooth/{{ bluetooth_device_address_rpi }}/{{ bluetooth_device_address_headset }}
+    state: directory
+    mode: u=rwx,g=,o=
+
+- name: Copy audio profile for bluetooth device
+  ansible.builtin.copy:
+    src: files/var/lib/bluetooth/{{ bluetooth_device_address_rpi }}/{{ bluetooth_device_address_headset }}/info
+    dest: /var/lib/bluetooth/{{ bluetooth_device_address_rpi }}/{{ bluetooth_device_address_headset }}/info
+    mode: u=rw,g=,o=
+  no_log: true
+
+- name: Create wireplumber config directory
+  ansible.builtin.file:
+    path: /home/kodi/.config/wireplumber/wireplumber.conf.d
+    state: directory
+    owner: kodi
+    group: kodi
+    mode: u=rwx,g=rx,o=rx
+
+- name: Create wireplumber state directory
+  ansible.builtin.file:
+    path: /home/kodi/.local/state/wireplumber
+    state: directory
+    owner: kodi
+    group: kodi
+    mode: u=rwx,g=,o=
+
+- name: Configure WirePlumber audio settings
+  ansible.builtin.template:
+    src: files/home/kodi/.config/wireplumber/wireplumber.conf.d/50-audio.conf.j2
+    dest: /home/kodi/.config/wireplumber/wireplumber.conf.d/50-audio.conf
+    owner: kodi
+    group: kodi
+    mode: u=rw,g=r,o=r
+
+- name: Configure WirePlumber default profile
+  ansible.builtin.template:
+    src: files/home/kodi/.local/state/wireplumber/default-profile.j2
+    dest: /home/kodi/.local/state/wireplumber/default-profile
+    owner: kodi
+    group: kodi
+    mode: u=rw,g=rw,o=r
+
+- name: Get UID of kodi user
+  ansible.builtin.shell: id -u kodi
+  register: kodi_uid_result
+  changed_when: false
+
+- name: Enable and start PipeWire for user kodi
+  become: true
+  become_user: kodi
+  ansible.builtin.shell:
+    cmd: systemctl --user --now enable pipewire pipewire-pulse
+    creates: /usr/lib/systemd/user/pipewire.service
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ kodi_uid_result.stdout }}"
 
 - name: Create startup script for Kodi
   ansible.builtin.copy:

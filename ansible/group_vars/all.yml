@@ -41,6 +41,8 @@ blackbox_exporter_configuration_modules:
 # renovate: datasource=github-tags depName=prometheus/blackbox_exporter
 blackbox_exporter_version: 0.27.0
 blackbox_exporter_web_listen_address: 127.0.0.1:9115
+bluetooth_device_address_headset: 08:C8:C2:85:EF:57 # Device 08:C8:C2:85:EF:57 PetrR Jabra Evolve2 55
+bluetooth_device_address_rpi: DC:A6:32:0E:BD:15
 # https://thesmarthomejourney.com/2022/08/01/fixing-cadvisor-cpu/
 # https://github.com/docker/for-linux/issues/1112 - Grafana -> Cadvisor exprter -> Memory
 boot_cmdline_parameters: cgroup_enable=cpuset cgroup_enable=memory
@@ -420,12 +422,14 @@ rpi_packages:
   - knot-dnsutils
   - kodi
   - mc
+  - pipewire-audio
   - python3-debian
   - smartmontools
   - sqlite3
   - telnet
   - unattended-upgrades
   - vim
+  - wireplumber
 rpi_password: !vault |
   $ANSIBLE_VAULT;1.1;AES256
   64396630623531333366363238336262323836616539343733376566376235363531626436323766
