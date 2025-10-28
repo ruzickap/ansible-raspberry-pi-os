@@ -38,7 +38,7 @@
 
 - name: Forward journald to /dev/tty12
   community.general.ini_file:
-    path: /etc/systemd/journald.conf.d/fw-tty12.conf
+    path: /etc/systemd/journald.conf.d/my-journald.conf
     no_extra_spaces: true
     section: Journal
     option: "{{ item.option }}"
@@ -51,7 +51,26 @@
       value: /dev/tty12
     - option: MaxLevelConsole
       value: info
+    - option: Storage
+      value: persistent
+    - option: SystemMaxUse
+      value: 10M
   notify: Reload systemd
+
+- name: Create /etc/systemd/system/bluetooth.service.d directory
+  ansible.builtin.file:
+    path: /etc/systemd/system/bluetooth.service.d
+    state: directory
+    mode: u=rwx,g=rx,o=rx
+
+- name: Enable bluetooth
+  community.general.ini_file:
+    path: /etc/systemd/system/bluetooth.service.d/override.conf
+    no_extra_spaces: true
+    section: Service
+    option: ExecStartPre
+    value: /usr/sbin/rfkill unblock bluetooth
+    mode: u=rw,g=r,o=r
 
 - name: Configure .bashrc for root
   ansible.builtin.blockinfile:
@@ -203,6 +222,7 @@
       SECURETRANSFER
       STARTTLS
       INSECURE
+      MASQUERADE {{ smtp_gmail_auth_user }}
 
 - name: Configure /etc/aliases
   ansible.builtin.copy:
@@ -226,8 +246,8 @@
   loop:
     - regexp: '^//Unattended-Upgrade::Mail "";'
       replace: 'Unattended-Upgrade::Mail "root";'
-    - regexp: '^//Unattended-Upgrade::MailReport "on-change";'
-      replace: '//Unattended-Upgrade::MailReport "only-on-error";'
+    - regexp: '^//Unattended-Upgrade::MailReport "only-on-error";'
+      replace: 'Unattended-Upgrade::MailReport "only-on-error";'
     - regexp: '^//Unattended-Upgrade::Remove-Unused-Dependencies "false";'
       replace: 'Unattended-Upgrade::Remove-Unused-Dependencies "true";'
     - regexp: '^//Unattended-Upgrade::Automatic-Reboot "false";'

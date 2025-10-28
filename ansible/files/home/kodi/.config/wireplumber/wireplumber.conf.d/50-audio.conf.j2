@@ -1,0 +1,33 @@
+wireplumber.settings = {
+  device.routes.default-sink-volume = 0.91
+}
+
+monitor.bluez.rules = [
+  {
+    matches = [ { device.name = "bluez_card.{{ bluetooth_device_address_headset | replace(':', '_') }}" } ]
+    actions = {
+      update-props = {
+        bluez5.roles = [ a2dp_sink ]
+        bluez5.codec = [ sbc_xq ]
+      }
+    }
+  }
+]
+
+monitor.alsa.rules = [
+  {
+    matches = [ { node.name = "alsa_output.platform-fef00700.hdmi.hdmi-stereo" } ]
+    actions = {
+      update-props = {
+        priority.driver = 1005
+        priority.session = 1005
+      }
+    }
+  }
+]
+
+# export XDG_RUNTIME_DIR="/run/user/1001"
+# wpctl status
+# wpctl inspect $(wpctl status | sed -n '/Sinks:/,/^$/{/PetrR Jabra Evolve2 55/s/[^0-9]*\([0-9][0-9]*\)\..*/\1/p}' | head -n1) | grep api.bluez5
+# bluetoothctl disconnect 08:C8:C2:85:EF:57
+# bluetoothctl connect 08:C8:C2:85:EF:57

@@ -18,12 +18,21 @@ if [ "$_IP" ]; then
 fi
 
 (
-# Wait for network to be fully initialized
-sleep 10
-cat << EOF | mailx -s "Reboot {{ ansible_fqdn }}" "{{ notification_email }}"
-RPi ({{ ansible_fqdn }}) rebooted:
+while ! nmcli networking connectivity check | grep -q "full"; do
+  sleep 5
+done
 
-$(date)
+cat << EOF | mailx -a "Content-Type: text/html" -s "Reboot {{ ansible_fqdn }}" "{{ notification_email }}"
+<html>
+<body>
+    <h4>🔄 {{ ansible_fqdn }} rebooted: $(date)</h4>
+    <summary>📋 5min before boot logs:</summary>
+    <pre>
+$(journalctl -b -1 --since "-5min")
+    </pre>
+    </details>
+</body>
+</html>
 EOF
 ) &
 
