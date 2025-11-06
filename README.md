@@ -24,8 +24,8 @@ Bluetooth - To connect a headset in pairing mode:
 ```bash
 su - kodi
 bluetoothctl
-power on
-pair 08:C8:C2:85:EF:57
-trust 08:C8:C2:85:EF:57
-connect 08:C8:C2:85:EF:57
+# power on
+# pair 08:C8:C2:85:EF:57
+# trust 08:C8:C2:85:EF:57
+# connect 08:C8:C2:85:EF:57
 ```
