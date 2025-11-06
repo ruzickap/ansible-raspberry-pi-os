@@ -10,3 +10,6 @@ network:
           auth:
             key-management: psk
             password: "${WIFI_PASSWORD}"
+          networkmanager:
+            passthrough:
+              connection.autoconnect-retries: 0

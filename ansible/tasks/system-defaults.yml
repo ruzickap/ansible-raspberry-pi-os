@@ -246,12 +246,16 @@
   loop:
     - regexp: '^//Unattended-Upgrade::Mail "";'
       replace: 'Unattended-Upgrade::Mail "root";'
-    - regexp: '^//Unattended-Upgrade::MailReport "only-on-error";'
+    - regexp: '^//Unattended-Upgrade::MailReport "on-change";'
       replace: 'Unattended-Upgrade::MailReport "only-on-error";'
     - regexp: '^//Unattended-Upgrade::Remove-Unused-Dependencies "false";'
       replace: 'Unattended-Upgrade::Remove-Unused-Dependencies "true";'
     - regexp: '^//Unattended-Upgrade::Automatic-Reboot "false";'
       replace: 'Unattended-Upgrade::Automatic-Reboot "true";'
+    - regexp: '^//Unattended-Upgrade::Automatic-Reboot-WithUsers "true";'
+      replace: 'Unattended-Upgrade::Automatic-Reboot-WithUsers "true";'
+    - regexp: '^//Unattended-Upgrade::Automatic-Reboot-Time "02:00";'
+      replace: 'Unattended-Upgrade::Automatic-Reboot-Time "00:00";'
 
 - name: Add Raspbian to /etc/apt/apt.conf.d/50unattended-upgrades
   ansible.builtin.blockinfile:
