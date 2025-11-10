@@ -278,11 +278,3 @@
 
 - name: Run all handlers
   ansible.builtin.meta: flush_handlers
-
-- name: Copy config files for NetworkManager
-  ansible.builtin.copy:
-    src: files/etc/NetworkManager/
-    dest: /etc/NetworkManager/
-    directory_mode: u=rwx,g=rx,o=rx
-    mode: u=rw,g=,o=
-  notify: Restart NetworkManager
