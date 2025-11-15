@@ -48,7 +48,7 @@
 
     - name: Restore Prometheus from backup # noqa: command-instead-of-module
       ansible.builtin.shell: |
-        rsync --archive --verbose --delete --log-file=/var/log/restore-prometheus.log --rsh='ssh -i /root/.ssh/id_ed25519-backup_raspi.xvx.cz -o StrictHostKeyChecking=no' {{ backup_user }}@{{ backup_server }}:{{ backup_directory }}/prometheus/ /var/lib/prometheus/
+        rsync --archive --verbose --chown=prometheus:prometheus --delete --log-file=/var/log/restore-prometheus.log --rsh='ssh -i /root/.ssh/id_ed25519-backup_raspi.xvx.cz -o StrictHostKeyChecking=no' {{ backup_user }}@{{ backup_server }}:{{ backup_directory }}/prometheus/ /var/lib/prometheus/
       changed_when: true
 
     - name: Start Prometheus

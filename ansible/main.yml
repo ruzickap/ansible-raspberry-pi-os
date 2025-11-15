@@ -8,6 +8,7 @@
     - community.docker
     - community.general
     - grafana.grafana
+    - prometheus.prometheus
 
   pre_tasks:
     - name: Set authorized key for pi and root
@@ -26,6 +27,13 @@
       loop:
         - pi
         - root
+    - name: Install Grafana dependencies
+      ansible.builtin.apt:
+        name: python3-debian
+        update_cache: true
+        install_recommends: false
+      register: result
+      until: result is succeeded
 
   roles:
     - role: geerlingguy.firewall
