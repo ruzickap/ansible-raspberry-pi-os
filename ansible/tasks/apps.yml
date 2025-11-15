@@ -13,15 +13,15 @@
     - /root/.ssh/id_ed25519-backup_raspi.xvx.cz.pub
   no_log: true
 
-# - name: Creates Backup Prometheus file /etc/cron.d/backup-prometheus
-#   ansible.builtin.cron:
-#     name: Backup Prometheus
-#     weekday: "*"
-#     minute: "0"
-#     hour: "3"
-#     user: root
-#     job: PROMETHEUS_SNAPSHOT_DIR=$(curl -s -X POST http://127.0.0.1:9090/api/v1/admin/tsdb/snapshot | jq -r '.data.name') && rsync --archive --verbose --delete --log-file=/tmp/backup-prometheus.log -e 'ssh -i /root/.ssh/id_ed25519-backup_raspi.xvx.cz -o StrictHostKeyChecking=no' /var/lib/prometheus/snapshots/${PROMETHEUS_SNAPSHOT_DIR}/ {{ backup_user }}@{{ backup_server }}:{{ backup_directory }}/prometheus/ > /dev/null && rm -rf /var/lib/prometheus/snapshots
-#     cron_file: backup-prometheus
+- name: Creates Backup Prometheus file /etc/cron.d/backup-prometheus
+  ansible.builtin.cron:
+    name: Backup Prometheus
+    weekday: "*"
+    minute: "0"
+    hour: "3"
+    user: root
+    job: PROMETHEUS_SNAPSHOT_DIR=$(curl -s -X POST http://127.0.0.1:9090/api/v1/admin/tsdb/snapshot | jq -r '.data.name') && rsync --archive --verbose --delete --log-file=/tmp/backup-prometheus.log -e 'ssh -i /root/.ssh/id_ed25519-backup_raspi.xvx.cz -o StrictHostKeyChecking=no' /var/lib/prometheus/snapshots/${PROMETHEUS_SNAPSHOT_DIR}/ {{ backup_user }}@{{ backup_server }}:{{ backup_directory }}/prometheus/ > /dev/null && rm -rf /var/lib/prometheus/snapshots
+    cron_file: backup-prometheus
 
 # - name: Creates Backup HASS file /etc/cron.d/backup-hass
 #   ansible.builtin.cron:
@@ -33,32 +33,32 @@
 #     job: HASS_BACKUP_FILE=$(ls -t {{ hass_config_directory }}/backups/*.tar | head -1) && rsync --archive --verbose --delete --log-file=/tmp/backup-hass.log --rsh='ssh -i /root/.ssh/id_ed25519-backup_raspi.xvx.cz -o StrictHostKeyChecking=no' "${HASS_BACKUP_FILE}" "{{ backup_user }}@{{ backup_server }}:{{ backup_directory }}/hass_config/hass_config_latest_backup.tar" > /dev/null && rm {{ hass_config_directory }}/backups/*.tar
 #     cron_file: backup-hass
 
-# - name: Check if /var/log/restore-prometheus.log exists
-#   ansible.builtin.stat:
-#     path: /var/log/restore-prometheus.log
-#   register: prometheus_restore_log
+- name: Check if /var/log/restore-prometheus.log exists
+  ansible.builtin.stat:
+    path: /var/log/restore-prometheus.log
+  register: prometheus_restore_log
 
-# - name: Restore Prometheus from backup
-#   when: not prometheus_restore_log.stat.exists
-#   block:
-#     - name: Stop Prometheus
-#       ansible.builtin.systemd_service:
-#         name: prometheus
-#         state: stopped
+- name: Restore Prometheus from backup
+  when: not prometheus_restore_log.stat.exists
+  block:
+    - name: Stop Prometheus
+      ansible.builtin.systemd_service:
+        name: prometheus
+        state: stopped
 
-#     - name: Restore Prometheus from backup # noqa: command-instead-of-module
-#       ansible.builtin.shell: |
-#         rsync --archive --verbose --delete --log-file=/var/log/restore-prometheus.log --rsh='ssh -i /root/.ssh/id_ed25519-backup_raspi.xvx.cz -o StrictHostKeyChecking=no' {{ backup_user }}@{{ backup_server }}:{{ backup_directory }}/prometheus/ /var/lib/prometheus/
-#       changed_when: true
+    - name: Restore Prometheus from backup # noqa: command-instead-of-module
+      ansible.builtin.shell: |
+        rsync --archive --verbose --chown=prometheus:prometheus --delete --log-file=/var/log/restore-prometheus.log --rsh='ssh -i /root/.ssh/id_ed25519-backup_raspi.xvx.cz -o StrictHostKeyChecking=no' {{ backup_user }}@{{ backup_server }}:{{ backup_directory }}/prometheus/ /var/lib/prometheus/
+      changed_when: true
 
-#     - name: Start Prometheus
-#       ansible.builtin.systemd_service:
-#         name: prometheus
-#         state: started
-#   rescue:
-#     - name: Print when errors
-#       ansible.builtin.fail:
-#         msg: Restore from backup failed
+    - name: Start Prometheus
+      ansible.builtin.systemd_service:
+        name: prometheus
+        state: started
+  rescue:
+    - name: Print when errors
+      ansible.builtin.fail:
+        msg: Restore from backup failed
 
 - name: Check if /var/log/restore-hass.log exists
   ansible.builtin.stat:
