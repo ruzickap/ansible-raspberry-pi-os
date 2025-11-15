@@ -36,17 +36,13 @@
         alloy_systemd_override: |
           [Service]
           User=root
-    # https://github.com/grafana/grafana-ansible-collection/issues/446
-    # - role: grafana.grafana.grafana
-    # https://github.com/prometheus-community/ansible/issues/667
-    # - role: prometheus.prometheus.prometheus
-    # - role: prometheus.prometheus.blackbox_exporter                  # <<< Replace by alloy
-    # - role: prometheus.prometheus.cadvisor                           # <<< Replace by alloy
-    #   vars:
-    #     cadvisor_docker_only: true
-    # - role: prometheus.prometheus.node_exporter                      # <<< Replace by alloy
-    # - role: prometheus.prometheus.systemd_exporter
-
+    - role: grafana.grafana.grafana
+    - role: prometheus.prometheus.prometheus
+      vars:
+        prometheus_storage_retention_size: 5GB
+        prometheus_config_flags_extra:
+          web.enable-admin-api:
+          web.enable-remote-write-receiver:
   tasks:
     - name: Install and configure system-defaults
       ansible.builtin.include_tasks:

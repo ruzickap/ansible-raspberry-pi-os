@@ -22,25 +22,6 @@ alloy_grafana_version: 1.11.3
 backup_directory: /mnt/backups/raspi
 backup_server: 192.168.1.1
 backup_user: root
-blackbox_exporter_configuration_modules:
-  http_2xx:
-    prober: http
-    http:
-      preferred_ip_protocol: ip4
-      tls_config:
-        insecure_skip_verify: true
-  icmp:
-    prober: icmp
-    icmp:
-      preferred_ip_protocol: ip4
-  ssh_banner:
-    prober: tcp
-    tcp:
-      query_response:
-        - expect: "^SSH-2.0-"
-# renovate: datasource=github-tags depName=prometheus/blackbox_exporter
-blackbox_exporter_version: 0.27.0
-blackbox_exporter_web_listen_address: 127.0.0.1:9115
 bluetooth_device_address_headset: 08:C8:C2:85:EF:57 # Device 08:C8:C2:85:EF:57 PetrR Jabra Evolve2 55
 bluetooth_device_address_rpi: DC:A6:32:0E:BD:15
 # https://thesmarthomejourney.com/2022/08/01/fixing-cadvisor-cpu/
@@ -48,19 +29,6 @@ bluetooth_device_address_rpi: DC:A6:32:0E:BD:15
 boot_cmdline_parameters: cgroup_enable=cpuset cgroup_enable=memory
 boot_config_parameters: |
   hdmi_ignore_cec_init=1
-# https://github.com/google/cadvisor/blob/master/docs/storage/prometheus.md
-cadvisor_enable_metrics:
-  - cpu
-  - cpuLoad
-  - disk
-  - diskIO
-  - memory
-  - network
-  - oom_event
-cadvisor_listen_ip: 127.0.0.1
-cadvisor_port: 8085
-# renovate: datasource=github-tags depName=google/cadvisor
-cadvisor_version: 0.53.0
 cloudflared_tunnel_token: !vault |
   $ANSIBLE_VAULT;1.1;AES256
   61393336363832613065376531643131646432666537326135393837653138356436643235366466
@@ -123,92 +91,77 @@ fw_allowed_udp_ports:
 fw_forwarded_tcp_ports:
   - src: 22222
     dest: 22
-# grafana_ini:
-#   auth:
-#     disable_login_form: true
-#     anonymous:
-#       enabled: true
-#       org_role: Admin
-#   security:
-#     admin_user: admin
-#     admin_password: !vault |
-#       $ANSIBLE_VAULT;1.1;AES256
-#       66616133396633383138643238383734656230663038663562373936616466396636663566633639
-#       3566383935643765343638323738363166396235383434320a346135353736663734386438613939
-#       61346135356565363035613261663837636564613232396464623036356637303336616236373435
-#       6565326435366132660a366461303865326631343338653231616564653331303064353265333763
-#       61326435303537313636323666323230653337363263636661633137303838333235
-#     allow_embedding: true
-#     cookie_samesite: none
+grafana_dashboards:
+  # 1617-systemd-service-dashboard
+  - dashboard_id: 1617
+    revision_id: 1
+    datasource: prometheus
+  # 1860-node-exporter-full
+  - dashboard_id: 1860
+    revision_id: 37
+    datasource: prometheus
+  # 16124-blackbox-exporter
+  - dashboard_id: 16124
+    revision_id: 2
+    datasource: prometheus
+  # 18153-openwrt
+  - dashboard_id: 18153
+    revision_id: 3
+    datasource: prometheus
+  # 18538-blackbox-exporter
+  - dashboard_id: 18538
+    revision_id: 1
+    datasource: prometheus
+  # 18999-grafana-metrics
+  - dashboard_id: 18999
+    revision_id: 1
+    datasource: prometheus
+  # 19268-prometheus
+  - dashboard_id: 19268
+    revision_id: 1
+    datasource: prometheus
+  # 19908-docker-container-monitoring-with-prometheus-and-cadvisor
+  - dashboard_id: 19908
+    revision_id: 1
+    datasource: prometheus
+  # 21040-docker-daemons
+  - dashboard_id: 21040
+    revision_id: 1
+    datasource: prometheus
+grafana_datasources:
+  - name: prometheus
+    type: prometheus
+    access: proxy
+    url: http://127.0.0.1:9090
+    basicAuth: false
+    isDefault: true
+grafana_ini:
+  auth:
+    disable_login_form: true
+    anonymous:
+      enabled: true
+      org_role: Admin
+  security:
+    admin_password: !vault |
+      $ANSIBLE_VAULT;1.1;AES256
+      66616133396633383138643238383734656230663038663562373936616466396636663566633639
+      3566383935643765343638323738363166396235383434320a346135353736663734386438613939
+      61346135356565363035613261663837636564613232396464623036356637303336616236373435
+      6565326435366132660a366461303865326631343338653231616564653331303064353265333763
+      61326435303537313636323666323230653337363263636661633137303838333235
+    allow_embedding: true
+    cookie_samesite: none
+  server:
+    http_addr: 127.0.0.1
+    http_port: 3001
+    root_url: https://grafana-rpi.xvx.cz
+  smtp:
+    enabled: true
+    host: smtp.gmail.com:587
+    user: "{{ smtp_gmail_auth_user }}"
+    password: "{{ smtp_gmail_auth_password }}"
 # renovate: datasource=github-tags depName=grafana/grafana
-# grafana_version: 12.2.1
-# grafana_address: 127.0.0.1
-# grafana_auth:
-#   disable_login_form: true
-#   anonymous:
-#     enabled: true
-#     org_role: Admin
-# grafana_dashboards:
-#   # 1617-systemd-service-dashboard
-#   - dashboard_id: 1617
-#     revision_id: 1
-#     datasource: prometheus
-#   # 1860-node-exporter-full
-#   - dashboard_id: 1860
-#     revision_id: 37
-#     datasource: prometheus
-#   # 11147-openwrt
-#   - dashboard_id: 11147
-#     revision_id: 1
-#     datasource: prometheus
-#   # 16124-blackbox-exporter
-#   - dashboard_id: 16124
-#     revision_id: 2
-#     datasource: prometheus
-#   # 18153-openwrt
-#   - dashboard_id: 18153
-#     revision_id: 3
-#     datasource: prometheus
-#   # 18538-blackbox-exporter
-#   - dashboard_id: 18538
-#     revision_id: 1
-#     datasource: prometheus
-#   # 19268-prometheus
-#   - dashboard_id: 19268
-#     revision_id: 1
-#     datasource: prometheus
-#   # 19908-docker-container-monitoring-with-prometheus-and-cadvisor
-#   - dashboard_id: 19908
-#     revision_id: 1
-#     datasource: prometheus
-#   # 21040-docker-daemons
-#   - dashboard_id: 21040
-#     revision_id: 1
-#     datasource: prometheus
-# grafana_datasources:
-#   - name: prometheus
-#     type: prometheus
-#     access: proxy
-#     url: http://127.0.0.1:9090
-#     basicAuth: false
-#     isDefault: true
-# grafana_port: 3001
-# grafana_security:
-#   admin_user: admin
-#   admin_password: !vault |
-#     $ANSIBLE_VAULT;1.1;AES256
-#     66616133396633383138643238383734656230663038663562373936616466396636663566633639
-#     3566383935643765343638323738363166396235383434320a346135353736663734386438613939
-#     61346135356565363035613261663837636564613232396464623036356637303336616236373435
-#     6565326435366132660a366461303865326631343338653231616564653331303064353265333763
-#     61326435303537313636323666323230653337363263636661633137303838333235
-#   allow_embedding: true
-#   cookie_samesite: none
-# grafana_smtp:
-#   host: smtp.gmail.com:587
-#   user: "{{ smtp_gmail_auth_user }}"
-#   password: "{{ smtp_gmail_auth_password }}"
-# grafana_url: https://grafana-rpi.xvx.cz
+grafana_version: 12.2.1
 hass_config_directory: /var/lib/hass_config
 hass_url: https://hass-rpi.xvx.cz
 hass_user_password: !vault |
@@ -246,14 +199,6 @@ mqtt_clients:
       63623263643735373938613736623266643566393366383032353939343131646636643636366134
       3866393337393363360a316465663163363133623034646330396132366466656637313837373630
       3064
-node_exporter_enabled_collectors:
-  - interrupts
-  - processes
-  - systemd
-  - tcpstat
-# renovate: datasource=github-tags depName=prometheus/node_exporter
-node_exporter_version: 1.10.2
-node_exporter_web_listen_address: 127.0.0.1:9100
 notification_email: petr.ruzicka@gmail.com
 ntp_server: ntp.nic.cz
 openwrt_homepage_password: !vault |
@@ -272,10 +217,6 @@ openwrt_luci_password: !vault |
   3066616463613265390a346137636634636163383630666533363433636536333938323139386361
   3861
 openwrt_luci_user: root
-prometheus_config_flags_extra:
-  web.enable-admin-api:
-prometheus_global:
-  scrape_interval: 5m
 prometheus_hass_bearer_token: !vault |
   $ANSIBLE_VAULT;1.1;AES256
   38383531333561393731633337326265343363303633363561643362646566316337383834346634
@@ -291,110 +232,6 @@ prometheus_hass_bearer_token: !vault |
   65633562633438613336303966393833393566633163663234313565303962333838663734313465
   63666363373565313262383365383633346261303436346465386633343239656634396361613664
   37333466323262626638316530343962663733373539393666393539613461353339
-prometheus_scrape_configs:
-  - job_name: blackbox
-    static_configs:
-      - targets:
-          - 127.0.0.1:9115
-  - job_name: blackbox-ssh
-    metrics_path: /probe
-    params:
-      module: [ssh_banner]
-    static_configs:
-      - targets:
-          - 192.168.1.1:22
-    relabel_configs:
-      - source_labels: [__address__]
-        target_label: __param_target
-      - source_labels: [__param_target]
-        target_label: instance
-      - target_label: __address__
-        replacement: 127.0.0.1:9115
-  - job_name: blackbox-http
-    metrics_path: /probe
-    params:
-      module: [http_2xx]
-    static_configs:
-      - targets:
-          - https://www.google.com
-          # rpi.xvx.cz
-          - http://127.0.0.1:3000/api/healthcheck
-          # grafana-rpi.xvx.cz
-          - http://127.0.0.1:3001/healthz
-          # esphome-rpi.xvx.cz
-          - http://127.0.0.1:6052/version
-          # cadvisor-rpi.xvx.cz
-          - http://127.0.0.1:8085/healthz
-          # hass-rpi.xvx.cz
-          - http://127.0.0.1:8123/static/icons/favicon.ico
-          # prometheus-rpi.xvx.cz
-          - http://127.0.0.1:9090/-/ready
-          # gate.xvx.cz
-          - https://192.168.1.1
-          # transmission.xvx.cz
-          - http://192.168.1.1:9091/web/
-          # uzg-01.xvx.cz
-          - http://192.168.1.3/login
-    relabel_configs:
-      - source_labels: [__address__]
-        target_label: __param_target
-      - source_labels: [__param_target]
-        target_label: instance
-      - target_label: __address__
-        replacement: 127.0.0.1:9115
-  - job_name: blackbox-ping
-    metrics_path: /probe
-    params:
-      module: [icmp]
-    static_configs:
-      - targets:
-          - 1.1.1.1
-          - 192.168.1.1
-          - 192.168.1.3
-          - 192.168.1.4
-    relabel_configs:
-      - source_labels: [__address__]
-        target_label: __param_target
-      - source_labels: [__param_target]
-        target_label: instance
-      - target_label: __address__
-        replacement: 127.0.0.1:9115
-  - job_name: cadvisor
-    static_configs:
-      - targets:
-          - 127.0.0.1:8085
-  - job_name: docker
-    static_configs:
-      - targets:
-          - 127.0.0.1:9323
-  - job_name: esphome
-    static_configs:
-      - targets:
-          - 192.168.1.4:80
-    basic_auth:
-      username: "{{ esphome_web_server_username }}"
-      password: "{{ esphome_web_server_password }}"
-  - job_name: grafana
-    static_configs:
-      - targets:
-          - 127.0.0.1:3001
-  - job_name: node_exporter
-    static_configs:
-      - targets:
-          - 127.0.0.1:9100
-  - job_name: openwrt
-    static_configs:
-      - targets:
-          - 192.168.1.1:9100
-  - job_name: prometheus
-    static_configs:
-      - targets:
-          - 127.0.0.1:9090
-  - job_name: systemd_exporter
-    static_configs:
-      - targets:
-          - 127.0.0.1:9558
-prometheus_storage_retention_size: 5GB
 # renovate: datasource=github-tags depName=prometheus/prometheus
 prometheus_version: 3.7.3
 prometheus_web_external_url: https://prometheus-rpi.xvx.cz
@@ -445,9 +282,6 @@ smtp_gmail_auth_password: !vault |
   3862666238383439660a383065633337663734343633636635323763393132306164303662323864
   32613061646137646163643864356537616236626534373533323833333465393537
 smtp_gmail_auth_user: my.user.mbox@gmail.com
-# renovate: datasource=github-tags depName=prometheus-community/systemd_exporter
-systemd_exporter_version: 0.7.0
-systemd_exporter_web_listen_address: 127.0.0.1:9558
 timezone: Europe/Prague
 transmission_ip: 192.168.1.1
 transmission_rpc_password: !vault |
