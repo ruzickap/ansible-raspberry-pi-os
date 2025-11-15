@@ -3,17 +3,27 @@
 // # Comprehensive monitoring setup for Raspberry Pi
 // #########################################################
 
+livedebugging {
+  enabled = true
+}
+
 // #########################################################
 // # Common Remote Write and Logging Endpoints
 // #########################################################
 
-prometheus.remote_write "metrics_service" {
+prometheus.remote_write "grafana_cloud_metrics_service" {
   endpoint {
     url = "{{ alloy_grafana_cloud_prometheus_url }}"
     basic_auth {
       username = "{{ alloy_grafana_cloud_prometheus_username }}"
       password = "{{ alloy_grafana_cloud_password }}"
     }
+  }
+}
+
+prometheus.remote_write "prometheus_metrics_service" {
+  endpoint {
+    url = "http://127.0.0.1:9090/api/v1/write"
   }
 }
 
@@ -36,12 +46,10 @@ prometheus.exporter.self "integrations_alloy_health" { }
 
 discovery.relabel "integrations_alloy_health" {
   targets = prometheus.exporter.self.integrations_alloy_health.targets
-
   rule {
     replacement = constants.hostname
     target_label  = "instance"
   }
-
   rule {
     target_label = "job"
     replacement  = "integrations/alloy"
@@ -55,8 +63,10 @@ prometheus.scrape "integrations_alloy_health" {
 }
 
 prometheus.relabel "integrations_alloy_health" {
-  forward_to = [prometheus.remote_write.metrics_service.receiver]
-
+  forward_to = [
+    prometheus.remote_write.grafana_cloud_metrics_service.receiver,
+    prometheus.remote_write.prometheus_metrics_service.receiver,
+  ]
   rule {
     source_labels = ["__name__"]
     regex         = "alloy_build_info|alloy_component_controller_running_components|alloy_component_dependencies_wait_seconds|alloy_component_dependencies_wait_seconds_bucket|alloy_component_evaluation_seconds|alloy_component_evaluation_seconds_bucket|alloy_component_evaluation_seconds_count|alloy_component_evaluation_seconds_sum|alloy_component_evaluation_slow_seconds|alloy_config_hash|alloy_resources_machine_rx_bytes_total|alloy_resources_machine_tx_bytes_total|alloy_resources_process_cpu_seconds_total|alloy_resources_process_resident_memory_bytes|cluster_node_gossip_health_score|cluster_node_gossip_proto_version|cluster_node_gossip_received_events_total|cluster_node_info|cluster_node_lamport_time|cluster_node_peers|cluster_node_update_observers|cluster_transport_rx_bytes_total|cluster_transport_rx_packet_queue_length|cluster_transport_rx_packets_failed_total|cluster_transport_rx_packets_total|cluster_transport_stream_rx_bytes_total|cluster_transport_stream_rx_packets_failed_total|cluster_transport_stream_rx_packets_total|cluster_transport_stream_tx_bytes_total|cluster_transport_stream_tx_packets_failed_total|cluster_transport_stream_tx_packets_total|cluster_transport_streams|cluster_transport_tx_bytes_total|cluster_transport_tx_packet_queue_length|cluster_transport_tx_packets_failed_total|cluster_transport_tx_packets_total|go_gc_duration_seconds_count|go_goroutines|go_memstats_heap_inuse_bytes|otelcol_exporter_send_failed_spans_total|otelcol_exporter_sent_spans_total|otelcol_processor_batch_batch_send_size_bucket|otelcol_processor_batch_metadata_cardinality|otelcol_processor_batch_timeout_trigger_send_total|otelcol_receiver_accepted_spans_total|otelcol_receiver_refused_spans_total|prometheus_remote_storage_bytes_total|prometheus_remote_storage_highest_timestamp_in_seconds|prometheus_remote_storage_metadata_bytes_total|prometheus_remote_storage_queue_highest_sent_timestamp_seconds|prometheus_remote_storage_samples_failed_total|prometheus_remote_storage_samples_retried_total|prometheus_remote_storage_samples_total|prometheus_remote_storage_sent_batch_duration_seconds_bucket|prometheus_remote_storage_sent_batch_duration_seconds_count|prometheus_remote_storage_sent_batch_duration_seconds_sum|prometheus_remote_storage_shards|prometheus_remote_storage_shards_max|prometheus_remote_storage_shards_min|prometheus_remote_write_wal_samples_appended_total|prometheus_remote_write_wal_storage_active_series|rpc_server_duration_milliseconds_bucket|scrape_duration_seconds|up"
@@ -71,11 +81,9 @@ logging {
 
 loki.process "logs_integrations_integrations_alloy_health" {
   forward_to = [loki.relabel.logs_integrations_integrations_alloy_health.receiver]
-
   stage.regex {
     expression = "(level=(?P<log_level>[\\s]*debug|warn|info|error))"
   }
-
   stage.labels {
     values = {
       level = "log_level",
@@ -85,12 +93,10 @@ loki.process "logs_integrations_integrations_alloy_health" {
 
 loki.relabel "logs_integrations_integrations_alloy_health" {
   forward_to = [loki.write.grafana_cloud_loki.receiver]
-
   rule {
     replacement = constants.hostname
     target_label  = "instance"
   }
-
   rule {
     target_label = "job"
     replacement  = "integrations/alloy"
@@ -104,12 +110,10 @@ loki.relabel "logs_integrations_integrations_alloy_health" {
 
 discovery.relabel "integrations_node_exporter" {
   targets = prometheus.exporter.unix.integrations_node_exporter.targets
-
   rule {
     target_label = "instance"
     replacement  = constants.hostname
   }
-
   rule {
     target_label = "job"
     replacement = "integrations/node_exporter"
@@ -118,17 +122,15 @@ discovery.relabel "integrations_node_exporter" {
 
 prometheus.exporter.unix "integrations_node_exporter" {
   disable_collectors = ["ipvs", "btrfs", "infiniband", "xfs", "zfs"]
-
+  enable_collectors = ["interrupts", "processes", "systemd", "tcpstat"]
   filesystem {
     fs_types_exclude     = "^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|tmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tracefs)$"
     mount_points_exclude = "^/(dev|proc|run/credentials/.+|sys|var/lib/docker/.+)($|/)"
     mount_timeout        = "5s"
   }
-
   netclass {
     ignored_devices = "^(veth.*|cali.*|[a-f0-9]{15})$"
   }
-
   netdev {
     device_exclude = "^(veth.*|cali.*|[a-f0-9]{15})$"
   }
@@ -140,7 +142,10 @@ prometheus.scrape "integrations_node_exporter" {
 }
 
 prometheus.relabel "integrations_node_exporter" {
-  forward_to = [prometheus.remote_write.metrics_service.receiver]
+  forward_to = [
+    prometheus.remote_write.grafana_cloud_metrics_service.receiver,
+    prometheus.remote_write.prometheus_metrics_service.receiver,
+  ]
 
   rule {
     source_labels = ["__name__"]
@@ -174,7 +179,10 @@ prometheus.scrape "integrations_node_exporter_rpi" {
 }
 
 prometheus.relabel "integrations_node_exporter_rpi" {
-  forward_to = [prometheus.remote_write.metrics_service.receiver]
+  forward_to = [
+    prometheus.remote_write.grafana_cloud_metrics_service.receiver,
+    prometheus.remote_write.prometheus_metrics_service.receiver,
+  ]
 
   rule {
     source_labels = ["__name__"]
@@ -207,7 +215,10 @@ discovery.relabel "integrations_cadvisor" {
 }
 
 prometheus.relabel "integrations_cadvisor" {
-  forward_to = [prometheus.remote_write.metrics_service.receiver]
+  forward_to = [
+    prometheus.remote_write.grafana_cloud_metrics_service.receiver,
+    prometheus.remote_write.prometheus_metrics_service.receiver,
+  ]
 
   rule {
     source_labels = ["__name__"]
@@ -260,6 +271,145 @@ loki.source.docker "logs_integrations_docker" {
 }
 
 // #########################################################
+// # Blackbox Exporter
+// #########################################################
+
+prometheus.exporter.blackbox "integrations_blackbox" {
+  config = "{ modules: { icmp: { prober: icmp, icmp: { preferred_ip_protocol: ip4 }, }, http: { prober: http, http: { follow_redirects: true, preferred_ip_protocol: ip4, tls_config: { insecure_skip_verify: true } } } } }"
+  targets = [
+    {
+      name    = "google.com",
+      address = "https://www.google.com",
+      module = "http",
+    },
+    {
+      name    = "rpi.xvx.cz",
+      address = "http://127.0.0.1:3000/api/healthcheck",
+      module = "http",
+    },
+    {
+      name    = "grafana-rpi.xvx.cz",
+      address = "http://127.0.0.1:3001/healthz",
+      module = "http",
+    },
+    {
+      name    = "esphome-rpi.xvx.cz",
+      address = "http://127.0.0.1:6052/version",
+      module = "http",
+    },
+    {
+      name    = "cadvisor-rpi.xvx.cz",
+      address = "http://127.0.0.1:8085/healthz",
+      module = "http",
+    },
+    {
+      name    = "hass-rpi.xvx.cz",
+      address = "http://127.0.0.1:8123/static/icons/favicon.ico",
+      module = "http",
+    },
+    {
+      name    = "prometheus-rpi.xvx.cz",
+      address = "http://127.0.0.1:9090/-/ready",
+      module = "http",
+    },
+    {
+      name    = "gate.xvx.cz",
+      address = "https://192.168.1.1",
+      module = "http",
+    },
+    {
+      name    = "transmission.xvx.cz",
+      address = "http://192.168.1.1:9091/web",
+      module = "http",
+    },
+    {
+      name    = "uzg-01.xvx.cz",
+      address = "http://192.168.1.3/login",
+      module = "http",
+    },
+    {
+      name    = "1.1.1.1",
+      address = "1.1.1.1",
+      module = "icmp",
+    },
+    {
+      name    = "gate.xvx.cz",
+      address = "192.168.1.1",
+      module = "icmp",
+    },
+    {
+      name    = "uzg-01.xvx.cz",
+      address = "192.168.1.3",
+      module = "icmp",
+    },
+    {
+      name    = "msr-2.xvx.cz",
+      address = "192.168.1.4",
+      module = "icmp",
+    },
+  ]
+}
+
+discovery.relabel "integrations_blackbox" {
+  targets = prometheus.exporter.blackbox.integrations_blackbox.targets
+  rule {
+    source_labels = ["job"]
+    regex         = "integrations/blackbox/(.*)"
+    target_label  = "instance"
+  }
+}
+
+// Configure a prometheus.scrape component to collect blackbox metrics.
+prometheus.scrape "integrations_blackbox" {
+  targets    = discovery.relabel.integrations_blackbox.output
+  forward_to = [prometheus.remote_write.prometheus_metrics_service.receiver]
+  job_name   = "integrations/blackbox"
+}
+
+// #########################################################
+// # Scrape
+// #########################################################
+
+// Scrape Docker Engine
+prometheus.scrape "docker" {
+  targets    = [{"__address__" = "localhost:9323"}]
+  job_name   = "docker"
+  forward_to = [prometheus.remote_write.prometheus_metrics_service.receiver]
+}
+
+// OpenWRT Router
+prometheus.scrape "openwrt" {
+  targets    = [{"__address__" = "192.168.1.1:9115"}]
+  job_name   = "openwrt"
+  forward_to = [prometheus.remote_write.prometheus_metrics_service.receiver]
+}
+
+// Prometheus
+prometheus.scrape "prometheus" {
+  targets    = [{"__address__" = "localhost:9090"}]
+  job_name   = "prometheus"
+  forward_to = [prometheus.remote_write.prometheus_metrics_service.receiver]
+}
+
+// Grafana
+prometheus.scrape "grafana" {
+  targets    = [{"__address__" = "localhost:3001"}]
+  job_name   = "grafana"
+  forward_to = [prometheus.remote_write.prometheus_metrics_service.receiver]
+}
+
+// ESPHome
+prometheus.scrape "esphome" {
+  targets    = [{"__address__" = "192.168.1.4:80"}]
+  basic_auth {
+    username = "{{ esphome_web_server_username }}"
+    password = "{{ esphome_web_server_password }}"
+  }
+  job_name   = "esphome"
+  forward_to = [prometheus.remote_write.prometheus_metrics_service.receiver]
+}
+
+// #########################################################
 // # Logging Configuration
 // #########################################################
 
@@ -282,57 +432,51 @@ journal_module "integrations_node_exporter" {
 //JOURNAL
 declare "journal_module" {
   argument "forward_to" {
-      optional = false
+    optional = false
   }
-
   loki.source.journal "default"  {
-      max_age       = "12h"
-      forward_to    = [loki.process.default.receiver]
-      relabel_rules = loki.relabel.default.rules
+    max_age       = "12h"
+    forward_to    = [loki.process.default.receiver]
+    relabel_rules = loki.relabel.default.rules
   }
-
   loki.relabel "default" {
-      rule {
-          source_labels = ["__journal__systemd_unit"]
-          target_label  = "unit"
-      }
-      rule {
-          source_labels = ["__journal__boot_id"]
-          target_label  = "boot_id"
-      }
-      rule {
-          source_labels = ["__journal__transport"]
-          target_label  = "transport"
-      }
-      rule {
-          source_labels = ["__journal_priority_keyword"]
-          target_label  = "level"
-      }
-      forward_to    = []
+    rule {
+      source_labels = ["__journal__systemd_unit"]
+      target_label  = "unit"
+    }
+    rule {
+      source_labels = ["__journal__boot_id"]
+      target_label  = "boot_id"
+    }
+    rule {
+      source_labels = ["__journal__transport"]
+      target_label  = "transport"
+    }
+    rule {
+      source_labels = ["__journal_priority_keyword"]
+      target_label  = "level"
+    }
+    forward_to    = []
   }
   loki.process "default" {
-      forward_to    = argument.forward_to.value
+    forward_to    = argument.forward_to.value
   }
 }
 
 discovery.relabel "logs_integrations_integrations_node_exporter_journal_scrape" {
   targets = []
-
   rule {
     source_labels = ["__journal__systemd_unit"]
     target_label  = "unit"
   }
-
   rule {
     source_labels = ["__journal__boot_id"]
     target_label  = "boot_id"
   }
-
   rule {
     source_labels = ["__journal__transport"]
     target_label  = "transport"
   }
-
   rule {
     source_labels = ["__journal_priority_keyword"]
     target_label  = "level"
