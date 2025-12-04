@@ -233,7 +233,7 @@ prometheus_hass_bearer_token: !vault |
   63666363373565313262383365383633346261303436346465386633343239656634396361613664
   37333466323262626638316530343962663733373539393666393539613461353339
 # renovate: datasource=github-tags depName=prometheus/prometheus
-prometheus_version: 3.7.3
+prometheus_version: 3.8.0
 prometheus_web_external_url: https://prometheus-rpi.xvx.cz
 prometheus_web_listen_address: 127.0.0.1:9090
 rpi_disable_boot_services:
