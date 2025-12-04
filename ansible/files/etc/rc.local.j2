@@ -27,7 +27,7 @@ cat << EOF | mailx -a "Content-Type: text/html" -s "Reboot {{ ansible_fqdn }}" "
 <body>
     <h4>🔄 {{ ansible_fqdn }} rebooted: $(date)</h4>
     <summary>📋 5min before boot logs:</summary>
-    <pre>
+    <pre style="font-size: 10px;">
 $(journalctl -b -1 --since "-5min")
     </pre>
     </details>
