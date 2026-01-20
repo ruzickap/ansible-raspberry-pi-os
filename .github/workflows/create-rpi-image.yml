@@ -76,7 +76,7 @@ jobs:
           timezone: Europe/Prague
 
           # Wifi country code of default network to connect to.
-          # wpa-country: CZ
+          wpa-country: CZ
 
       - name: Encrypt build artifact
         env:
