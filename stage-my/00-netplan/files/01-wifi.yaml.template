@@ -2,7 +2,7 @@ network:
   version: 2
   renderer: NetworkManager
   wifis:
-    wlan0:
+    wlan1:
       dhcp4: yes
       dhcp6: yes
       access-points:
