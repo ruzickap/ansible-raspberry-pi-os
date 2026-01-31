@@ -7,7 +7,7 @@ on:
       compression-level:
         description: "Compression level for zip (0-9, where 9 is maximum compression)"
         required: false
-        default: "9"
+        default: "5"
         type: string
 
 permissions: read-all
