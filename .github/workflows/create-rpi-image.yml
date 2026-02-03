@@ -3,6 +3,12 @@ name: create-rpi-image
 
 on:
   workflow_dispatch:
+    inputs:
+      compression-level:
+        description: "Compression level for zip (0-9, where 9 is maximum compression)"
+        required: false
+        default: "5"
+        type: string
 
 permissions: read-all
 
@@ -82,9 +88,10 @@ jobs:
         env:
           RASPBERRY_PI_OS_IMAGE: ${{ steps.build.outputs.image-path }}
           WIFI_PASSWORD: ${{ secrets.WIFI_PASSWORD }}
+          COMPRESSION_LEVEL: ${{ inputs.compression-level }}
         run: |
           set -euxo pipefail
-          zip -9 --junk-paths --password "${WIFI_PASSWORD}" "${RASPBERRY_PI_OS_IMAGE}.zip" "${RASPBERRY_PI_OS_IMAGE}"
+          zip -"${COMPRESSION_LEVEL}" --junk-paths --password "${WIFI_PASSWORD}" "${RASPBERRY_PI_OS_IMAGE}.zip" "${RASPBERRY_PI_OS_IMAGE}"
           ls -sh "${RASPBERRY_PI_OS_IMAGE}.zip"
 
       - name: Upload build artifact
