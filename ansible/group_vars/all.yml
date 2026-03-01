@@ -161,7 +161,7 @@ grafana_ini:
     user: "{{ smtp_gmail_auth_user }}"
     password: "{{ smtp_gmail_auth_password }}"
 # renovate: datasource=github-tags depName=grafana/grafana
-grafana_version: 12.3.3
+grafana_version: 12.3.4
 hass_config_directory: /var/lib/hass_config
 hass_url: https://hass-rpi.xvx.cz
 hass_user_password: !vault |
