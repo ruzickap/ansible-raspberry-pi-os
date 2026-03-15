@@ -90,7 +90,7 @@ There are no unit tests. Quality assurance relies on linting and CI scans.
 ## Markdown Style
 
 - Must pass `rumdl` checks (CHANGELOG.md excluded)
-- Wrap lines at 72 characters
+- Wrap lines at 80 characters
 - Use proper heading hierarchy (no skipped levels)
 - Include language identifiers in code fences (e.g., `bash`, `json`)
 - URLs must be reachable (validated by `lychee`)
