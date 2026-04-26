@@ -18,7 +18,7 @@ alloy_grafana_cloud_password: !vault |
 alloy_grafana_cloud_prometheus_url: "https://prometheus-prod-24-prod-eu-west-2.grafana.net/api/prom/push"
 alloy_grafana_cloud_prometheus_username: 1623667
 # renovate: datasource=github-tags depName=grafana/alloy
-alloy_grafana_version: 1.15.0
+alloy_grafana_version: 1.16.0
 backup_directory: /mnt/backups/raspi
 backup_server: 192.168.1.1
 backup_user: root
@@ -26,7 +26,7 @@ bluetooth_device_address_headset: 08:C8:C2:85:EF:57 # Device 08:C8:C2:85:EF:57 P
 bluetooth_device_address_rpi: DC:A6:32:0E:BD:15
 # https://thesmarthomejourney.com/2022/08/01/fixing-cadvisor-cpu/
 # https://github.com/docker/for-linux/issues/1112 - Grafana -> Cadvisor exprter -> Memory
-boot_cmdline_parameters: cgroup_enable=cpuset cgroup_enable=memory
+boot_cmdline_parameters: cgroup_enable=cpuset cgroup_enable=memory psi=1
 boot_config_parameters: |
   hdmi_ignore_cec_init=1
 cloudflared_tunnel_token: !vault |
