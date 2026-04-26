@@ -337,7 +337,7 @@
 - name: ESPHome container
   community.docker.docker_container:
     name: esphome
-    image: ghcr.io/esphome/esphome:2025.11.5@sha256:a22312011695efb5c37680682654c1b5cd2dcec4804ba5f3d4af5dd9093e592f
+    image: ghcr.io/esphome/esphome:2026.4.2@sha256:a2784bc539dcf7529241bfe4425d645f1076031f9bf9ce07f5d59d1c45e9ff22
     comparisons:
       image: strict
       labels: allow_more_present
@@ -409,7 +409,7 @@
 # - name: Home Assistant container
 #   community.docker.docker_container:
 #     name: home-assistant
-#     image: ghcr.io/home-assistant/home-assistant:2025.10.2@sha256:5ae78cf2e6d8b53439cac50ed184ff1336cfbbb878fce16f75589e048fcdcdd9
+#     image: ghcr.io/home-assistant/home-assistant:2026.4.4@sha256:c1e5f0147f4cb51ccb05bb30b62a1269cc1bd48a6274792d3b38a77ab274dfd2
 #     comparisons:
 #       image: strict
 #       labels: allow_more_present
@@ -466,7 +466,7 @@
 # - name: Homepage container
 #   community.docker.docker_container:
 #     name: homepage
-#     image: ghcr.io/gethomepage/homepage:v1.5.0@sha256:e7fc26f914cf5e7dcd6c566e24ca218addb879aa76478ad4a553b1f9ae48b1d7
+#     image: ghcr.io/gethomepage/homepage:v1.12.3@sha256:cc84f2f5eb3c7734353701ccbaa24ed02dacb0d119114e50e4251e2005f3990a
 #     comparisons:
 #       image: strict
 #       labels: allow_more_present
