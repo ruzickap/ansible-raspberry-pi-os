@@ -8,16 +8,13 @@ Configure Raspbian (RPi) using Ansible
 1. Flash the image to the SD card
 1. Boot the RPi with the SD card
    1. Initial user is `pi` with password `raspberry`
-1. Run the ansible playbook from shell script [run_ansible-raspbian.sh](run_ansible-raspbian.sh)
+1. Run the ansible playbook: `mise run run`
 
 ## Notes
 
-Decrypt variables:
-
-```bash
-cd ansible || exit
-ansible localhost -m ansible.builtin.debug -a var="cloudflared_token" -e "@host_vars/raspi.xvx.cz"
-```
+Variables are stored in AWS SSM Parameter Store and injected via
+[fnox](https://github.com/jdx/fnox) +
+[mise](https://mise.jdx.dev/). See `fnox.toml` and `mise.toml`.
 
 Bluetooth - To connect a headset in pairing mode:
 

@@ -14,20 +14,14 @@ through MegaLinter (CI) and ansible-lint.
 # Install Ansible Galaxy dependencies (run from repo root)
 cd ansible && ansible-galaxy install -r requirements.yml
 
-# Run the full playbook (requires target host + vault password)
-cd ansible && ansible-playbook --diff --user root \
-  -i inventory/hosts main.yml
+# Run the full playbook (requires target host + AWS credentials)
+mise run run
 
 # Lint Ansible playbooks and tasks
 ansible-lint -c ansible/.ansible-lint ansible/
 
 # Lint a single Ansible file
 ansible-lint -c ansible/.ansible-lint ansible/tasks/apps.yml
-
-# Shell script linting and formatting
-shellcheck --exclude=SC2317 run_ansible-raspbian.sh
-shfmt --case-indent --indent 2 --space-redirects -d \
-  run_ansible-raspbian.sh
 
 # Markdown linting (exclude CHANGELOG.md)
 rumdl README.md
@@ -49,7 +43,9 @@ There are no unit tests. Quality assurance relies on linting and CI scans.
 - **File permissions**: Use symbolic mode notation
   (e.g., `mode: u=rw,g=r,o=r`), not octal.
 - **Sensitive data**: Mark tasks exposing secrets with `no_log: true`.
-  All secrets must use Ansible Vault (`!vault` tag) in `group_vars/`.
+  Secrets are stored in AWS SSM Parameter Store, fetched via fnox
+  (`fnox.toml`), and referenced as `{{ lookup('env', 'VAR_NAME') }}`
+  in `group_vars/`. Never hardcode secrets in YAML files.
 - **Idempotency**: Use `changed_when: false` on read-only commands.
   Use `changed_when: true` when a shell task always modifies state.
 - **Retries on apt**: Use `register: result` with
