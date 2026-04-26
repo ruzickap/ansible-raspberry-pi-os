@@ -1,0 +1,26 @@
+# Example for a system wide configuration file
+
+# A system wide configuration file is optional.
+# If it exists, it usually defines a default account.
+# This allows msmtp to be used like /usr/sbin/sendmail.
+account default
+
+# The SMTP smarthost
+host {{ msmtp_host }}
+
+# Use TLS
+port 2525
+tls on
+
+from {{ msmtp_from }}
+# Do not allow programs to override this envelope-from address via -f
+allow_from_override off
+# Always set a From header that matches the envelope-from address
+set_from_header on
+
+# Syslog logging with facility LOG_MAIL instead of the default LOG_USER
+syslog LOG_MAIL
+
+auth on
+user {{ msmtp_auth_user }}
+password {{ msmtp_auth_password }}

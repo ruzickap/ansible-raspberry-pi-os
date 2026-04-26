@@ -101,9 +101,9 @@ grafana_ini:
     root_url: https://grafana-rpi.xvx.cz
   smtp:
     enabled: true
-    host: smtp.gmail.com:587
-    user: "{{ smtp_gmail_auth_user }}"
-    password: "{{ smtp_gmail_auth_password }}"
+    host: "{{ msmtp_host }}:2525"
+    user: "{{ msmtp_auth_user }}"
+    password: "{{ msmtp_auth_password }}"
 # renovate: datasource=github-tags depName=grafana/grafana
 grafana_version: 13.0.1
 hass_config_directory: /var/lib/hass_config
@@ -119,6 +119,10 @@ mqtt_clients:
   uzg-01:
     user: uzg-01
     password: "{{ lookup('env', 'MQTT_UZG01_PASSWORD') }}"
+msmtp_auth_password: "{{ lookup('env', 'MSMTP_AUTH_PASSWORD') }}"
+msmtp_auth_user: api
+msmtp_from: petr.ruzicka@mylabs.dev
+msmtp_host: live.smtp.mailtrap.io
 notification_email: petr.ruzicka@gmail.com
 ntp_server: ntp.nic.cz
 openwrt_homepage_password: "{{ lookup('env', 'OPENWRT_HOMEPAGE_PASSWORD') }}"
@@ -145,7 +149,6 @@ rpi_disable_boot_services:
   - sshswitch
 rpi_packages:
   - bsd-mailx
-  - dma
   - dnsmasq
   - fzf
   - htop
@@ -153,6 +156,7 @@ rpi_packages:
   - knot-dnsutils
   - kodi
   - mc
+  - msmtp-mta
   - pipewire-audio
   - python3-debian
   - smartmontools
@@ -162,8 +166,6 @@ rpi_packages:
   - vim
   - wireplumber
 rpi_password: "{{ lookup('env', 'RPI_PASSWORD') }}"
-smtp_gmail_auth_password: "{{ lookup('env', 'SMTP_GMAIL_AUTH_PASSWORD') }}"
-smtp_gmail_auth_user: my.user.mbox@gmail.com
 timezone: Europe/Prague
 transmission_ip: 192.168.1.1
 transmission_rpc_password: "{{ lookup('env', 'TRANSMISSION_RPC_PASSWORD') }}"

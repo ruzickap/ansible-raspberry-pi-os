@@ -204,25 +204,12 @@
       uncompresscmd /usr/bin/unxz
       compressext .xz
 
-- name: Configure dma auth.conf
-  ansible.builtin.lineinfile:
-    path: /etc/dma/auth.conf
-    regexp: ".*|smtp.gmail.com:.*"
-    line: "{{ smtp_gmail_auth_user }}|smtp.gmail.com:{{ smtp_gmail_auth_password }}"
-    mode: u=rw,g=r
+- name: Configure msmtp
+  ansible.builtin.template:
+    dest: /etc/msmtprc
+    src: files/etc/msmtprc.j2
+    mode: u=rw,g=,o=
   no_log: true
-
-- name: Configure dma dma.conf
-  ansible.builtin.blockinfile:
-    dest: /etc/dma/dma.conf
-    block: |
-      SMARTHOST smtp.gmail.com
-      PORT 587
-      AUTHPATH /etc/dma/auth.conf
-      SECURETRANSFER
-      STARTTLS
-      INSECURE
-      MASQUERADE {{ smtp_gmail_auth_user }}
 
 - name: Configure /etc/aliases
   ansible.builtin.copy:

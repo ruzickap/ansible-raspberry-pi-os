@@ -22,7 +22,12 @@ while ! nmcli networking connectivity check | grep -q "full"; do
   sleep 5
 done
 
-cat << EOF | mailx -a "Content-Type: text/html" -s "Reboot {{ ansible_fqdn }}" "{{ notification_email }}"
+sendmail -t << EOF
+To: {{ notification_email }}
+Subject: Reboot {{ ansible_fqdn }} - $(date "+%Y-%m-%d %H:%M")
+MIME-Version: 1.0
+Content-Type: text/html; charset=UTF-8
+
 <html>
 <body>
     <h4>🔄 {{ ansible_fqdn }} rebooted: $(date)</h4>

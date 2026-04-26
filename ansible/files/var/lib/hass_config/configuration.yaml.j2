@@ -88,15 +88,15 @@ lovelace:
 notify:
   - name: notify_smtp_gmail
     encryption: starttls
-    password: !secret smtp_gmail_auth_password
+    password: !secret msmtp_auth_password
     platform: smtp
-    port: 587
+    port: 2525
     recipient: !secret smtp_recipient
     sender_name: Home Assistant
-    sender: !secret smtp_gmail_auth_user
-    server: smtp.gmail.com
+    sender: !secret msmtp_from
+    server: !secret msmtp_host
     timeout: 15
-    username: !secret smtp_gmail_auth_user
+    username: !secret msmtp_auth_user
 
 prometheus:
   namespace: hass
