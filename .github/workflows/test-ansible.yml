@@ -8,8 +8,32 @@ permissions: read-all
 
 env:
   # Raspberry Pi OS image details
-  # renovate: datasource=custom.raspios depName=raspios_lite_arm64
   RASPIOS_IMAGE_URL: "https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2025-05-13/2025-05-13-raspios-trixie-arm64-lite.img.xz"
+  # Dummy secrets for testing (no real credentials needed)
+  ALLOY_GRAFANA_CLOUD_PASSWORD: dummy-alloy-password
+  BLUETOOTH_IDENTITY_RESOLVING_KEY: "0000000000000000"
+  BLUETOOTH_LINK_KEY: "0000000000000000"
+  BLUETOOTH_LONG_TERM_KEY: "0000000000000000"
+  CLOUDFLARED_TUNNEL_TOKEN: dummy-cloudflared-token
+  ESPHOME_API_ENCRYPTION_KEY: dummy-esphome-api-key
+  ESPHOME_OTA_PASSWORD: dummy-esphome-ota
+  ESPHOME_WEB_SERVER_PASSWORD: dummy-esphome-web
+  GRAFANA_ADMIN_PASSWORD: dummy-grafana-admin
+  KODI_GUISETTINGS_SERVICES_WEBSERVERPASSWORD: dummy-kodi-password
+  MQTT_UZG01_PASSWORD: dummy-mqtt-uzg01
+  MQTT_ZIGBEE2MQTT_PASSWORD: dummy-mqtt-zigbee2mqtt
+  MSMTP_AUTH_PASSWORD: dummy-msmtp-password
+  OPENWRT_HOMEPAGE_PASSWORD: dummy-openwrt-homepage
+  OPENWRT_LUCI_PASSWORD: dummy-openwrt-luci
+  PROMETHEUS_HASS_BEARER_TOKEN: dummy-prometheus-hass-token
+  RPI_PASSWORD: dummy-rpi-password
+  SSH_BACKUP_ED25519_KEY: dummy-ssh-backup-key
+  SSH_HOST_ED25519_KEY: dummy-ssh-host-key
+  TRANSMISSION_RPC_PASSWORD: dummy-transmission-password
+  UPTIMEROBOT_API_KEY: dummy-uptimerobot-key
+  WIFI_24GHZ_SSID: dummy-wifi-ssid
+  WIFI_PASSWORD: dummy-wifi-password
+  ZIGBEE2MQTT_NETWORK_KEY: "[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]"
 
 jobs:
   test-ansible:
@@ -132,35 +156,6 @@ jobs:
           ansible_python_interpreter=/usr/bin/python3
           ansible_ssh_common_args=-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
           EOF
-
-      - name: Set dummy environment variables for secrets
-        run: |
-          {
-            echo "ALLOY_GRAFANA_CLOUD_PASSWORD=dummy-alloy-password"
-            echo "BLUETOOTH_IDENTITY_RESOLVING_KEY=0000000000000000"
-            echo "BLUETOOTH_LINK_KEY=0000000000000000"
-            echo "BLUETOOTH_LONG_TERM_KEY=0000000000000000"
-            echo "CLOUDFLARED_TUNNEL_TOKEN=dummy-cloudflared-token"
-            echo "ESPHOME_API_ENCRYPTION_KEY=dummy-esphome-api-key"
-            echo "ESPHOME_OTA_PASSWORD=dummy-esphome-ota"
-            echo "ESPHOME_WEB_SERVER_PASSWORD=dummy-esphome-web"
-            echo "GRAFANA_ADMIN_PASSWORD=dummy-grafana-admin"
-            echo "KODI_GUISETTINGS_SERVICES_WEBSERVERPASSWORD=dummy-kodi-password"
-            echo "MQTT_UZG01_PASSWORD=dummy-mqtt-uzg01"
-            echo "MQTT_ZIGBEE2MQTT_PASSWORD=dummy-mqtt-zigbee2mqtt"
-            echo "MSMTP_AUTH_PASSWORD=dummy-msmtp-password"
-            echo "OPENWRT_HOMEPAGE_PASSWORD=dummy-openwrt-homepage"
-            echo "OPENWRT_LUCI_PASSWORD=dummy-openwrt-luci"
-            echo "PROMETHEUS_HASS_BEARER_TOKEN=dummy-prometheus-hass-token"
-            echo "RPI_PASSWORD=dummy-rpi-password"
-            echo "SSH_BACKUP_ED25519_KEY=dummy-ssh-backup-key"
-            echo "SSH_HOST_ED25519_KEY=dummy-ssh-host-key"
-            echo "TRANSMISSION_RPC_PASSWORD=dummy-transmission-password"
-            echo "UPTIMEROBOT_API_KEY=dummy-uptimerobot-key"
-            echo "WIFI_24GHZ_SSID=dummy-wifi-ssid"
-            echo "WIFI_PASSWORD=dummy-wifi-password"
-            echo "ZIGBEE2MQTT_NETWORK_KEY=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]"
-          } >> "${GITHUB_ENV}"
 
       - name: Install Ansible Galaxy dependencies
         working-directory: ansible
