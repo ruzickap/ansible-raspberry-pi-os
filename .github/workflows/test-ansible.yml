@@ -15,30 +15,24 @@ jobs:
   test-ansible:
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash -euxo pipefail {0}
     steps:
       - name: Checkout Code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Install QEMU and dependencies
         run: |
-          set -euxo pipefail
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            qemu-system-arm \
-            qemu-efi-aarch64 \
-            cloud-image-utils \
-            sshpass \
-            xz-utils
+          sudo apt-get install -y --no-install-recommends cloud-image-utils qemu-efi-aarch64 qemu-system-arm sshpass xz-utils
 
       - name: Download Raspberry Pi OS image
         run: |
-          set -euxo pipefail
-          wget -q -O raspios.img.xz "${RASPIOS_IMAGE_URL}"
-          xz -d raspios.img.xz
+          wget -q -O - "${RASPIOS_IMAGE_URL}" | xz -d > raspios.img
 
       - name: Prepare image for QEMU
         run: |
-          set -euxo pipefail
 
           IMAGE_FILE="raspios.img"
 
@@ -80,7 +74,6 @@ jobs:
 
       - name: Boot Raspberry Pi OS in QEMU
         run: |
-          set -euxo pipefail
 
           # Copy UEFI firmware
           cp /usr/share/AAVMF/AAVMF_CODE.fd flash0.img
@@ -88,10 +81,7 @@ jobs:
 
           # Start QEMU in background with KVM (native arm64 runner)
           qemu-system-aarch64 \
-            -machine virt,gic-version=max -accel kvm \
-            -cpu host \
-            -m 2048 \
-            -smp 2 \
+            -machine virt,gic-version=max -accel kvm -cpu host -m 2048 -smp 2 \
             -drive if=pflash,format=raw,file=flash0.img,readonly=on \
             -drive if=pflash,format=raw,file=flash1.img \
             -drive if=virtio,file=raspios.qcow2,format=qcow2 \
@@ -127,13 +117,10 @@ jobs:
 
       - name: Install Ansible
         run: |
-          set -euxo pipefail
           sudo apt-get install -y --no-install-recommends ansible sshpass
-          ansible --version
 
       - name: Create test inventory
         run: |
-          set -euxo pipefail
           cat > ansible/inventory/test-hosts <<'EOF'
           [raspberry_pi]
           localhost
@@ -148,7 +135,6 @@ jobs:
 
       - name: Set dummy environment variables for secrets
         run: |
-          set -euxo pipefail
           {
             echo "ALLOY_GRAFANA_CLOUD_PASSWORD=dummy-alloy-password"
             echo "BLUETOOTH_IDENTITY_RESOLVING_KEY=0000000000000000"
@@ -178,15 +164,11 @@ jobs:
 
       - name: Install Ansible Galaxy dependencies
         working-directory: ansible
-        run: |
-          set -euxo pipefail
-          ansible-galaxy install -r requirements.yml
+        run: ansible-galaxy install -r requirements.yml
 
       - name: Run Ansible playbook
         working-directory: ansible
-        run: |
-          set -euxo pipefail
-          ansible-playbook --diff --user root -i inventory/test-hosts main.yml
+        run: ansible-playbook --diff --user root -i inventory/test-hosts main.yml
 
       - name: Stop QEMU
         if: always()
