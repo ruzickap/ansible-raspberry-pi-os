@@ -15,7 +15,7 @@
 
 - greeting:
     text_size: xl
-    text: {{ inventory_hostname }} | {{ ansible_default_ipv4.address }}
+    text: {{ inventory_hostname }} | {{ ansible_facts["default_ipv4"]["address"] }}
 
 - logo:
     icon: raspberrypi.svg

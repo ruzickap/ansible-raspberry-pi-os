@@ -11,6 +11,9 @@ backup_server: 192.168.1.1
 backup_user: root
 bluetooth_device_address_headset: 08:C8:C2:85:EF:57 # Device 08:C8:C2:85:EF:57 PetrR Jabra Evolve2 55
 bluetooth_device_address_rpi: DC:A6:32:0E:BD:15
+bluetooth_identity_resolving_key: "{{ lookup('env', 'BLUETOOTH_IDENTITY_RESOLVING_KEY') }}"
+bluetooth_link_key: "{{ lookup('env', 'BLUETOOTH_LINK_KEY') }}"
+bluetooth_long_term_key: "{{ lookup('env', 'BLUETOOTH_LONG_TERM_KEY') }}"
 # https://thesmarthomejourney.com/2022/08/01/fixing-cadvisor-cpu/
 # https://github.com/docker/for-linux/issues/1112 - Grafana -> Cadvisor exprter -> Memory
 boot_cmdline_parameters: cgroup_enable=cpuset cgroup_enable=memory psi=1
@@ -26,7 +29,7 @@ esphome_web_server_password: "{{ lookup('env', 'ESPHOME_WEB_SERVER_PASSWORD') }}
 esphome_web_server_username: admin
 firewall_additional_rules:
   - "iptables -A INPUT -m pkttype --pkt-type multicast -j ACCEPT"
-  - "iptables -t nat -A POSTROUTING -o {{ ansible_default_ipv4.interface }} -j MASQUERADE"
+  - "iptables -t nat -A POSTROUTING -o {{ ansible_facts.default_ipv4.interface }} -j MASQUERADE"
 firewall_allowed_tcp_ports: "{{ fw_allowed_tcp_ports }}"
 firewall_allowed_udp_ports: "{{ fw_allowed_udp_ports }}"
 firewall_forwarded_tcp_ports: "{{ fw_forwarded_tcp_ports }}"
@@ -106,9 +109,16 @@ grafana_ini:
     password: "{{ msmtp_auth_password }}"
 # renovate: datasource=github-tags depName=grafana/grafana
 grafana_version: 13.0.1
-hass_config_directory: /var/lib/hass_config
+# hacs_github_token: "{{ lookup('env', 'HACS_GITHUB_TOKEN') }}"
+# hass_auth_password_hash: "{{ lookup('env', 'HASS_AUTH_PASSWORD_HASH') }}"
+# hass_auth_refresh_token_prometheus: "{{ lookup('env', 'HASS_AUTH_REFRESH_TOKEN_PROMETHEUS') }}"
+# hass_auth_refresh_token_prometheus_jwt_key: "{{ lookup('env', 'HASS_AUTH_REFRESH_TOKEN_PROMETHEUS_JWT_KEY') }}"
+# hass_auth_refresh_token_system: "{{ lookup('env', 'HASS_AUTH_REFRESH_TOKEN_SYSTEM') }}"
+# hass_auth_refresh_token_system_jwt_key: "{{ lookup('env', 'HASS_AUTH_REFRESH_TOKEN_SYSTEM_JWT_KEY') }}"
+# hass_config_directory: /var/lib/hass_config
+# hass_totp_secret: "{{ lookup('env', 'HASS_TOTP_SECRET') }}"
 hass_url: https://hass-rpi.xvx.cz
-hass_user_password: "{{ lookup('env', 'HASS_USER_PASSWORD') }}"
+# hass_user_password: "{{ lookup('env', 'HASS_USER_PASSWORD') }}"
 kernel_modules:
   - nf_conntrack
 kodi_guisettings_services_webserverpassword: "{{ lookup('env', 'KODI_GUISETTINGS_SERVICES_WEBSERVERPASSWORD') }}"
@@ -166,14 +176,17 @@ rpi_packages:
   - vim
   - wireplumber
 rpi_password: "{{ lookup('env', 'RPI_PASSWORD') }}"
+ssh_backup_ed25519_key: "{{ lookup('env', 'SSH_BACKUP_ED25519_KEY') }}"
+ssh_host_ed25519_key: "{{ lookup('env', 'SSH_HOST_ED25519_KEY') }}"
+ssh_host_ed25519_key_pub: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINtl48odZdS8Gs3TxXWzZoFck9BpE6q2GtxNPCSBrJVp root@raspberrypi"
 timezone: Europe/Prague
 transmission_ip: 192.168.1.1
 transmission_rpc_password: "{{ lookup('env', 'TRANSMISSION_RPC_PASSWORD') }}"
 uptimerobot_api_key: "{{ lookup('env', 'UPTIMEROBOT_API_KEY') }}"
 wifi_24ghz_ssid: "{{ lookup('env', 'WIFI_24GHZ_SSID') }}"
 wifi_password: "{{ lookup('env', 'WIFI_PASSWORD') }}"
-zigbee2mqtt_ext_pan_id: "{{ lookup('env', 'ZIGBEE2MQTT_EXT_PAN_ID') }}"
+zigbee2mqtt_ext_pan_id: "[86, 239, 229, 2, 51, 96, 1, 226]"
 zigbee2mqtt_network_key: "{{ lookup('env', 'ZIGBEE2MQTT_NETWORK_KEY') }}"
-zigbee2mqtt_pan_id: "{{ lookup('env', 'ZIGBEE2MQTT_PAN_ID') }}"
+zigbee2mqtt_pan_id: "48032"
 zigbee_coordinator_ip: 192.168.1.3
 # keep-sorted end

@@ -1,0 +1,179 @@
+{
+  "version": 1,
+  "minor_version": 4,
+  "key": "core.config_entries",
+  "data": {
+    "entries": [
+      {
+        "created_at": "2024-10-15T06:47:38.966410+00:00",
+        "data": {},
+        "discovery_keys": {},
+        "disabled_by": null,
+        "domain": "sun",
+        "entry_id": "01JA7EXAPNZ8TS7MNAHAEYNHTZ",
+        "minor_version": 1,
+        "modified_at": "2024-10-15T06:47:38.966427+00:00",
+        "options": {},
+        "pref_disable_new_entities": false,
+        "pref_disable_polling": false,
+        "source": "import",
+        "title": "Sun",
+        "unique_id": null,
+        "version": 1
+      },
+      {
+        "created_at": "2024-10-20T12:26:32.488664+00:00",
+        "data": {},
+        "discovery_keys": {},
+        "disabled_by": null,
+        "domain": "bluetooth",
+        "entry_id": "01JAMY9EN8PNNY50XQQH01WPK8",
+        "minor_version": 1,
+        "modified_at": "2024-10-20T12:26:32.488668+00:00",
+        "options": {},
+        "pref_disable_new_entities": false,
+        "pref_disable_polling": false,
+        "source": "integration_discovery",
+        "title": "Raspberry Pi Trading Ltd bcm43438-bt (DC:A6:32:0E:BD:15)",
+        "unique_id": "DC:A6:32:0E:BD:15",
+        "version": 1
+      },
+      {
+        "created_at": "2024-10-20T12:30:46.154967+00:00",
+        "data": {
+          "device": {
+            "path": "socket://192.168.1.3:6638",
+            "baudrate": 115200,
+            "flow_control": null
+          },
+          "radio_type": "znp"
+        },
+        "discovery_keys": {
+          "zeroconf": [
+            {
+              "domain": "zeroconf",
+              "key": [
+                "_zigstar_gw._tcp.local.",
+                "uzg-01._zigstar_gw._tcp.local."
+              ],
+              "version": 1
+            }
+          ]
+        },
+        "disabled_by": null,
+        "domain": "zha",
+        "entry_id": "01JAMYH6CAD8GA75MKZKZD8FX3",
+        "minor_version": 1,
+        "modified_at": "2024-10-20T12:30:46.154976+00:00",
+        "options": {},
+        "pref_disable_new_entities": false,
+        "pref_disable_polling": false,
+        "source": "zeroconf",
+        "title": "socket://192.168.1.3:6638",
+        "unique_id": "uzg-01",
+        "version": 4
+      },
+      {
+        "created_at": "2024-10-20T12:49:10.354545+00:00",
+        "data": {
+          "host": "192.168.1.4",
+          "port": 6053,
+          "password": "",
+          "noise_psk": "{{ esphome_api_encryption_key }}",
+          "device_name": "apollo-msr-2-f585f4"
+        },
+        "discovery_keys": {
+          "zeroconf": [
+            {
+              "domain": "zeroconf",
+              "key": [
+                "_esphomelib._tcp.local.",
+                "apollo-msr-2-f585f4._esphomelib._tcp.local."
+              ],
+              "version": 1
+            }
+          ],
+          "dhcp": [
+            {
+              "domain": "dhcp",
+              "key": "f0f5bdf585f4",
+              "version": 1
+            }
+          ]
+        },
+        "disabled_by": null,
+        "domain": "esphome",
+        "entry_id": "01JAMZJWPJEB82BE9GY4YCN8X3",
+        "minor_version": 1,
+        "modified_at": "2024-10-20T15:01:46.096596+00:00",
+        "options": {
+          "allow_service_calls": false
+        },
+        "pref_disable_new_entities": false,
+        "pref_disable_polling": false,
+        "source": "zeroconf",
+        "title": "Apollo MSR-2 f585f4",
+        "unique_id": "f0:f5:bd:f5:85:f4",
+        "version": 1
+      },
+      {
+        "created_at": "2024-10-20T15:31:39.813890+00:00",
+        "data": {
+          "token": "{{ hacs_github_token }}"
+        },
+        "discovery_keys": {},
+        "disabled_by": null,
+        "domain": "hacs",
+        "entry_id": "01JAN8WDN57DJTZPHQ5KE1Q0TJ",
+        "minor_version": 1,
+        "modified_at": "2024-10-20T15:31:39.813894+00:00",
+        "options": {
+          "experimental": true
+        },
+        "pref_disable_new_entities": false,
+        "pref_disable_polling": false,
+        "source": "user",
+        "title": "",
+        "unique_id": null,
+        "version": 1
+      },
+      {
+        "created_at": "2024-12-01T10:52:06.884333+00:00",
+        "data": {
+          "host": "192.168.1.2",
+          "name": "raspi",
+          "password": "{{ kodi_guisettings_services_webserverpassword }}",
+          "port": 8080,
+          "ssl": false,
+          "timeout": 5,
+          "username": "kodi",
+          "ws_port": null
+        },
+        "disabled_by": null,
+        "discovery_keys": {
+          "zeroconf": [
+            {
+              "domain": "zeroconf",
+              "key": [
+                "_xbmc-jsonrpc-h._tcp.local.",
+                "Kodi (raspi.xvx.cz)._xbmc-jsonrpc-h._tcp.local."
+              ],
+              "version": 1
+            }
+          ]
+        },
+        "domain": "kodi",
+        "entry_id": "01JE0XJQV45NNRGW4A2YSYD13K",
+        "minor_version": 1,
+        "modified_at": "2024-12-01T10:52:06.884344+00:00",
+        "options": {},
+        "pref_disable_new_entities": false,
+        "pref_disable_polling": false,
+        "source": "zeroconf",
+        "title": "raspi",
+        "unique_id": "84fd49a0-a69a-47c2-a433-263174f4b516",
+        "version": 1
+      }
+    ]
+  }
+}

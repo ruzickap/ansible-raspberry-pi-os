@@ -10,9 +10,9 @@
   ansible.builtin.lineinfile:
     dest: /etc/hosts
     regexp: ".*{{ inventory_hostname }}.*"
-    line: "{{ ansible_default_ipv4.address }} {{ inventory_hostname }}"
+    line: "{{ ansible_facts.default_ipv4.address }} {{ inventory_hostname }}"
     mode: u=rw,g=r,o=r
-  when: ansible_default_ipv4.address is defined
+  when: ansible_facts["default_ipv4"]["address"] is defined
 
 - name: Configure NTP
   community.general.ini_file:
@@ -23,11 +23,28 @@
     value: "{{ ntp_server }}"
     mode: u=rw,g=r,o=r
 
-- name: Copy sshd keys to /etc/ssh/
+- name: Copy sshd Ed25519 private key to /etc/ssh/
   ansible.builtin.copy:
-    src: files/etc/ssh/
-    dest: /etc/ssh/
+    content: "{{ ssh_host_ed25519_key }}"
+    dest: /etc/ssh/ssh_host_ed25519_key
     mode: u=rw,g=,o=
+  no_log: true
+  notify: Restart sshd
+
+- name: Copy sshd Ed25519 public key to /etc/ssh/
+  ansible.builtin.copy:
+    content: "{{ ssh_host_ed25519_key_pub }}"
+    dest: /etc/ssh/ssh_host_ed25519_key.pub
+    mode: u=rw,g=r,o=r
+  no_log: true
+  notify: Restart sshd
+
+- name: Configure sshd to use only Ed25519 host key
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "^#?HostKey /etc/ssh/ssh_host_ed25519_key"
+    line: HostKey /etc/ssh/ssh_host_ed25519_key
+    mode: u=rw,g=r,o=r
   notify: Restart sshd
 
 - name: Create /etc/systemd/journald.conf.d directory

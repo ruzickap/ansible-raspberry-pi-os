@@ -33,7 +33,7 @@ http:
   trusted_proxies:
     - 127.0.0.1
     - ::1
-    - {{ ansible_default_ipv4.address }}
+    - {{ ansible_facts["default_ipv4"]["address"] }}
 
 logger:
   default: warn
