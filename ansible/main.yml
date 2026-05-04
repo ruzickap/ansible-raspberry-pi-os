@@ -3,12 +3,6 @@
   hosts: all
   become: true
   force_handlers: true
-  collections:
-    - ansible.posix
-    - community.docker
-    - community.general
-    - grafana.grafana
-    - prometheus.prometheus
 
   pre_tasks:
     - name: Set authorized key for pi and root

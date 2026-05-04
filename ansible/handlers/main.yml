@@ -13,13 +13,13 @@
     state: started
 
 - name: Restart cloudflared
-  ansible.builtin.service:
+  ansible.builtin.systemd_service:
     enabled: true
     name: cloudflared
     state: restarted
 
 - name: Restart dnsmasq
-  ansible.builtin.service:
+  ansible.builtin.systemd_service:
     enabled: true
     name: dnsmasq
     state: restarted

@@ -16,8 +16,8 @@ run = """
 set -euxo pipefail
 ansible-galaxy install -r requirements.yml
 if [ ! -f /tmp/ansible-raspberry-pi-os.log ]; then
-  ansible-playbook --diff --user root -i inventory/hosts main.yml 2>&1 | tee /tmp/ansible-raspberry-pi-os.log
+  ansible-playbook --diff -i inventory/hosts main.yml 2>&1 | tee /tmp/ansible-raspberry-pi-os.log
 else
-  ansible-playbook --diff --user root -i inventory/hosts main.yml
+  ansible-playbook --diff -i inventory/hosts main.yml
 fi
 """

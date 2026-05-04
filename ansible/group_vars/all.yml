@@ -153,7 +153,6 @@ rpi_disable_boot_services:
   - console-setup
   - dnsmasq
   - keyboard-setup
-  - ModemManager
   - regenerate_ssh_host_keys
   - sshd-keygen
   - sshswitch
@@ -168,7 +167,6 @@ rpi_packages:
   - mc
   - msmtp-mta
   - pipewire-audio
-  - python3-debian
   - smartmontools
   - sqlite3
   - telnet

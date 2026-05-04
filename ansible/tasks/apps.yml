@@ -16,15 +16,6 @@
     dest: /root/.ssh/id_ed25519-backup_raspi.xvx.cz
     mode: u=rw,g=,o=
     owner: root
-
-  no_log: true
-
-- name: Install ssh private key id_ed25519-backup_raspi.xvx.cz
-  ansible.builtin.copy:
-    content: "{{ ssh_backup_ed25519_key }}\n"
-    dest: /root/.ssh/id_ed25519-backup_raspi.xvx.cz
-    mode: u=rw,g=,o=
-    owner: root
   no_log: true
 
 - name: Creates Backup Prometheus file /etc/cron.d/backup-prometheus
@@ -139,7 +130,7 @@
   until: result is succeeded
 
 - name: Start and enable Docker service
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: docker
     state: started
     enabled: true
@@ -536,7 +527,7 @@
     group: kodi
   register: created_user_kodi
 
-- name: Create /home/kodi/.config/wireplumber/wireplumber.conf.d directory
+- name: Create bluetooth device directory for headset pairing
   ansible.builtin.file:
     path: /var/lib/bluetooth/{{ bluetooth_device_address_rpi }}/{{ bluetooth_device_address_headset }}
     state: directory
@@ -581,19 +572,14 @@
     group: kodi
     mode: u=rw,g=rw,o=r
 
-- name: Get UID of kodi user
-  ansible.builtin.shell: id -u kodi
-  register: kodi_uid_result
-  changed_when: false
-
-- name: Enable and start PipeWire for user kodi
+- name: Enable and start PipeWire for user kodi # noqa: command-instead-of-module
   become: true
   become_user: kodi
-  ansible.builtin.shell:
+  ansible.builtin.command:
     cmd: systemctl --user --now enable pipewire pipewire-pulse
     creates: /usr/lib/systemd/user/pipewire.service
   environment:
-    XDG_RUNTIME_DIR: "/run/user/{{ kodi_uid_result.stdout }}"
+    XDG_RUNTIME_DIR: "/run/user/{{ created_user_kodi.uid }}"
 
 - name: Create startup script for Kodi
   ansible.builtin.copy:
