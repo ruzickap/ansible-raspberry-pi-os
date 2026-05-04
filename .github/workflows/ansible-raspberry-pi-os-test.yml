@@ -7,8 +7,7 @@ on:
 permissions: read-all
 
 env:
-  # Raspberry Pi OS image details
-  RASPIOS_IMAGE_URL: "https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2025-05-13/2025-05-13-raspios-trixie-arm64-lite.img.xz"
+  RASPIOS_BASE_URL: "https://downloads.raspberrypi.com/raspios_lite_arm64/images"
   # Dummy secrets for testing (no real credentials needed)
   ALLOY_GRAFANA_CLOUD_PASSWORD: dummy-alloy-password
   BLUETOOTH_IDENTITY_RESOLVING_KEY: "0000000000000000"
@@ -51,8 +50,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends cloud-image-utils qemu-efi-aarch64 qemu-system-arm sshpass xz-utils
 
-      - name: Download Raspberry Pi OS image
+      - name: Download latest Raspberry Pi OS image
         run: |
+          LATEST_DIR=$(curl -sL "${RASPIOS_BASE_URL}/" | grep -oP 'raspios_lite_arm64-\d{4}-\d{2}-\d{2}' | tail -1)
+          RASPIOS_IMAGE_URL="${RASPIOS_BASE_URL}/${LATEST_DIR}/$(curl -sL "${RASPIOS_BASE_URL}/${LATEST_DIR}/" | grep -oP '[^"]+\.img\.xz' | head -1)"
+          echo "Downloading: ${RASPIOS_IMAGE_URL}"
           wget -q -O - "${RASPIOS_IMAGE_URL}" | xz -d > raspios.img
 
       - name: Prepare image for QEMU
