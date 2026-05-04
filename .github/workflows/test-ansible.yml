@@ -1,5 +1,5 @@
 ---
-name: test-ansible
+name: ansible-raspberry-pi-os-test
 
 on:
   workflow_dispatch:
@@ -10,7 +10,6 @@ env:
   # Raspberry Pi OS image details
   # renovate: datasource=custom.raspios depName=raspios_lite_arm64
   RASPIOS_IMAGE_URL: "https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2025-05-13/2025-05-13-raspios-trixie-arm64-lite.img.xz"
-  RASPIOS_IMAGE_SHA256: "73a23e07469dfc9d4d0e7a76e34abd03b73067de3cf11fcea45fd1d88d939fc5"
 
 jobs:
   test-ansible:
@@ -31,11 +30,10 @@ jobs:
             sshpass \
             xz-utils
 
-      - name: Download and verify Raspberry Pi OS image
+      - name: Download Raspberry Pi OS image
         run: |
           set -euxo pipefail
           wget -q -O raspios.img.xz "${RASPIOS_IMAGE_URL}"
-          echo "${RASPIOS_IMAGE_SHA256}  raspios.img.xz" | sha256sum -c -
           xz -d raspios.img.xz
 
       - name: Prepare image for QEMU

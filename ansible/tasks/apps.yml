@@ -2,14 +2,21 @@
 # Backup / Restore
 #################################################
 
-- name: Install ssh key id_ed25519-backup_raspi.xvx.cz{.pub}
+- name: Install ssh key id_ed25519-backup_raspi.xvx.cz.pub
   ansible.builtin.copy:
-    src: files/{{ item }}
-    dest: "{{ item }}"
+    src: files/root/.ssh/id_ed25519-backup_raspi.xvx.cz.pub
+    dest: /root/.ssh/id_ed25519-backup_raspi.xvx.cz.pub
     mode: u=rw,g=,o=
     owner: root
-  loop:
-    - /root/.ssh/id_ed25519-backup_raspi.xvx.cz.pub
+  no_log: true
+
+- name: Install ssh private key id_ed25519-backup_raspi.xvx.cz
+  ansible.builtin.copy:
+    content: "{{ ssh_backup_ed25519_key }}\n"
+    dest: /root/.ssh/id_ed25519-backup_raspi.xvx.cz
+    mode: u=rw,g=,o=
+    owner: root
+
   no_log: true
 
 - name: Install ssh private key id_ed25519-backup_raspi.xvx.cz
