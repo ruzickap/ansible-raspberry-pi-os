@@ -49,6 +49,7 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq ansible python3-passlib qemu-system-x86 qemu-utils cloud-image-utils sshpass
+          pip install --break-system-packages passlib
 
       - name: Download Debian cloud image
         run: |
