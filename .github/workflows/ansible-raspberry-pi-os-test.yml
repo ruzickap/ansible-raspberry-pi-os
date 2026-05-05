@@ -146,9 +146,9 @@ jobs:
           cp "${UEFI_FW}" flash0.img
           dd if=/dev/zero of=flash1.img bs=1m count=64
 
-          # Start QEMU in background with HVF hardware virtualization
+          # Start QEMU in background with TCG software emulation
           qemu-system-aarch64 \
-            -machine virt,highmem=on -accel hvf -cpu host -m 2048 -smp 2 \
+            -machine virt,highmem=on -accel tcg -cpu cortex-a72 -m 2048 -smp 2 \
             -drive if=pflash,format=raw,file=flash0.img,readonly=on \
             -drive if=pflash,format=raw,file=flash1.img \
             -drive if=virtio,file=raspios.qcow2,format=qcow2 \
@@ -184,7 +184,7 @@ jobs:
 
       - name: Install Ansible
         run: |
-          pip3 install --break-system-packages ansible
+          brew install --quiet ansible
 
       - name: Create test inventory
         run: |
