@@ -152,6 +152,10 @@ jobs:
           echo 'console=tty1 root=/dev/vda1 cgroup_enable=cpuset cgroup_enable=memory psi=1' | sudo tee /boot/firmware/cmdline.txt
           # Create sshd service alias (Debian uses 'ssh', RPi OS uses 'sshd')
           sudo ln -sf /lib/systemd/system/ssh.service /etc/systemd/system/sshd.service
+          # Create dummy systemd units for RPi OS-specific services that the playbook disables
+          for SVC in cloud-init-main cloud-init-network console-setup keyboard-setup regenerate_ssh_host_keys sshd-keygen sshswitch; do
+            printf '[Unit]\nDescription=Dummy %s\n[Service]\nType=oneshot\nExecStart=/bin/true\n[Install]\nWantedBy=multi-user.target\n' "${SVC}" | sudo tee "/etc/systemd/system/${SVC}.service"
+          done
           sudo systemctl daemon-reload
           REMOTE_SCRIPT
 
