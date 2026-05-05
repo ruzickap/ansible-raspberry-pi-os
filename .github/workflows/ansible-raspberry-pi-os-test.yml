@@ -129,7 +129,7 @@ jobs:
         run: |
           printf '%s\n' \
             "[raspberry_pi]" \
-            "localhost" \
+            "rpi-test ansible_host=127.0.0.1" \
             "" \
             "[raspberry_pi:vars]" \
             "ansible_user=pi" \
