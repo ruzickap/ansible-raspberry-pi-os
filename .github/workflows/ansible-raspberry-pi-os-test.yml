@@ -48,7 +48,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq ansible sshpass
+          sudo apt-get install -y -qq ansible python3-passlib sshpass
 
       - name: Start Debian container (Raspberry Pi OS base)
         run: |
