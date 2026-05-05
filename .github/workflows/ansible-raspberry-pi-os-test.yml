@@ -8,7 +8,6 @@ on:
 permissions: read-all
 
 env:
-  RASPIOS_BASE_URL: "https://downloads.raspberrypi.com/raspios_lite_arm64/images"
   # Dummy secrets for testing (no real credentials needed)
   ALLOY_GRAFANA_CLOUD_PASSWORD: dummy-alloy-password
   BLUETOOTH_IDENTITY_RESOLVING_KEY: "0000000000000000"
@@ -38,7 +37,7 @@ env:
 jobs:
   ansible-raspberry-pi-os-test:
     runs-on: ubuntu-24.04-arm
-    timeout-minutes: 15
+    timeout-minutes: 30
     defaults:
       run:
         shell: bash -euxo pipefail {0}
@@ -46,143 +45,60 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Install QEMU and dependencies
+      - name: Install dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq ansible mtools qemu-system-arm qemu-efi-aarch64 qemu-utils sshpass xz-utils
+          sudo apt-get install -y -qq ansible sshpass
 
-      - name: Download latest Raspberry Pi OS image
+      - name: Start Debian container (Raspberry Pi OS base)
         run: |
-          LATEST_DIR=$(curl -sL "${RASPIOS_BASE_URL}/" | grep -oE 'raspios_lite_arm64-[0-9]{4}-[0-9]{2}-[0-9]{2}' | tail -1)
-          RASPIOS_IMAGE_URL="${RASPIOS_BASE_URL}/${LATEST_DIR}/$(curl -sL "${RASPIOS_BASE_URL}/${LATEST_DIR}/" | grep -oE '[^"]+\.img\.xz' | head -1)"
-          echo "Downloading: ${RASPIOS_IMAGE_URL}"
-          curl -sL "${RASPIOS_IMAGE_URL}" | xz -d > raspios.img
+          # Run Debian bookworm (same base as Raspberry Pi OS) with SSH
+          docker run -d --name raspi-test \
+            -p 2222:22 \
+            --tmpfs /run \
+            --tmpfs /run/lock \
+            debian:bookworm \
+            bash -c '
+              apt-get update -qq &&
+              apt-get install -y -qq openssh-server sudo python3 systemd &&
+              useradd -m -s /bin/bash pi &&
+              echo "pi:raspberry" | chpasswd &&
+              echo "pi ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/pi &&
+              mkdir -p /run/sshd &&
+              sed -i "s/^#*PasswordAuthentication.*/PasswordAuthentication yes/" /etc/ssh/sshd_config &&
+              /usr/sbin/sshd -D
+            '
 
-      - name: Prepare image for QEMU
-        run: |
-          IMAGE_FILE="raspios.img"
-
-          # Resize image to give more space for packages
-          qemu-img resize -f raw "${IMAGE_FILE}" 8G
-
-          # Parse MBR partition table to find partition offsets
-          # shellcheck disable=SC2034
-          PARTITIONS=$(python3 -c "
-          import struct
-          with open('${IMAGE_FILE}', 'rb') as f:
-              f.seek(446)
-              for i in range(4):
-                  entry = f.read(16)
-                  if len(entry) < 16:
-                      break
-                  ptype = entry[4]
-                  lba_start = struct.unpack('<I', entry[8:12])[0]
-                  lba_size = struct.unpack('<I', entry[12:16])[0]
-                  if lba_size > 0:
-                      print(f'{i+1} {ptype} {lba_start} {lba_size}')
-          ")
-
-          BOOT_START=$(echo "${PARTITIONS}" | awk 'NR==1{print $3}')
-          ROOT_START=$(echo "${PARTITIONS}" | awk 'NR==2{print $3}')
-
-          BOOT_OFFSET_BYTES=$((BOOT_START * 512))
-
-          echo "Boot partition: start=${BOOT_START} sectors"
-          echo "Root partition: start=${ROOT_START} sectors"
-
-          # Enable SSH by creating the ssh file in boot partition
-          touch ssh_marker && mcopy -i "${IMAGE_FILE}@@${BOOT_OFFSET_BYTES}" ssh_marker ::ssh && rm ssh_marker
-
-          # Create userconf.txt for pi user with password 'raspberry'
-          ENCRYPTED_PASS=$(openssl passwd -5 raspberry)
-          echo "pi:${ENCRYPTED_PASS}" > userconf.txt
-          mcopy -i "${IMAGE_FILE}@@${BOOT_OFFSET_BYTES}" userconf.txt ::userconf.txt && rm userconf.txt
-
-          # Create firstrun.sh to enable password authentication
-          cat > firstrun.sh <<'FIRSTRUN'
-          #!/bin/bash
-          set -e
-          sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
-          systemctl restart ssh
-          rm -f /boot/firmware/firstrun.sh
-          FIRSTRUN
-          chmod +x firstrun.sh
-          mcopy -i "${IMAGE_FILE}@@${BOOT_OFFSET_BYTES}" firstrun.sh ::firstrun.sh && rm firstrun.sh
-
-          # Read cmdline.txt, append firstrun.sh reference, and write back
-          mcopy -i "${IMAGE_FILE}@@${BOOT_OFFSET_BYTES}" ::cmdline.txt cmdline.txt
-          if ! grep -q "firstrun.sh" cmdline.txt 2>/dev/null; then
-            # Append systemd.run directive (remove trailing newline first)
-            tr -d '\n' < cmdline.txt > cmdline_tmp.txt
-            echo " systemd.run=/boot/firmware/firstrun.sh systemd.run_success_action=none systemd.unit=kernel-command-line.target" >> cmdline_tmp.txt
-            mcopy -o -i "${IMAGE_FILE}@@${BOOT_OFFSET_BYTES}" cmdline_tmp.txt ::cmdline.txt
-            rm cmdline.txt cmdline_tmp.txt
-          else
-            rm cmdline.txt
-          fi
-
-          # Convert image to qcow2 for better performance
-          qemu-img convert -f raw -O qcow2 "${IMAGE_FILE}" raspios.qcow2
-          rm "${IMAGE_FILE}"
-
-      - name: Boot Raspberry Pi OS in QEMU
-        run: |
-          UEFI_FW="/usr/share/qemu-efi-aarch64/QEMU_EFI.fd"
-
-          # Create 64MB pflash images (QEMU requires exact size)
-          dd if=/dev/zero of=flash0.img bs=1M count=64
-          dd if="${UEFI_FW}" of=flash0.img conv=notrunc
-          dd if=/dev/zero of=flash1.img bs=1M count=64
-
-          # Start QEMU in background with TCG emulation (KVM not available on GitHub runners)
-          qemu-system-aarch64 \
-            -machine virt,highmem=on -accel tcg,thread=multi -cpu cortex-a72 -m 4096 -smp 4 \
-            -drive if=pflash,format=raw,file=flash0.img,readonly=on \
-            -drive if=pflash,format=raw,file=flash1.img \
-            -drive if=virtio,file=raspios.qcow2,format=qcow2 \
-            -device virtio-net-pci,netdev=net0,romfile= \
-            -netdev user,id=net0,hostfwd=tcp::2222-:22 \
-            -nographic \
-            -no-reboot &
-
-          QEMU_PID=$!
-          echo "QEMU_PID=${QEMU_PID}" >> "${GITHUB_ENV}"
-
-          # Wait for SSH to become available (timeout 5 minutes)
+          # Wait for SSH to become available
           echo "Waiting for SSH to become available..."
-          for I in $(seq 1 60); do
+          for I in $(seq 1 30); do
             if sshpass -p raspberry ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 2222 pi@localhost echo "SSH is ready" 2>/dev/null; then
               echo "SSH is ready after ${I} attempts"
               break
             fi
-            if ! kill -0 "${QEMU_PID}" 2>/dev/null; then
-              echo "QEMU process died"
-              exit 1
-            fi
-            echo "Attempt ${I}/60 - waiting 5s..."
-            sleep 5
+            echo "Attempt ${I}/30 - waiting 2s..."
+            sleep 2
           done
 
           # Verify SSH connectivity
           sshpass -p raspberry ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 2222 pi@localhost uname -a
 
-          # Resize root partition inside the VM
-          sshpass -p raspberry ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 2222 pi@localhost \
-            "sudo growpart /dev/vda 2 && sudo resize2fs /dev/vda2" || true
-
       - name: Create test inventory
         run: |
-          cat > ansible/inventory/test-hosts <<'EOF'
-          [raspberry_pi]
-          localhost
-
-          [raspberry_pi:vars]
-          ansible_user=pi
-          ansible_ssh_pass=raspberry
-          ansible_port=2222
-          ansible_python_interpreter=/usr/bin/python3
-          ansible_ssh_common_args=-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
-          EOF
+          # Generate SSH key (required by Ansible pre_tasks)
+          ssh-keygen -t ed25519 -f "${HOME}/.ssh/id_ed25519" -N "" -q
+          printf '%s\n' \
+            "[raspberry_pi]" \
+            "localhost" \
+            "" \
+            "[raspberry_pi:vars]" \
+            "ansible_user=pi" \
+            "ansible_ssh_pass=raspberry" \
+            "ansible_become_password=raspberry" \
+            "ansible_port=2222" \
+            "ansible_python_interpreter=/usr/bin/python3" \
+            "ansible_ssh_common_args=-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
+            > ansible/inventory/test-hosts
 
       - name: Install Ansible Galaxy dependencies
         working-directory: ansible
@@ -192,9 +108,7 @@ jobs:
         working-directory: ansible
         run: ansible-playbook --diff --user root -i inventory/test-hosts main.yml
 
-      - name: Stop QEMU
+      - name: Stop container
         if: always()
         run: |
-          if [ -n "${QEMU_PID:-}" ]; then
-            kill "${QEMU_PID}" 2>/dev/null || true
-          fi
+          docker rm -f raspi-test 2>/dev/null || true
