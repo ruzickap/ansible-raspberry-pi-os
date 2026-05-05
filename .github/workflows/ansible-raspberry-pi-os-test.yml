@@ -144,7 +144,9 @@ jobs:
         run: |
           # Create Raspberry Pi-specific files with expected content to prevent unnecessary reboot
           # The playbook uses blockinfile for config.txt and lineinfile for cmdline.txt
-          sshpass -p raspberry ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 2222 pi@127.0.0.1 bash -s <<'REMOTE_SCRIPT'
+          sshpass -p raspberry ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 2222 pi@127.0.0.1 bash -euxo pipefail -s <<'REMOTE_SCRIPT'
+          # Wait for cloud-init to finish (it holds apt lock)
+          sudo cloud-init status --wait
           sudo mkdir -p /boot/firmware
           # Install packages that the playbook expects (present on RPi OS but not Debian cloud)
           sudo apt-get update -qq && sudo apt-get install -y -qq cron gnupg logrotate rsync
