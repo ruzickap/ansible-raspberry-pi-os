@@ -93,6 +93,10 @@ jobs:
           sudo chroot "${MOUNT_DIR}" useradd -m -G sudo -s /bin/bash pi || true
           echo "pi:${ENCRYPTED_PASS}" | sudo chroot "${MOUNT_DIR}" chpasswd -e
 
+          # Enable passwordless sudo for pi user
+          echo "pi ALL=(ALL) NOPASSWD:ALL" | sudo tee "${MOUNT_DIR}/etc/sudoers.d/010_pi-nopasswd" > /dev/null
+          sudo chmod 0440 "${MOUNT_DIR}/etc/sudoers.d/010_pi-nopasswd"
+
           # Enable password authentication in SSH
           sudo sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication yes/' "${MOUNT_DIR}/etc/ssh/sshd_config"
 
@@ -117,8 +121,8 @@ jobs:
           VMLINUZ=$(find /boot -maxdepth 1 -name "vmlinuz-*" | sort -V | tail -1)
           KERNEL_VERSION=$(basename "${VMLINUZ}" | sed 's/^vmlinuz-//')
 
-          # Copy kernel for QEMU direct boot (vmlinuz is an EFI stub on arm64 runners)
-          sudo sh -c "cat '${VMLINUZ}' > Image"
+          # Make kernel readable for QEMU direct boot
+          sudo chmod +r "${VMLINUZ}"
 
           # Generate initrd for the host kernel (the runner doesn't ship one)
           sudo update-initramfs -c -k "${KERNEL_VERSION}"
@@ -126,7 +130,7 @@ jobs:
 
           qemu-system-aarch64 \
             -machine virt,gic-version=max -accel tcg -cpu cortex-a72 -m 8192 -smp 4 \
-            -kernel Image \
+            -kernel "${VMLINUZ}" \
             -initrd "${INITRD}" \
             -append "root=/dev/vda2 rootfstype=ext4 rootwait rw console=ttyAMA0" \
             -drive if=virtio,file=raspios.qcow2,format=qcow2 \
