@@ -65,8 +65,7 @@ REPOSITORY_CHECKOV_ARGUMENTS: --quiet
 REPOSITORY_DEVSKIM_ARGUMENTS: --ignore-globs CHANGELOG.md --ignore-rule-ids DS162092,DS137138
 
 # KICS (security scanner) - only fail on high severity issues
-# Exclude test workflow with dummy secrets from KICS scanning
-REPOSITORY_KICS_ARGUMENTS: --fail-on high --exclude-paths .github/workflows/ansible-raspberry-pi-os-test.yml
+REPOSITORY_KICS_ARGUMENTS: --fail-on high
 
 # Trivy (vulnerability scanner) - only check HIGH and CRITICAL severity
 REPOSITORY_TRIVY_ARGUMENTS: --severity HIGH,CRITICAL --ignore-unfixed
