@@ -107,16 +107,8 @@ jobs:
       - name: Boot Raspberry Pi OS in QEMU
         run: |
 
-          # Start QEMU in background with direct kernel boot (use KVM if available, otherwise TCG)
-          if [ -e /dev/kvm ]; then
-            ACCEL_OPTS="-accel kvm -cpu host"
-          else
-            ACCEL_OPTS="-accel tcg -cpu cortex-a72"
-          fi
-
-          # shellcheck disable=SC2086
           qemu-system-aarch64 \
-            -machine virt,gic-version=max ${ACCEL_OPTS} -m 2048 -smp 2 \
+            -machine virt,gic-version=max -accel tcg -cpu cortex-a72 -m 2048 -smp 2 \
             -kernel kernel8.img \
             -initrd initramfs8 \
             -append "root=/dev/vda2 rootfstype=ext4 rw console=ttyAMA0" \
