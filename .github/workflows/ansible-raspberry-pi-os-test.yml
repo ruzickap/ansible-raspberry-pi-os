@@ -74,7 +74,7 @@ jobs:
           sudo mount -o loop,offset=$((ROOT_OFFSET * 512)) "${IMAGE_FILE}" "${MOUNT_DIR}"
 
           # Mount boot partition
-          sudo mount -o loop,offset=$((BOOT_OFFSET * 512)) "${MOUNT_DIR}/boot/firmware"
+          sudo mount -o loop,offset=$((BOOT_OFFSET * 512)) "${IMAGE_FILE}" "${MOUNT_DIR}/boot/firmware"
 
           # Enable SSH by creating the ssh file in boot partition
           sudo touch "${MOUNT_DIR}/boot/firmware/ssh"
