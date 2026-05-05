@@ -1,5 +1,5 @@
----
 # kics-scan ignore
+---
 name: ansible-raspberry-pi-os-test
 
 on:
