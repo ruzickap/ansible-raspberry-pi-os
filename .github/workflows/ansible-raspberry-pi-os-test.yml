@@ -170,6 +170,8 @@ jobs:
             printf '[Unit]\nDescription=Dummy %s\n[Service]\nType=oneshot\nExecStart=/bin/true\n[Install]\nWantedBy=multi-user.target\n' "${SVC}" | sudo tee "/etc/systemd/system/${SVC}.service"
           done
           sudo systemctl daemon-reload
+          # Start a dummy listener on port 8080 (Kodi web server won't start in headless VM)
+          nohup sudo python3 -c 'import http.server; http.server.HTTPServer(("", 8080), http.server.BaseHTTPRequestHandler).serve_forever()' &
           REMOTE_SCRIPT
 
           # Export VM's existing SSH host key so the playbook writes a valid key
