@@ -9,7 +9,6 @@ permissions: read-all
 env:
   RASPIOS_BASE_URL: "https://downloads.raspberrypi.com/raspios_lite_arm64/images"
   # Dummy secrets for testing (no real credentials needed)
-  # kics-scan ignore-block
   ALLOY_GRAFANA_CLOUD_PASSWORD: dummy-alloy-password
   BLUETOOTH_IDENTITY_RESOLVING_KEY: "0000000000000000"
   BLUETOOTH_LINK_KEY: "0000000000000000"
