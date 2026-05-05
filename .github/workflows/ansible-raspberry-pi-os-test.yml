@@ -124,7 +124,7 @@ jobs:
             -drive if=pflash,format=raw,file=flash0.img,readonly=on \
             -drive if=pflash,format=raw,file=flash1.img \
             -drive if=virtio,file=raspios.qcow2,format=qcow2 \
-            -device virtio-net-pci,netdev=net0 \
+            -device virtio-net-pci,netdev=net0,romfile="" \
             -netdev user,id=net0,hostfwd=tcp::2222-:22 \
             -nographic \
             -no-reboot &
