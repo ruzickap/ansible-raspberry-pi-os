@@ -83,11 +83,13 @@ jobs:
           # Enable SSH by creating the ssh file in boot partition
           sudo touch "${MOUNT_DIR}/boot/firmware/ssh"
 
+          # Create pi user with password 'raspberry' via userconf file
+          # Modern Raspberry Pi OS requires this for first-boot user creation
+          ENCRYPTED_PASS=$(openssl passwd -6 raspberry)
+          echo "pi:${ENCRYPTED_PASS}" | sudo tee "${MOUNT_DIR}/boot/firmware/userconf" > /dev/null
+
           # Enable password authentication in SSH
           sudo sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication yes/' "${MOUNT_DIR}/etc/ssh/sshd_config"
-
-          # Ensure pi user exists with password 'raspberry'
-          # The default Raspberry Pi OS image should already have this
 
           # Unmount and detach loop devices
           sudo umount "${MOUNT_DIR}/boot/firmware"
@@ -108,16 +110,8 @@ jobs:
           VMLINUZ=$(find /boot -maxdepth 1 -name "vmlinuz-*" | sort -V | tail -1)
           KERNEL_VERSION=$(basename "${VMLINUZ}" | sed 's/^vmlinuz-//')
 
-          # Decompress kernel for QEMU (aarch64 QEMU only supports uncompressed or gzip kernels)
-          KERNEL_FILE="Image"
-          FILE_TYPE=$(sudo file -b "${VMLINUZ}")
-          case ${FILE_TYPE} in
-            *gzip*)  sudo sh -c "zcat '${VMLINUZ}' > '${KERNEL_FILE}'" ;;
-            *zstd*)  sudo sh -c "zstdcat '${VMLINUZ}' > '${KERNEL_FILE}'" ;;
-            *LZ4*)   sudo sh -c "lz4cat '${VMLINUZ}' > '${KERNEL_FILE}'" ;;
-            *PE32*|*EFI*) sudo sh -c "cat '${VMLINUZ}' > '${KERNEL_FILE}'" ;;
-            *)       sudo cp "${VMLINUZ}" "${KERNEL_FILE}" ;;
-          esac
+          # Copy kernel for QEMU direct boot
+          sudo cp "${VMLINUZ}" Image
 
           # Generate initrd for the host kernel (the runner doesn't ship one)
           sudo update-initramfs -c -k "${KERNEL_VERSION}"
@@ -125,7 +119,7 @@ jobs:
 
           qemu-system-aarch64 \
             -machine virt,gic-version=max -accel tcg -cpu cortex-a72 -m 8192 -smp 4 \
-            -kernel "${KERNEL_FILE}" \
+            -kernel Image \
             -initrd "${INITRD}" \
             -append "root=/dev/vda2 rootfstype=ext4 rootwait rw console=ttyAMA0" \
             -drive if=virtio,file=raspios.qcow2,format=qcow2 \
@@ -140,7 +134,7 @@ jobs:
           # Wait for SSH to become available (timeout 5 minutes)
           echo "Waiting for SSH to become available..."
           for I in $(seq 1 60); do
-            if sshpass -p raspberry ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 2222 pi@localhost echo "SSH is ready" 2>/dev/null; then
+            if sshpass -p raspberry ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 -p 2222 pi@localhost echo "SSH is ready" 2>/dev/null; then
               echo "SSH is ready after ${I} attempts"
               break
             fi
