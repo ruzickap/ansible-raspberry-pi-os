@@ -117,16 +117,8 @@ jobs:
           VMLINUZ=$(find /boot -maxdepth 1 -name "vmlinuz-*" | sort -V | tail -1)
           KERNEL_VERSION=$(basename "${VMLINUZ}" | sed 's/^vmlinuz-//')
 
-          # Extract kernel for QEMU direct boot
-          KERNEL_FILE="Image"
-          FILE_TYPE=$(sudo file -b "${VMLINUZ}")
-          case ${FILE_TYPE} in
-            *gzip*)  sudo sh -c "zcat '${VMLINUZ}' > '${KERNEL_FILE}'" ;;
-            *zstd*)  sudo sh -c "zstdcat '${VMLINUZ}' > '${KERNEL_FILE}'" ;;
-            *LZ4*)   sudo sh -c "lz4cat '${VMLINUZ}' > '${KERNEL_FILE}'" ;;
-            *PE32*|*EFI*) sudo sh -c "cat '${VMLINUZ}' > '${KERNEL_FILE}'" ;;
-            *)       sudo cp "${VMLINUZ}" "${KERNEL_FILE}" ;;
-          esac
+          # Copy kernel for QEMU direct boot (vmlinuz is an EFI stub on arm64 runners)
+          sudo sh -c "cat '${VMLINUZ}' > Image"
 
           # Generate initrd for the host kernel (the runner doesn't ship one)
           sudo update-initramfs -c -k "${KERNEL_VERSION}"
