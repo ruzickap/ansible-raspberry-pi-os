@@ -49,7 +49,7 @@ jobs:
       - name: Install QEMU and dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends cloud-image-utils ipxe-qemu qemu-efi-aarch64 qemu-system-arm sshpass xz-utils
+          sudo apt-get install -y --no-install-recommends cloud-image-utils initramfs-tools qemu-system-arm sshpass xz-utils
 
       - name: Download latest Raspberry Pi OS image
         run: |
@@ -113,16 +113,32 @@ jobs:
       - name: Boot Raspberry Pi OS in QEMU
         run: |
 
-          # Copy UEFI firmware
-          cp /usr/share/AAVMF/AAVMF_CODE.fd flash0.img
-          cp /usr/share/AAVMF/AAVMF_VARS.fd flash1.img
+          # Use the host's Ubuntu kernel with a generated initrd (which includes virtio modules)
+          VMLINUZ=$(find /boot -maxdepth 1 -name "vmlinuz-*" | sort -V | tail -1)
+          KERNEL_VERSION=$(basename "${VMLINUZ}" | sed 's/^vmlinuz-//')
+
+          # Extract kernel for QEMU direct boot
+          KERNEL_FILE="Image"
+          FILE_TYPE=$(sudo file -b "${VMLINUZ}")
+          case ${FILE_TYPE} in
+            *gzip*)  sudo sh -c "zcat '${VMLINUZ}' > '${KERNEL_FILE}'" ;;
+            *zstd*)  sudo sh -c "zstdcat '${VMLINUZ}' > '${KERNEL_FILE}'" ;;
+            *LZ4*)   sudo sh -c "lz4cat '${VMLINUZ}' > '${KERNEL_FILE}'" ;;
+            *PE32*|*EFI*) sudo sh -c "cat '${VMLINUZ}' > '${KERNEL_FILE}'" ;;
+            *)       sudo cp "${VMLINUZ}" "${KERNEL_FILE}" ;;
+          esac
+
+          # Generate initrd for the host kernel (the runner doesn't ship one)
+          sudo update-initramfs -c -k "${KERNEL_VERSION}"
+          INITRD="/boot/initrd.img-${KERNEL_VERSION}"
 
           qemu-system-aarch64 \
             -machine virt,gic-version=max -accel tcg -cpu cortex-a72 -m 8192 -smp 4 \
-            -drive if=pflash,format=raw,file=flash0.img,readonly=on \
-            -drive if=pflash,format=raw,file=flash1.img \
+            -kernel "${KERNEL_FILE}" \
+            -initrd "${INITRD}" \
+            -append "root=/dev/vda2 rootfstype=ext4 rootwait rw console=ttyAMA0" \
             -drive if=virtio,file=raspios.qcow2,format=qcow2 \
-            -device virtio-net-pci,netdev=net0 \
+            -device virtio-net-pci,netdev=net0,romfile="" \
             -netdev user,id=net0,hostfwd=tcp::2222-:22 \
             -nographic \
             -no-reboot &
