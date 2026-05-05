@@ -89,9 +89,20 @@ jobs:
           # Ensure pi user exists with password 'raspberry'
           # The default Raspberry Pi OS image should already have this
 
-          # Copy kernel and initrd for QEMU direct kernel boot
+          # Copy kernel for QEMU direct kernel boot
           cp "${MOUNT_DIR}/boot/firmware/kernel8.img" .
-          cp "${MOUNT_DIR}/boot/firmware/initramfs8" . || true
+
+          # Rebuild initramfs with virtio modules needed for QEMU
+          # The stock Raspberry Pi initramfs lacks virtio drivers for QEMU's virtio-blk disk
+          KERNEL_VERSION=$(find "${MOUNT_DIR}/lib/modules/" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | head -1)
+          echo "virtio_pci" | sudo tee -a "${MOUNT_DIR}/etc/initramfs-tools/modules"
+          echo "virtio_blk" | sudo tee -a "${MOUNT_DIR}/etc/initramfs-tools/modules"
+          sudo mount --bind /proc "${MOUNT_DIR}/proc"
+          sudo mount --bind /sys "${MOUNT_DIR}/sys"
+          sudo mount --bind /dev "${MOUNT_DIR}/dev"
+          sudo chroot "${MOUNT_DIR}" update-initramfs -u -k "${KERNEL_VERSION}"
+          sudo umount "${MOUNT_DIR}/proc" "${MOUNT_DIR}/sys" "${MOUNT_DIR}/dev"
+          cp "${MOUNT_DIR}/boot/initrd.img-${KERNEL_VERSION}" initramfs8
 
           # Unmount and detach loop devices
           sudo umount "${MOUNT_DIR}/boot/firmware"
@@ -108,10 +119,10 @@ jobs:
         run: |
 
           qemu-system-aarch64 \
-            -machine virt,gic-version=max -accel tcg -cpu cortex-a72 -m 2048 -smp 2 \
+            -machine virt,gic-version=max -accel tcg -cpu cortex-a72 -m 8192 -smp 4 \
             -kernel kernel8.img \
             -initrd initramfs8 \
-            -append "root=/dev/vda2 rootfstype=ext4 rw console=ttyAMA0" \
+            -append "root=/dev/vda2 rootfstype=ext4 rootwait rw console=ttyAMA0" \
             -drive if=virtio,file=raspios.qcow2,format=qcow2 \
             -device virtio-net-pci,netdev=net0,romfile="" \
             -netdev user,id=net0,hostfwd=tcp::2222-:22 \
