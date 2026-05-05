@@ -130,7 +130,7 @@ jobs:
             -initrd "${INITRD}" \
             -append "root=/dev/vda2 rootfstype=ext4 rootwait rw console=ttyAMA0" \
             -drive if=virtio,file=raspios.qcow2,format=qcow2 \
-            -device virtio-net-pci,netdev=net0 \
+            -device virtio-net-pci,netdev=net0,romfile="" \
             -netdev user,id=net0,hostfwd=tcp::2222-:22 \
             -nographic \
             -no-reboot &
