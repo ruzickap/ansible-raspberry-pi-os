@@ -36,7 +36,7 @@ env:
 
 jobs:
   ansible-raspberry-pi-os-test:
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     defaults:
       run:
@@ -48,45 +48,84 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq ansible python3-passlib sshpass
+          sudo apt-get install -y -qq ansible python3-passlib qemu-system-x86 qemu-utils cloud-image-utils sshpass
 
-      - name: Start Debian container (Raspberry Pi OS base)
+      - name: Download Debian cloud image
         run: |
-          # Run Debian bookworm (same base as Raspberry Pi OS) with SSH
-          docker run -d --name raspi-test \
-            -p 2222:22 \
-            --tmpfs /run \
-            --tmpfs /run/lock \
-            debian:bookworm \
-            bash -c '
-              apt-get update -qq &&
-              apt-get install -y -qq openssh-server sudo python3 systemd &&
-              useradd -m -s /bin/bash pi &&
-              echo "pi:raspberry" | chpasswd &&
-              echo "pi ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/pi &&
-              mkdir -p /run/sshd &&
-              sed -i "s/^#*PasswordAuthentication.*/PasswordAuthentication yes/" /etc/ssh/sshd_config &&
-              /usr/sbin/sshd -D
-            '
+          CLOUD_IMAGE_URL="https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-genericcloud-amd64.qcow2"
+          curl -sL -o debian-cloud.qcow2 "${CLOUD_IMAGE_URL}"
+          # Resize to 10GB for package installs
+          qemu-img resize debian-cloud.qcow2 10G
 
-          # Wait for SSH to become available
+      - name: Prepare cloud-init and boot VM
+        run: |
+          # Generate SSH key for Ansible
+          ssh-keygen -t ed25519 -f "${HOME}/.ssh/id_ed25519" -N "" -q
+
+          # Create cloud-init user-data
+          cat > user-data <<'USERDATA'
+          #cloud-config
+          users:
+            - name: pi
+              plain_text_passwd: raspberry
+              lock_passwd: false
+              sudo: ALL=(ALL) NOPASSWD:ALL
+              shell: /bin/bash
+              ssh_authorized_keys:
+                - SSH_PUB_KEY_PLACEHOLDER
+          ssh_pwauth: true
+          package_update: true
+          packages:
+            - python3
+          USERDATA
+
+          # Inject the actual SSH public key
+          SSH_PUB_KEY=$(cat "${HOME}/.ssh/id_ed25519.pub")
+          sed -i "s|SSH_PUB_KEY_PLACEHOLDER|${SSH_PUB_KEY}|" user-data
+
+          # Remove leading whitespace from heredoc (YAML indentation artifact)
+          sed -i 's/^          //' user-data
+
+          # Create cloud-init ISO
+          cloud-localds seed.img user-data
+
+          # Verify KVM is available
+          ls -la /dev/kvm
+          sudo chmod 666 /dev/kvm
+
+          # Boot VM with KVM acceleration
+          qemu-system-x86_64 \
+            -machine q35 -accel kvm -cpu host -m 4096 -smp 4 \
+            -drive file=debian-cloud.qcow2,if=virtio,format=qcow2 \
+            -drive file=seed.img,if=virtio,format=raw \
+            -device virtio-net-pci,netdev=net0 \
+            -netdev user,id=net0,hostfwd=tcp::2222-:22 \
+            -nographic \
+            -no-reboot &
+
+          QEMU_PID=$!
+          echo "QEMU_PID=${QEMU_PID}" >> "${GITHUB_ENV}"
+
+          # Wait for SSH (cloud-init needs time to configure the VM)
           echo "Waiting for SSH to become available..."
-          for I in $(seq 1 30); do
+          for I in $(seq 1 60); do
             if sshpass -p raspberry ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 2222 pi@localhost echo "SSH is ready" 2>/dev/null; then
               echo "SSH is ready after ${I} attempts"
               break
             fi
-            echo "Attempt ${I}/30 - waiting 2s..."
-            sleep 2
+            if ! kill -0 "${QEMU_PID}" 2>/dev/null; then
+              echo "QEMU process died"
+              exit 1
+            fi
+            echo "Attempt ${I}/60 - waiting 5s..."
+            sleep 5
           done
 
-          # Verify SSH connectivity
+          # Verify connectivity
           sshpass -p raspberry ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 2222 pi@localhost uname -a
 
       - name: Create test inventory
         run: |
-          # Generate SSH key (required by Ansible pre_tasks)
-          ssh-keygen -t ed25519 -f "${HOME}/.ssh/id_ed25519" -N "" -q
           printf '%s\n' \
             "[raspberry_pi]" \
             "localhost" \
@@ -108,7 +147,9 @@ jobs:
         working-directory: ansible
         run: ansible-playbook --diff --user root -i inventory/test-hosts main.yml
 
-      - name: Stop container
+      - name: Stop QEMU
         if: always()
         run: |
-          docker rm -f raspi-test 2>/dev/null || true
+          if [ -n "${QEMU_PID:-}" ]; then
+            kill "${QEMU_PID}" 2>/dev/null || true
+          fi
