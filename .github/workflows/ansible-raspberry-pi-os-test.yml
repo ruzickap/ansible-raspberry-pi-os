@@ -49,7 +49,7 @@ jobs:
       - name: Install QEMU and dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends ansible cloud-image-utils initramfs-tools qemu-system-arm sshpass xz-utils
+          sudo apt-get install -y --no-install-recommends ansible cloud-image-utils initramfs-tools python3-passlib qemu-system-arm sshpass xz-utils
 
       - name: Download latest Raspberry Pi OS image
         run: |
