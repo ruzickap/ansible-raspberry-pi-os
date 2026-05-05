@@ -129,8 +129,9 @@ jobs:
         run: |
           UEFI_FW="/usr/share/qemu-efi-aarch64/QEMU_EFI.fd"
 
-          # Create writable copies of UEFI firmware
-          cp "${UEFI_FW}" flash0.img
+          # Create 64MB pflash images (QEMU requires exact size)
+          dd if=/dev/zero of=flash0.img bs=1M count=64
+          dd if="${UEFI_FW}" of=flash0.img conv=notrunc
           dd if=/dev/zero of=flash1.img bs=1M count=64
 
           # Start QEMU in background with TCG emulation (KVM not available on GitHub runners)
