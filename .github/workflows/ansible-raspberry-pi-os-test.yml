@@ -49,7 +49,7 @@ jobs:
       - name: Install QEMU and dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends cloud-image-utils initramfs-tools qemu-system-arm sshpass xz-utils
+          sudo apt-get install -y --no-install-recommends ansible cloud-image-utils initramfs-tools qemu-system-arm sshpass xz-utils
 
       - name: Download latest Raspberry Pi OS image
         run: |
@@ -130,7 +130,7 @@ jobs:
             -initrd "${INITRD}" \
             -append "root=/dev/vda2 rootfstype=ext4 rootwait rw console=ttyAMA0" \
             -drive if=virtio,file=raspios.qcow2,format=qcow2 \
-            -device virtio-net-pci,netdev=net0,romfile="" \
+            -device virtio-net-pci,netdev=net0 \
             -netdev user,id=net0,hostfwd=tcp::2222-:22 \
             -nographic \
             -no-reboot &
@@ -140,29 +140,24 @@ jobs:
 
           # Wait for SSH to become available (timeout 5 minutes)
           echo "Waiting for SSH to become available..."
-          for I in $(seq 1 60); do
-            if sshpass -p raspberry ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 -p 2222 pi@localhost echo "SSH is ready" 2>/dev/null; then
-              echo "SSH is ready after ${I} attempts"
+          while true; do
+            if sshpass -p raspberry ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 -p 2222 pi@localhost true 2>/dev/null; then
+              echo "SSH is ready"
               break
             fi
             if ! kill -0 "${QEMU_PID}" 2>/dev/null; then
               echo "QEMU process died"
               exit 1
             fi
-            echo "Attempt ${I}/60 - waiting 5s..."
             sleep 5
           done
-
-          # Verify SSH connectivity
-          sshpass -p raspberry ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 2222 pi@localhost uname -a
 
           # Resize root partition inside the VM
           sshpass -p raspberry ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 2222 pi@localhost \
             "sudo growpart /dev/vda 2 && sudo resize2fs /dev/vda2" || true
 
-      - name: Install Ansible
-        run: |
-          sudo apt-get install -y --no-install-recommends ansible sshpass
+      - name: Generate SSH key
+        run: ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -N ""
 
       - name: Create test inventory
         run: |
