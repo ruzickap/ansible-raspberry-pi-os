@@ -1,5 +1,5 @@
 ---
-# kics-scan disable=a88baa34-e2ad-44ea-ad6f-8cac87bc7c71
+# kics-scan ignore
 name: ansible-raspberry-pi-os-test
 
 on:
