@@ -49,7 +49,7 @@ jobs:
       - name: Install QEMU and dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends cloud-image-utils qemu-efi-aarch64 qemu-system-arm sshpass xz-utils
+          sudo apt-get install -y --no-install-recommends cloud-image-utils qemu-system-arm sshpass xz-utils
 
       - name: Download latest Raspberry Pi OS image
         run: |
@@ -107,11 +107,7 @@ jobs:
       - name: Boot Raspberry Pi OS in QEMU
         run: |
 
-          # Copy UEFI firmware
-          cp /usr/share/AAVMF/AAVMF_CODE.fd flash0.img
-          cp /usr/share/AAVMF/AAVMF_VARS.fd flash1.img
-
-          # Start QEMU in background (use KVM if available, otherwise TCG)
+          # Start QEMU in background with direct kernel boot (use KVM if available, otherwise TCG)
           if [ -e /dev/kvm ]; then
             ACCEL_OPTS="-accel kvm -cpu host"
           else
@@ -121,8 +117,9 @@ jobs:
           # shellcheck disable=SC2086
           qemu-system-aarch64 \
             -machine virt,gic-version=max ${ACCEL_OPTS} -m 2048 -smp 2 \
-            -drive if=pflash,format=raw,file=flash0.img,readonly=on \
-            -drive if=pflash,format=raw,file=flash1.img \
+            -kernel kernel8.img \
+            -initrd initramfs8 \
+            -append "root=/dev/vda2 rootfstype=ext4 rw console=ttyAMA0" \
             -drive if=virtio,file=raspios.qcow2,format=qcow2 \
             -device virtio-net-pci,netdev=net0,romfile="" \
             -netdev user,id=net0,hostfwd=tcp::2222-:22 \
