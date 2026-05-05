@@ -150,10 +150,11 @@ jobs:
           sudo mkdir -p /boot/firmware
           # Install packages that the playbook expects (present on RPi OS but not Debian cloud)
           sudo apt-get update -qq && sudo apt-get install -y -qq cron gnupg logrotate rsync
-          # Pre-install dearmored GPG keys for Docker and Mosquitto repos
-          # The playbook downloads armored keys via get_url but deb822 signed_by needs dearmored keys
+          # Pre-install GPG keys for Docker and Mosquitto repos
+          # Docker key is armored and needs dearmoring for deb822 signed_by
           curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker.gpg
-          curl -fsSL https://repo.mosquitto.org/debian/mosquitto-repo.gpg | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/mosquitto-repo.asc
+          # Mosquitto key is already binary, just download it directly
+          sudo curl -fsSL -o /etc/apt/trusted.gpg.d/mosquitto-repo.asc https://repo.mosquitto.org/debian/mosquitto-repo.gpg
           # Create restore logs to skip backup restore tasks (backup server is unreachable in CI)
           sudo touch /var/log/restore-prometheus.log /var/log/restore-hass.log
           # Pre-populate config.txt with the content the playbook would write (blockinfile)
