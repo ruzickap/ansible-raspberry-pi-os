@@ -48,7 +48,7 @@ jobs:
 
       - name: Install QEMU and dependencies
         run: |
-          brew install --quiet ansible qemu mtools xz
+          brew install --quiet ansible qemu mtools hudochenkov/sshpass/sshpass xz
 
       - name: Download latest Raspberry Pi OS image
         run: |
@@ -60,10 +60,6 @@ jobs:
       - name: Prepare image for QEMU
         run: |
           IMAGE_FILE="raspios.img"
-
-          # Generate SSH keypair for authentication
-          ssh-keygen -t ed25519 -f "${HOME}/.ssh/id_ed25519" -N "" -q
-          SSH_PUBKEY=$(cat "${HOME}/.ssh/id_ed25519.pub")
 
           # Resize image to give more space for packages
           qemu-img resize -f raw "${IMAGE_FILE}" 8G
@@ -101,15 +97,12 @@ jobs:
           echo "pi:${ENCRYPTED_PASS}" > userconf.txt
           mcopy -i "${IMAGE_FILE}@@${BOOT_OFFSET_BYTES}" userconf.txt ::userconf.txt && rm userconf.txt
 
-          # Create firstrun.sh to inject SSH public key for pi user
-          cat > firstrun.sh <<FIRSTRUN
+          # Create firstrun.sh to enable password authentication
+          cat > firstrun.sh <<'FIRSTRUN'
           #!/bin/bash
           set -e
-          mkdir -p /home/pi/.ssh
-          echo "${SSH_PUBKEY}" > /home/pi/.ssh/authorized_keys
-          chmod 700 /home/pi/.ssh
-          chmod 600 /home/pi/.ssh/authorized_keys
-          chown -R pi:pi /home/pi/.ssh
+          sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
+          systemctl restart ssh
           rm -f /boot/firmware/firstrun.sh
           FIRSTRUN
           chmod +x firstrun.sh
@@ -153,13 +146,10 @@ jobs:
           QEMU_PID=$!
           echo "QEMU_PID=${QEMU_PID}" >> "${GITHUB_ENV}"
 
-          SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
-
           # Wait for SSH to become available (timeout 5 minutes)
           echo "Waiting for SSH to become available..."
           for I in $(seq 1 60); do
-            # shellcheck disable=SC2086
-            if ssh ${SSH_OPTS} -p 2222 pi@localhost echo "SSH is ready" 2>/dev/null; then
+            if sshpass -p raspberry ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 2222 pi@localhost echo "SSH is ready" 2>/dev/null; then
               echo "SSH is ready after ${I} attempts"
               break
             fi
@@ -172,12 +162,10 @@ jobs:
           done
 
           # Verify SSH connectivity
-          # shellcheck disable=SC2086
-          ssh ${SSH_OPTS} -p 2222 pi@localhost uname -a
+          sshpass -p raspberry ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 2222 pi@localhost uname -a
 
           # Resize root partition inside the VM
-          # shellcheck disable=SC2086
-          ssh ${SSH_OPTS} -p 2222 pi@localhost \
+          sshpass -p raspberry ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 2222 pi@localhost \
             "sudo growpart /dev/vda 2 && sudo resize2fs /dev/vda2" || true
 
       - name: Create test inventory
@@ -188,6 +176,7 @@ jobs:
 
           [raspberry_pi:vars]
           ansible_user=pi
+          ansible_ssh_pass=raspberry
           ansible_port=2222
           ansible_python_interpreter=/usr/bin/python3
           ansible_ssh_common_args=-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
