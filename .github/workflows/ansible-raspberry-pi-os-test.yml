@@ -109,9 +109,16 @@ jobs:
           cp /usr/share/AAVMF/AAVMF_CODE.fd flash0.img
           cp /usr/share/AAVMF/AAVMF_VARS.fd flash1.img
 
-          # Start QEMU in background with KVM (native arm64 runner)
+          # Start QEMU in background (use KVM if available, otherwise TCG)
+          if [ -e /dev/kvm ]; then
+            ACCEL_OPTS="-accel kvm -cpu host"
+          else
+            ACCEL_OPTS="-accel tcg -cpu cortex-a72"
+          fi
+
+          # shellcheck disable=SC2086
           qemu-system-aarch64 \
-            -machine virt,gic-version=max -accel kvm -cpu host -m 2048 -smp 2 \
+            -machine virt,gic-version=max ${ACCEL_OPTS} -m 2048 -smp 2 \
             -drive if=pflash,format=raw,file=flash0.img,readonly=on \
             -drive if=pflash,format=raw,file=flash1.img \
             -drive if=virtio,file=raspios.qcow2,format=qcow2 \
