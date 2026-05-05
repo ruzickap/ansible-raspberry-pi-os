@@ -37,7 +37,7 @@ env:
 
 jobs:
   ansible-raspberry-pi-os-test:
-    runs-on: ubuntu-24.04-arm
+    runs-on: macos-latest
     timeout-minutes: 60
     defaults:
       run:
@@ -48,55 +48,92 @@ jobs:
 
       - name: Install QEMU and dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends cloud-image-utils qemu-efi-aarch64 qemu-system-arm sshpass xz-utils
+          brew install --quiet qemu e2fsprogs hudochenkov/sshpass/sshpass xz
 
       - name: Download latest Raspberry Pi OS image
         run: |
-          LATEST_DIR=$(curl -sL "${RASPIOS_BASE_URL}/" | grep -oP 'raspios_lite_arm64-\d{4}-\d{2}-\d{2}' | tail -1)
-          RASPIOS_IMAGE_URL="${RASPIOS_BASE_URL}/${LATEST_DIR}/$(curl -sL "${RASPIOS_BASE_URL}/${LATEST_DIR}/" | grep -oP '[^"]+\.img\.xz' | head -1)"
+          LATEST_DIR=$(curl -sL "${RASPIOS_BASE_URL}/" | grep -oE 'raspios_lite_arm64-[0-9]{4}-[0-9]{2}-[0-9]{2}' | tail -1)
+          RASPIOS_IMAGE_URL="${RASPIOS_BASE_URL}/${LATEST_DIR}/$(curl -sL "${RASPIOS_BASE_URL}/${LATEST_DIR}/" | grep -oE '[^"]+\.img\.xz' | head -1)"
           echo "Downloading: ${RASPIOS_IMAGE_URL}"
-          wget -q -O - "${RASPIOS_IMAGE_URL}" | xz -d > raspios.img
+          curl -sL "${RASPIOS_IMAGE_URL}" | xz -d > raspios.img
 
       - name: Prepare image for QEMU
         run: |
           IMAGE_FILE="raspios.img"
 
           # Resize image to give more space for packages
-          qemu-img resize "${IMAGE_FILE}" 8G
+          qemu-img resize -f raw "${IMAGE_FILE}" 8G
 
-          # Find partition offsets
-          BOOT_OFFSET=$(fdisk -l "${IMAGE_FILE}" | awk '/\.img1/{print $2}')
-          ROOT_OFFSET=$(fdisk -l "${IMAGE_FILE}" | awk '/\.img2/{print $2}')
+          # Parse MBR partition table to find partition offsets
+          # shellcheck disable=SC2034
+          PARTITIONS=$(python3 -c "
+          import struct
+          with open('${IMAGE_FILE}', 'rb') as f:
+              f.seek(446)
+              for i in range(4):
+                  entry = f.read(16)
+                  if len(entry) < 16:
+                      break
+                  ptype = entry[4]
+                  lba_start = struct.unpack('<I', entry[8:12])[0]
+                  lba_size = struct.unpack('<I', entry[12:16])[0]
+                  if lba_size > 0:
+                      print(f'{i+1} {ptype} {lba_start} {lba_size}')
+          ")
 
-          # Mount root partition and enable SSH
-          MOUNT_DIR=$(mktemp -d)
-          ROOT_LOOP=$(sudo losetup --find --show --offset $((ROOT_OFFSET * 512)) "${IMAGE_FILE}")
-          sudo mount "${ROOT_LOOP}" "${MOUNT_DIR}"
+          BOOT_START=$(echo "${PARTITIONS}" | awk 'NR==1{print $3}')
+          BOOT_SIZE=$(echo "${PARTITIONS}" | awk 'NR==1{print $4}')
+          ROOT_START=$(echo "${PARTITIONS}" | awk 'NR==2{print $3}')
 
-          # Mount boot partition
-          BOOT_LOOP=$(sudo losetup --find --show --offset $((BOOT_OFFSET * 512)) "${IMAGE_FILE}")
-          sudo mount "${BOOT_LOOP}" "${MOUNT_DIR}/boot/firmware"
+          BOOT_OFFSET_BYTES=$((BOOT_START * 512))
+          BOOT_SIZE_BYTES=$((BOOT_SIZE * 512))
+
+          echo "Boot partition: start=${BOOT_START}, size=${BOOT_SIZE} sectors"
+          echo "Root partition: start=${ROOT_START} sectors"
+
+          # Mount FAT32 boot partition using hdiutil
+          BOOT_DEV=$(hdiutil attach -nomount -imagekey diskimage-class=CRawDiskImage -section "${BOOT_OFFSET_BYTES},${BOOT_SIZE_BYTES}" "${IMAGE_FILE}" | awk '{print $1}')
+          BOOT_MOUNT=$(mktemp -d)
+          mount -t msdos "${BOOT_DEV}" "${BOOT_MOUNT}"
 
           # Enable SSH by creating the ssh file in boot partition
-          sudo touch "${MOUNT_DIR}/boot/firmware/ssh"
+          touch "${BOOT_MOUNT}/ssh"
 
-          # Enable password authentication in SSH
-          sudo sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication yes/' "${MOUNT_DIR}/etc/ssh/sshd_config"
+          # Create userconf.txt for pi user with password 'raspberry'
+          ENCRYPTED_PASS=$(python3 -c "import crypt; print(crypt.crypt('raspberry', crypt.mksalt(crypt.METHOD_SHA256)))")
+          echo "pi:${ENCRYPTED_PASS}" > "${BOOT_MOUNT}/userconf.txt"
 
-          # Ensure pi user exists with password 'raspberry'
-          # The default Raspberry Pi OS image should already have this
+          # Create firstrun.sh to enable password authentication
+          cat > "${BOOT_MOUNT}/firstrun.sh" <<'FIRSTRUN'
+          #!/bin/bash
+          set -e
+          sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
+          systemctl restart ssh
+          rm -f /boot/firmware/firstrun.sh
+          FIRSTRUN
+          chmod +x "${BOOT_MOUNT}/firstrun.sh"
 
-          # Copy kernel and initrd for QEMU direct kernel boot
-          cp "${MOUNT_DIR}/boot/firmware/kernel8.img" .
-          cp "${MOUNT_DIR}/boot/firmware/initramfs8" . || true
+          # Add firstrun.sh to cmdline.txt if not already present
+          if ! grep -q "firstrun.sh" "${BOOT_MOUNT}/cmdline.txt" 2>/dev/null; then
+            CMDLINE=$(cat "${BOOT_MOUNT}/cmdline.txt")
+            echo "${CMDLINE} systemd.run=/boot/firmware/firstrun.sh systemd.run_success_action=none systemd.unit=kernel-command-line.target" > "${BOOT_MOUNT}/cmdline.txt"
+          fi
 
-          # Unmount
-          sudo umount "${MOUNT_DIR}/boot/firmware"
-          sudo losetup -d "${BOOT_LOOP}"
-          sudo umount "${MOUNT_DIR}"
-          sudo losetup -d "${ROOT_LOOP}"
-          rmdir "${MOUNT_DIR}"
+          # Unmount boot partition
+          umount "${BOOT_MOUNT}"
+          hdiutil detach "${BOOT_DEV}"
+          rmdir "${BOOT_MOUNT}"
+
+          # Modify sshd_config on root partition (ext4) using debugfs
+          E2FSPROGS_PREFIX="$(brew --prefix e2fsprogs)"
+          SSHD_CONFIG=$("${E2FSPROGS_PREFIX}/sbin/debugfs" -R "cat etc/ssh/sshd_config" -f /dev/stdin "${IMAGE_FILE}" -b 512 -s "${ROOT_START}" 2>/dev/null || true)
+          if [ -n "${SSHD_CONFIG}" ]; then
+            MODIFIED_CONFIG="${SSHD_CONFIG//\#*PasswordAuthentication*/PasswordAuthentication yes}"
+            TMPFILE=$(mktemp)
+            echo "${MODIFIED_CONFIG}" > "${TMPFILE}"
+            echo "write ${TMPFILE} etc/ssh/sshd_config" | "${E2FSPROGS_PREFIX}/sbin/debugfs" -w "${IMAGE_FILE}" -b 512 -s "${ROOT_START}" 2>/dev/null || true
+            rm -f "${TMPFILE}"
+          fi
 
           # Convert image to qcow2 for better performance
           qemu-img convert -f raw -O qcow2 "${IMAGE_FILE}" raspios.qcow2
@@ -104,21 +141,15 @@ jobs:
 
       - name: Boot Raspberry Pi OS in QEMU
         run: |
+          UEFI_FW="$(brew --prefix qemu)/share/qemu/edk2-aarch64-code.fd"
 
-          # Copy UEFI firmware
-          cp /usr/share/AAVMF/AAVMF_CODE.fd flash0.img
-          cp /usr/share/AAVMF/AAVMF_VARS.fd flash1.img
+          # Create writable copies of UEFI firmware
+          cp "${UEFI_FW}" flash0.img
+          dd if=/dev/zero of=flash1.img bs=1m count=64
 
-          # Start QEMU in background (use KVM if available, otherwise TCG)
-          if [ -e /dev/kvm ]; then
-            ACCEL_OPTS="-accel kvm -cpu host"
-          else
-            ACCEL_OPTS="-accel tcg -cpu cortex-a72"
-          fi
-
-          # shellcheck disable=SC2086
+          # Start QEMU in background with HVF hardware virtualization
           qemu-system-aarch64 \
-            -machine virt,gic-version=max ${ACCEL_OPTS} -m 2048 -smp 2 \
+            -machine virt,highmem=on -accel hvf -cpu host -m 2048 -smp 2 \
             -drive if=pflash,format=raw,file=flash0.img,readonly=on \
             -drive if=pflash,format=raw,file=flash1.img \
             -drive if=virtio,file=raspios.qcow2,format=qcow2 \
@@ -154,7 +185,7 @@ jobs:
 
       - name: Install Ansible
         run: |
-          sudo apt-get install -y --no-install-recommends ansible sshpass
+          pip3 install --break-system-packages ansible
 
       - name: Create test inventory
         run: |
