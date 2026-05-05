@@ -94,6 +94,10 @@ jobs:
           sudo chroot "${MOUNT_DIR}" useradd -m -G sudo -s /bin/bash pi || true
           echo "pi:${ENCRYPTED_PASS}" | sudo chroot "${MOUNT_DIR}" chpasswd -e
 
+          # Enable passwordless sudo for pi user
+          echo "pi ALL=(ALL) NOPASSWD:ALL" | sudo tee "${MOUNT_DIR}/etc/sudoers.d/010_pi-nopasswd" > /dev/null
+          sudo chmod 0440 "${MOUNT_DIR}/etc/sudoers.d/010_pi-nopasswd"
+
           # Enable password authentication in SSH
           sudo sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication yes/' "${MOUNT_DIR}/etc/ssh/sshd_config"
 
@@ -174,7 +178,6 @@ jobs:
           ansible_user=pi
           ansible_ssh_pass=raspberry
           ansible_become=true
-          ansible_become_pass=raspberry
           ansible_port=2222
           ansible_python_interpreter=/usr/bin/python3
           ansible_ssh_common_args=-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
