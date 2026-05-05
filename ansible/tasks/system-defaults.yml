@@ -25,7 +25,7 @@
 
 - name: Copy sshd Ed25519 private key to /etc/ssh/
   ansible.builtin.copy:
-    content: "{{ ssh_host_ed25519_key }}"
+    content: "{{ ssh_host_ed25519_key }}\n"
     dest: /etc/ssh/ssh_host_ed25519_key
     mode: u=rw,g=,o=
   no_log: true
@@ -33,7 +33,7 @@
 
 - name: Copy sshd Ed25519 public key to /etc/ssh/
   ansible.builtin.copy:
-    content: "{{ ssh_host_ed25519_key_pub }}"
+    content: "{{ ssh_host_ed25519_key_pub }}\n"
     dest: /etc/ssh/ssh_host_ed25519_key.pub
     mode: u=rw,g=r,o=r
   no_log: true
