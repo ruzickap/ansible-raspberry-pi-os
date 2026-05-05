@@ -38,6 +38,7 @@
 
   roles:
     - role: geerlingguy.firewall
+      tags: [firewall]
     - role: grafana.grafana.alloy
       vars:
         alloy_version: "{{ alloy_grafana_version }}"

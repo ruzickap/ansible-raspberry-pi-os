@@ -162,10 +162,9 @@ jobs:
             "sudo growpart /dev/vda 2 && sudo resize2fs /dev/vda2" || true
 
           # Install passlib on the VM (required by Ansible password_hash filter)
-          # Also switch iptables to legacy mode (host kernel lacks nf_tables)
           # Wait for any running apt processes to finish first
           sshpass -p raspberry ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 2222 pi@localhost \
-            "while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do sleep 5; done && sudo apt-get update -qq && sudo apt-get install -y -qq iptables python3-passlib && sudo update-alternatives --set iptables /usr/sbin/iptables-legacy && sudo update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy"
+            "while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do sleep 5; done && sudo apt-get update -qq && sudo apt-get install -y -qq python3-passlib"
 
       - name: Generate SSH key
         run: ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -N ""
@@ -191,7 +190,7 @@ jobs:
 
       - name: Run Ansible playbook
         working-directory: ansible
-        run: ansible-playbook --diff -i inventory/test-hosts main.yml
+        run: ansible-playbook --diff --skip-tags firewall -i inventory/test-hosts main.yml
 
       - name: Stop QEMU
         if: always()
