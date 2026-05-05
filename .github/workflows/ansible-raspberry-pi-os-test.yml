@@ -37,7 +37,7 @@ env:
 jobs:
   ansible-raspberry-pi-os-test:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 10
     defaults:
       run:
         shell: bash -euxo pipefail {0}
