@@ -1,0 +1,36 @@
+[providers]
+ps = { type = "aws-ps", profile = "my-aws", region = "eu-central-1" }
+
+[secrets]
+ALLOY_GRAFANA_CLOUD_PASSWORD = { provider = "ps", value = "/github/ruzickap/ansible-raspberry-pi-os/ansible/ALLOY_GRAFANA_CLOUD_PASSWORD", if_missing = "error" }
+BLUETOOTH_IDENTITY_RESOLVING_KEY = { provider = "ps", value = "/github/ruzickap/ansible-raspberry-pi-os/ansible/BLUETOOTH_IDENTITY_RESOLVING_KEY", if_missing = "error" }
+BLUETOOTH_LINK_KEY = { provider = "ps", value = "/github/ruzickap/ansible-raspberry-pi-os/ansible/BLUETOOTH_LINK_KEY", if_missing = "error" }
+BLUETOOTH_LONG_TERM_KEY = { provider = "ps", value = "/github/ruzickap/ansible-raspberry-pi-os/ansible/BLUETOOTH_LONG_TERM_KEY", if_missing = "error" }
+CLOUDFLARED_TUNNEL_TOKEN = { provider = "ps", value = "/github/ruzickap/ansible-raspberry-pi-os/ansible/CLOUDFLARED_TUNNEL_TOKEN", if_missing = "error" }
+ESPHOME_API_ENCRYPTION_KEY = { provider = "ps", value = "/github/ruzickap/ansible-raspberry-pi-os/ansible/ESPHOME_API_ENCRYPTION_KEY", if_missing = "error" }
+ESPHOME_OTA_PASSWORD = { provider = "ps", value = "/github/ruzickap/ansible-raspberry-pi-os/ansible/ESPHOME_OTA_PASSWORD", if_missing = "error" }
+ESPHOME_WEB_SERVER_PASSWORD = { provider = "ps", value = "/github/ruzickap/ansible-raspberry-pi-os/ansible/ESPHOME_WEB_SERVER_PASSWORD", if_missing = "error" }
+GRAFANA_ADMIN_PASSWORD = { provider = "ps", value = "/github/ruzickap/ansible-raspberry-pi-os/ansible/GRAFANA_ADMIN_PASSWORD", if_missing = "error" }
+# HACS_GITHUB_TOKEN = { provider = "ps", value = "/github/ruzickap/ansible-raspberry-pi-os/ansible/HACS_GITHUB_TOKEN", if_missing = "error" }
+# HASS_AUTH_PASSWORD_HASH = { provider = "ps", value = "/github/ruzickap/ansible-raspberry-pi-os/ansible/HASS_AUTH_PASSWORD_HASH", if_missing = "error" }
+# HASS_AUTH_REFRESH_TOKEN_PROMETHEUS = { provider = "ps", value = "/github/ruzickap/ansible-raspberry-pi-os/ansible/HASS_AUTH_REFRESH_TOKEN_PROMETHEUS", if_missing = "error" }
+# HASS_AUTH_REFRESH_TOKEN_PROMETHEUS_JWT_KEY = { provider = "ps", value = "/github/ruzickap/ansible-raspberry-pi-os/ansible/HASS_AUTH_REFRESH_TOKEN_PROMETHEUS_JWT_KEY", if_missing = "error" }
+# HASS_AUTH_REFRESH_TOKEN_SYSTEM = { provider = "ps", value = "/github/ruzickap/ansible-raspberry-pi-os/ansible/HASS_AUTH_REFRESH_TOKEN_SYSTEM", if_missing = "error" }
+# HASS_AUTH_REFRESH_TOKEN_SYSTEM_JWT_KEY = { provider = "ps", value = "/github/ruzickap/ansible-raspberry-pi-os/ansible/HASS_AUTH_REFRESH_TOKEN_SYSTEM_JWT_KEY", if_missing = "error" }
+# HASS_TOTP_SECRET = { provider = "ps", value = "/github/ruzickap/ansible-raspberry-pi-os/ansible/HASS_TOTP_SECRET", if_missing = "error" }
+# HASS_USER_PASSWORD = { provider = "ps", value = "/github/ruzickap/ansible-raspberry-pi-os/ansible/HASS_USER_PASSWORD", if_missing = "error" }
+KODI_GUISETTINGS_SERVICES_WEBSERVERPASSWORD = { provider = "ps", value = "/github/ruzickap/ansible-raspberry-pi-os/ansible/KODI_GUISETTINGS_SERVICES_WEBSERVERPASSWORD", if_missing = "error" }
+MQTT_UZG01_PASSWORD = { provider = "ps", value = "/github/ruzickap/ansible-raspberry-pi-os/ansible/MQTT_UZG01_PASSWORD", if_missing = "error" }
+MQTT_ZIGBEE2MQTT_PASSWORD = { provider = "ps", value = "/github/ruzickap/ansible-raspberry-pi-os/ansible/MQTT_ZIGBEE2MQTT_PASSWORD", if_missing = "error" }
+MSMTP_AUTH_PASSWORD = { provider = "ps", value = "/github/ruzickap/ansible-raspberry-pi-os/ansible/MSMTP_AUTH_PASSWORD", if_missing = "error" }
+OPENWRT_HOMEPAGE_PASSWORD = { provider = "ps", value = "/github/ruzickap/ansible-raspberry-pi-os/ansible/OPENWRT_HOMEPAGE_PASSWORD", if_missing = "error" }
+OPENWRT_LUCI_PASSWORD = { provider = "ps", value = "/github/ruzickap/ansible-raspberry-pi-os/ansible/OPENWRT_LUCI_PASSWORD", if_missing = "error" }
+PROMETHEUS_HASS_BEARER_TOKEN = { provider = "ps", value = "/github/ruzickap/ansible-raspberry-pi-os/ansible/PROMETHEUS_HASS_BEARER_TOKEN", if_missing = "error" }
+RPI_PASSWORD = { provider = "ps", value = "/github/ruzickap/ansible-raspberry-pi-os/ansible/RPI_PASSWORD", if_missing = "error" }
+SSH_BACKUP_ED25519_KEY = { provider = "ps", value = "/github/ruzickap/ansible-raspberry-pi-os/ansible/SSH_BACKUP_ED25519_KEY", if_missing = "error" }
+SSH_HOST_ED25519_KEY = { provider = "ps", value = "/github/ruzickap/ansible-raspberry-pi-os/ansible/SSH_HOST_ED25519_KEY", if_missing = "error" }
+TRANSMISSION_RPC_PASSWORD = { provider = "ps", value = "/github/ruzickap/ansible-raspberry-pi-os/ansible/TRANSMISSION_RPC_PASSWORD", if_missing = "error" }
+UPTIMEROBOT_API_KEY = { provider = "ps", value = "/github/ruzickap/ansible-raspberry-pi-os/ansible/UPTIMEROBOT_API_KEY", if_missing = "error" }
+WIFI_24GHZ_SSID = { provider = "ps", value = "/github/shared/actions-secrets/WIFI_SSID", if_missing = "error" }
+WIFI_PASSWORD = { provider = "ps", value = "/github/shared/actions-secrets/WIFI_PASSWORD", if_missing = "error" }
+ZIGBEE2MQTT_NETWORK_KEY = { provider = "ps", value = "/github/ruzickap/ansible-raspberry-pi-os/ansible/ZIGBEE2MQTT_NETWORK_KEY", if_missing = "error" }

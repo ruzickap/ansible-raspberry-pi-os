@@ -2,15 +2,20 @@
 # Backup / Restore
 #################################################
 
-- name: Install ssh key id_ed25519-backup_raspi.xvx.cz{.pub}
+- name: Install ssh key id_ed25519-backup_raspi.xvx.cz.pub
   ansible.builtin.copy:
-    src: files/{{ item }}
-    dest: "{{ item }}"
+    src: files/root/.ssh/id_ed25519-backup_raspi.xvx.cz.pub
+    dest: /root/.ssh/id_ed25519-backup_raspi.xvx.cz.pub
     mode: u=rw,g=,o=
     owner: root
-  loop:
-    - /root/.ssh/id_ed25519-backup_raspi.xvx.cz
-    - /root/.ssh/id_ed25519-backup_raspi.xvx.cz.pub
+  no_log: true
+
+- name: Install ssh private key id_ed25519-backup_raspi.xvx.cz
+  ansible.builtin.copy:
+    content: "{{ ssh_backup_ed25519_key }}\n"
+    dest: /root/.ssh/id_ed25519-backup_raspi.xvx.cz
+    mode: u=rw,g=,o=
+    owner: root
   no_log: true
 
 - name: Creates Backup Prometheus file /etc/cron.d/backup-prometheus
@@ -95,7 +100,7 @@
   ansible.builtin.deb822_repository:
     name: docker
     uris: https://download.docker.com/linux/debian
-    suites: "{{ ansible_distribution_release }}"
+    suites: "{{ ansible_facts.distribution_release }}"
     components: stable
     signed_by: /usr/share/keyrings/docker.gpg
 
@@ -125,7 +130,7 @@
   until: result is succeeded
 
 - name: Start and enable Docker service
-  ansible.builtin.systemd:
+  ansible.builtin.systemd_service:
     name: docker
     state: started
     enabled: true
@@ -218,7 +223,7 @@
   ansible.builtin.deb822_repository:
     name: mosquitto
     uris: https://repo.mosquitto.org/debian
-    suites: "{{ ansible_distribution_release }}"
+    suites: "{{ ansible_facts.distribution_release }}"
     components: [main]
     signed_by: /etc/apt/trusted.gpg.d/mosquitto-repo.asc
 
@@ -273,10 +278,9 @@
 
 - name: Copy the Zigbee2MQTT database (/var/lib/zigbee2mqtt/database.db)
   ansible.builtin.copy:
-    dest: /var/lib/zigbee2mqtt/database.db
     src: files/var/lib/zigbee2mqtt/database.db
+    dest: /var/lib/zigbee2mqtt/database.db
     mode: u=rw,g=r,o=r
-  no_log: true
   notify: Restart zigbee2mqtt
 
 - name: Zigbee2MQTT container
@@ -379,10 +383,27 @@
 #     dest: "{{ hass_config_directory }}/"
 #     mode: u=rw,g=r,o=r
 #   loop:
-#     - files/{{ hass_config_directory }}/.storage
+#     - files/{{ hass_config_directory }}/.storage/core.device_registry
 #     - files/{{ hass_config_directory }}/lovelace
 #     - files/{{ hass_config_directory }}/known_devices.yaml
 #     - files/{{ hass_config_directory }}/automations.yaml
+#   notify: Restart hass
+
+# - name: Create secret storage files for Home Assistant to {{ hass_config_directory }}/
+#   ansible.builtin.template:
+#     src: "{{ item.src }}"
+#     dest: "{{ item.dest }}"
+#     mode: u=rw,g=,o=
+#   loop:
+#     - dest: "{{ hass_config_directory }}/.storage/core.config_entries"
+#       src: files/{{ hass_config_directory }}/.storage/core.config_entries.j2
+#     - dest: "{{ hass_config_directory }}/.storage/auth_provider.homeassistant"
+#       src: files/{{ hass_config_directory }}/.storage/auth_provider.homeassistant.j2
+#     - dest: "{{ hass_config_directory }}/.storage/auth"
+#       src: files/{{ hass_config_directory }}/.storage/auth.j2
+#     - dest: "{{ hass_config_directory }}/.storage/auth_module.totp"
+#       src: files/{{ hass_config_directory }}/.storage/auth_module.totp.j2
+#   no_log: true
 #   notify: Restart hass
 
 # - name: Create config files for Home Assistant to {{ hass_config_directory }}
@@ -506,15 +527,15 @@
     group: kodi
   register: created_user_kodi
 
-- name: Create /home/kodi/.config/wireplumber/wireplumber.conf.d directory
+- name: Create bluetooth device directory for headset pairing
   ansible.builtin.file:
     path: /var/lib/bluetooth/{{ bluetooth_device_address_rpi }}/{{ bluetooth_device_address_headset }}
     state: directory
     mode: u=rwx,g=,o=
 
 - name: Copy audio profile for bluetooth device
-  ansible.builtin.copy:
-    src: files/var/lib/bluetooth/{{ bluetooth_device_address_rpi }}/{{ bluetooth_device_address_headset }}/info
+  ansible.builtin.template:
+    src: files/var/lib/bluetooth/info.j2
     dest: /var/lib/bluetooth/{{ bluetooth_device_address_rpi }}/{{ bluetooth_device_address_headset }}/info
     mode: u=rw,g=,o=
   no_log: true
@@ -551,19 +572,14 @@
     group: kodi
     mode: u=rw,g=rw,o=r
 
-- name: Get UID of kodi user
-  ansible.builtin.shell: id -u kodi
-  register: kodi_uid_result
-  changed_when: false
-
-- name: Enable and start PipeWire for user kodi
+- name: Enable and start PipeWire for user kodi # noqa: command-instead-of-module
   become: true
   become_user: kodi
-  ansible.builtin.shell:
+  ansible.builtin.command:
     cmd: systemctl --user --now enable pipewire pipewire-pulse
     creates: /usr/lib/systemd/user/pipewire.service
   environment:
-    XDG_RUNTIME_DIR: "/run/user/{{ kodi_uid_result.stdout }}"
+    XDG_RUNTIME_DIR: "/run/user/{{ created_user_kodi.uid }}"
 
 - name: Create startup script for Kodi
   ansible.builtin.copy:
@@ -616,6 +632,8 @@
     enabled: true
   register: result
   until: result.status.SubState == "running"
+  retries: 5
+  delay: 10
 
 - name: Wait for Kodi to be started
   ansible.builtin.wait_for:
@@ -640,6 +658,7 @@
 - name: Refresh Music Library
   no_log: true
   # checkov:skip=CKV2_ANSIBLE_1
+  # kics-scan ignore-line
   ansible.builtin.uri:
     url: http://{{ ansible_host }}:8080/jsonrpc
     user: kodi

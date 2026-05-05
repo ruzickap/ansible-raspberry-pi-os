@@ -3,12 +3,6 @@
   hosts: all
   become: true
   force_handlers: true
-  collections:
-    - ansible.posix
-    - community.docker
-    - community.general
-    - grafana.grafana
-    - prometheus.prometheus
 
   pre_tasks:
     - name: Set authorized key for pi and root
@@ -18,6 +12,13 @@
       loop:
         - pi
         - root
+
+    - name: Configure passwordless sudo for pi user
+      ansible.builtin.copy:
+        content: "pi ALL=(ALL) NOPASSWD: ALL\n"
+        dest: /etc/sudoers.d/pi
+        mode: u=r,g=r,o=
+        validate: "visudo -cf %s"
 
     - name: Change pi and root user password
       ansible.builtin.user:
@@ -44,6 +45,7 @@
         alloy_systemd_override: |
           [Service]
           User=root
+      diff: false
     - role: grafana.grafana.grafana
     - role: prometheus.prometheus.prometheus
       vars:

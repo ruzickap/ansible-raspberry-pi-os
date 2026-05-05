@@ -1,0 +1,103 @@
+{
+  "version": 1,
+  "minor_version": 1,
+  "key": "auth",
+  "data": {
+    "users": [
+      {
+        "id": "5d3707bb5fb24c04a2711e1ef241ab5f",
+        "group_ids": [
+          "system-read-only"
+        ],
+        "is_owner": false,
+        "is_active": true,
+        "name": "Home Assistant Content",
+        "system_generated": true,
+        "local_only": false
+      },
+      {
+        "id": "7eda3566cf7b4cf499d7796692626f7b",
+        "group_ids": [
+          "system-admin"
+        ],
+        "is_owner": true,
+        "is_active": true,
+        "name": "Petr Ruzicka",
+        "system_generated": false,
+        "local_only": false
+      },
+      {
+        "id": "a8db9b0ef33a40ffa0e2f59e2bb865f8",
+        "group_ids": [
+          "system-read-only"
+        ],
+        "is_owner": false,
+        "is_active": true,
+        "name": "Home Assistant Content",
+        "system_generated": true,
+        "local_only": false
+      }
+    ],
+    "groups": [
+      {
+        "id": "system-admin",
+        "name": "Administrators"
+      },
+      {
+        "id": "system-users",
+        "name": "Users"
+      },
+      {
+        "id": "system-read-only",
+        "name": "Read Only"
+      }
+    ],
+    "credentials": [
+      {
+        "id": "b6503bfd6c52411280753510c9c4e109",
+        "user_id": "7eda3566cf7b4cf499d7796692626f7b",
+        "auth_provider_type": "homeassistant",
+        "auth_provider_id": null,
+        "data": {
+          "username": "ruzickap"
+        }
+      }
+    ],
+    "refresh_tokens": [
+      {
+        "id": "2dee78b0a04241f085d7c6dce8f8627e",
+        "user_id": "7eda3566cf7b4cf499d7796692626f7b",
+        "client_id": null,
+        "client_name": "Prometheus",
+        "client_icon": null,
+        "token_type": "long_lived_access_token",
+        "created_at": "2024-10-26T20:07:15.819178+00:00",
+        "access_token_expiration": 315360000.0,
+        "token": "{{ hass_auth_refresh_token_prometheus }}",
+        "jwt_key": "{{ hass_auth_refresh_token_prometheus_jwt_key }}",
+        "last_used_at": "2024-10-26T20:07:15.819355+00:00",
+        "last_used_ip": null,
+        "expire_at": null,
+        "credential_id": null,
+        "version": "2024.10.3"
+      },
+      {
+        "id": "fdc02626bd224ad986838d2fe5773ab4",
+        "user_id": "a8db9b0ef33a40ffa0e2f59e2bb865f8",
+        "client_id": null,
+        "client_name": null,
+        "client_icon": null,
+        "token_type": "system",
+        "created_at": "2024-10-15T06:47:32.979071+00:00",
+        "access_token_expiration": 1800.0,
+        "token": "{{ hass_auth_refresh_token_system }}",
+        "jwt_key": "{{ hass_auth_refresh_token_system_jwt_key }}",
+        "last_used_at": null,
+        "last_used_ip": null,
+        "expire_at": null,
+        "credential_id": null,
+        "version": "2024.10.2"
+      }
+    ]
+  }
+}

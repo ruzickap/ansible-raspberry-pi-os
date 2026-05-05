@@ -4,4 +4,5 @@ raspi.xvx.cz
 [raspberry_pi:vars]
 ansible_user=pi
 ansible_ssh_pass=raspberry
+ansible_become_password=raspberry
 ansible_python_interpreter=/usr/bin/python3

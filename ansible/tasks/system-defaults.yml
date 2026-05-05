@@ -10,9 +10,9 @@
   ansible.builtin.lineinfile:
     dest: /etc/hosts
     regexp: ".*{{ inventory_hostname }}.*"
-    line: "{{ ansible_default_ipv4.address }} {{ inventory_hostname }}"
+    line: "{{ ansible_facts.default_ipv4.address }} {{ inventory_hostname }}"
     mode: u=rw,g=r,o=r
-  when: ansible_default_ipv4.address is defined
+  when: ansible_facts["default_ipv4"]["address"] is defined
 
 - name: Configure NTP
   community.general.ini_file:
@@ -23,11 +23,28 @@
     value: "{{ ntp_server }}"
     mode: u=rw,g=r,o=r
 
-- name: Copy sshd keys to /etc/ssh/
+- name: Copy sshd Ed25519 private key to /etc/ssh/
   ansible.builtin.copy:
-    src: files/etc/ssh/
-    dest: /etc/ssh/
+    content: "{{ ssh_host_ed25519_key }}\n"
+    dest: /etc/ssh/ssh_host_ed25519_key
     mode: u=rw,g=,o=
+  no_log: true
+  notify: Restart sshd
+
+- name: Copy sshd Ed25519 public key to /etc/ssh/
+  ansible.builtin.copy:
+    content: "{{ ssh_host_ed25519_key_pub }}\n"
+    dest: /etc/ssh/ssh_host_ed25519_key.pub
+    mode: u=rw,g=r,o=r
+  no_log: true
+  notify: Restart sshd
+
+- name: Configure sshd to use only Ed25519 host key
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "^#?HostKey /etc/ssh/ssh_host_ed25519_key"
+    line: HostKey /etc/ssh/ssh_host_ed25519_key
+    mode: u=rw,g=r,o=r
   notify: Restart sshd
 
 - name: Create /etc/systemd/journald.conf.d directory
@@ -204,25 +221,12 @@
       uncompresscmd /usr/bin/unxz
       compressext .xz
 
-- name: Configure dma auth.conf
-  ansible.builtin.lineinfile:
-    path: /etc/dma/auth.conf
-    regexp: ".*|smtp.gmail.com:.*"
-    line: "{{ smtp_gmail_auth_user }}|smtp.gmail.com:{{ smtp_gmail_auth_password }}"
-    mode: u=rw,g=r
+- name: Configure msmtp
+  ansible.builtin.template:
+    dest: /etc/msmtprc
+    src: files/etc/msmtprc.j2
+    mode: u=rw,g=,o=
   no_log: true
-
-- name: Configure dma dma.conf
-  ansible.builtin.blockinfile:
-    dest: /etc/dma/dma.conf
-    block: |
-      SMARTHOST smtp.gmail.com
-      PORT 587
-      AUTHPATH /etc/dma/auth.conf
-      SECURETRANSFER
-      STARTTLS
-      INSECURE
-      MASQUERADE {{ smtp_gmail_auth_user }}
 
 - name: Configure /etc/aliases
   ansible.builtin.copy:

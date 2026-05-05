@@ -33,7 +33,7 @@ homeassistant:
   enabled: true
 mqtt:
   base_topic: zigbee2mqtt
-  server: mqtt://{{ ansible_default_ipv4.address }}:1883
+  server: mqtt://{{ ansible_facts["default_ipv4"]["address"] }}:1883
   user: zigbee2mqtt
   password: {{ mqtt_clients.zigbee2mqtt.password }}
   version: 5
