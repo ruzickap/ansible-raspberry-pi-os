@@ -50,7 +50,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends cloud-image-utils initramfs-tools qemu-system-arm sshpass xz-utils
-          sudo pip install --break-system-packages ansible passlib
+          pip install --break-system-packages ansible passlib
 
       - name: Download latest Raspberry Pi OS image
         run: |
