@@ -101,8 +101,7 @@ jobs:
             -drive file=seed.img,if=virtio,format=raw \
             -device virtio-net-pci,netdev=net0 \
             -netdev user,id=net0,hostfwd=tcp::2222-:22 \
-            -nographic \
-            -no-reboot &
+            -nographic &
 
           QEMU_PID=$!
           echo "QEMU_PID=${QEMU_PID}" >> "${GITHUB_ENV}"
