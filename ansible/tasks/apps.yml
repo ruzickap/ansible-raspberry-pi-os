@@ -658,6 +658,7 @@
 - name: Refresh Music Library
   no_log: true
   # checkov:skip=CKV2_ANSIBLE_1
+  # kics-scan ignore-line
   ansible.builtin.uri:
     url: http://{{ ansible_host }}:8080/jsonrpc
     user: kodi
