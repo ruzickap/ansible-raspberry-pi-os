@@ -216,7 +216,7 @@
 - name: Add Mosquitto apt signing keys
   ansible.builtin.get_url:
     url: https://repo.mosquitto.org/debian/mosquitto-repo.gpg
-    dest: /etc/apt/trusted.gpg.d/mosquitto-repo.asc
+    dest: /etc/apt/trusted.gpg.d/mosquitto-repo.gpg
     mode: u=rw,g=r,o=r
 
 - name: Add Mosquitto apt signing keys
@@ -225,7 +225,7 @@
     uris: https://repo.mosquitto.org/debian
     suites: "{{ ansible_facts.distribution_release }}"
     components: [main]
-    signed_by: /etc/apt/trusted.gpg.d/mosquitto-repo.asc
+    signed_by: /etc/apt/trusted.gpg.d/mosquitto-repo.gpg
 
 - name: Install mosquitto
   ansible.builtin.apt:

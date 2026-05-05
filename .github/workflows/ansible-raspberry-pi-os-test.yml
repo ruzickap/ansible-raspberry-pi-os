@@ -153,10 +153,6 @@ jobs:
           # Pre-install GPG keys for Docker and Mosquitto repos
           # Docker key is armored and needs dearmoring for deb822 signed_by
           curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker.gpg
-          # Mosquitto key is binary but the playbook saves it with .asc extension
-          # Convert to armored format matching the .asc extension
-          # get_url won't overwrite since the file already exists
-          curl -fsSL https://repo.mosquitto.org/debian/mosquitto-repo.gpg | sudo gpg --enarmor | sudo sed 's/ARMORED FILE/PUBLIC KEY BLOCK/' | sudo tee /etc/apt/trusted.gpg.d/mosquitto-repo.asc > /dev/null
           # Create restore logs to skip backup restore tasks (backup server is unreachable in CI)
           sudo touch /var/log/restore-prometheus.log /var/log/restore-hass.log
           # Pre-populate config.txt with the content the playbook would write (blockinfile)
