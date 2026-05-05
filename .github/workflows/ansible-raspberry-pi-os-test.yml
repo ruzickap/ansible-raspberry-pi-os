@@ -69,12 +69,16 @@ jobs:
           BOOT_OFFSET=$(fdisk -l "${IMAGE_FILE}" | awk '/\.img1/{print $2}')
           ROOT_OFFSET=$(fdisk -l "${IMAGE_FILE}" | awk '/\.img2/{print $2}')
 
+          # Set up loop devices for each partition
+          ROOT_LOOP=$(sudo losetup --find --show --offset $((ROOT_OFFSET * 512)) "${IMAGE_FILE}")
+          BOOT_LOOP=$(sudo losetup --find --show --offset $((BOOT_OFFSET * 512)) "${IMAGE_FILE}")
+
           # Mount root partition and enable SSH
           MOUNT_DIR=$(mktemp -d)
-          sudo mount -o loop,offset=$((ROOT_OFFSET * 512)) "${IMAGE_FILE}" "${MOUNT_DIR}"
+          sudo mount "${ROOT_LOOP}" "${MOUNT_DIR}"
 
           # Mount boot partition
-          sudo mount -o loop,offset=$((BOOT_OFFSET * 512)) "${IMAGE_FILE}" "${MOUNT_DIR}/boot/firmware"
+          sudo mount "${BOOT_LOOP}" "${MOUNT_DIR}/boot/firmware"
 
           # Enable SSH by creating the ssh file in boot partition
           sudo touch "${MOUNT_DIR}/boot/firmware/ssh"
@@ -89,9 +93,11 @@ jobs:
           cp "${MOUNT_DIR}/boot/firmware/kernel8.img" .
           cp "${MOUNT_DIR}/boot/firmware/initramfs8" . || true
 
-          # Unmount
+          # Unmount and detach loop devices
           sudo umount "${MOUNT_DIR}/boot/firmware"
           sudo umount "${MOUNT_DIR}"
+          sudo losetup --detach "${BOOT_LOOP}"
+          sudo losetup --detach "${ROOT_LOOP}"
           rmdir "${MOUNT_DIR}"
 
           # Convert image to qcow2 for better performance
