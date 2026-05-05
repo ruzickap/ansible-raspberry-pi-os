@@ -49,7 +49,7 @@ jobs:
       - name: Install QEMU and dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends cloud-image-utils linux-image-generic qemu-system-arm sshpass xz-utils
+          sudo apt-get install -y --no-install-recommends cloud-image-utils initramfs-tools qemu-system-arm sshpass xz-utils
 
       - name: Download latest Raspberry Pi OS image
         run: |
@@ -103,10 +103,14 @@ jobs:
       - name: Boot Raspberry Pi OS in QEMU
         run: |
 
-          # Use the host's Debian kernel and initrd (which include virtio modules)
+          # Use the host's Ubuntu kernel with a generated initrd (which includes virtio modules)
           # to boot the Raspberry Pi OS disk image via direct kernel boot
-          VMLINUZ=$(find /boot -name "vmlinuz-*-generic" | sort -V | tail -1)
-          INITRD=$(find /boot -name "initrd.img-*-generic" | sort -V | tail -1)
+          VMLINUZ=$(find /boot -maxdepth 1 -name "vmlinuz-*" | sort -V | tail -1)
+          KERNEL_VERSION=$(basename "${VMLINUZ}" | sed 's/^vmlinuz-//')
+
+          # Generate initrd for the host kernel (the runner doesn't ship one)
+          sudo update-initramfs -c -k "${KERNEL_VERSION}"
+          INITRD="/boot/initrd.img-${KERNEL_VERSION}"
 
           qemu-system-aarch64 \
             -machine virt,gic-version=max -accel tcg -cpu cortex-a72 -m 8192 -smp 4 \
