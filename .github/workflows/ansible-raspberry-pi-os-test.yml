@@ -36,7 +36,7 @@ env:
   ZIGBEE2MQTT_NETWORK_KEY: "[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]"
 
 jobs:
-  test-ansible:
+  ansible-raspberry-pi-os-test:
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 60
     defaults:
@@ -71,10 +71,12 @@ jobs:
 
           # Mount root partition and enable SSH
           MOUNT_DIR=$(mktemp -d)
-          sudo mount -o loop,offset=$((ROOT_OFFSET * 512)) "${IMAGE_FILE}" "${MOUNT_DIR}"
+          ROOT_LOOP=$(sudo losetup --find --show --offset $((ROOT_OFFSET * 512)) "${IMAGE_FILE}")
+          sudo mount "${ROOT_LOOP}" "${MOUNT_DIR}"
 
           # Mount boot partition
-          sudo mount -o loop,offset=$((BOOT_OFFSET * 512)) "${IMAGE_FILE}" "${MOUNT_DIR}/boot/firmware"
+          BOOT_LOOP=$(sudo losetup --find --show --offset $((BOOT_OFFSET * 512)) "${IMAGE_FILE}")
+          sudo mount "${BOOT_LOOP}" "${MOUNT_DIR}/boot/firmware"
 
           # Enable SSH by creating the ssh file in boot partition
           sudo touch "${MOUNT_DIR}/boot/firmware/ssh"
@@ -91,7 +93,9 @@ jobs:
 
           # Unmount
           sudo umount "${MOUNT_DIR}/boot/firmware"
+          sudo losetup -d "${BOOT_LOOP}"
           sudo umount "${MOUNT_DIR}"
+          sudo losetup -d "${ROOT_LOOP}"
           rmdir "${MOUNT_DIR}"
 
           # Convert image to qcow2 for better performance
