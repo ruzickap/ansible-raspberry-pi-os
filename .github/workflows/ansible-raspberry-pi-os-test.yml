@@ -110,11 +110,13 @@ jobs:
 
           # Decompress kernel for QEMU (aarch64 QEMU only supports uncompressed or gzip kernels)
           KERNEL_FILE="Image"
-          case $(file -b "${VMLINUZ}") in
-            *gzip*)  zcat "${VMLINUZ}" > "${KERNEL_FILE}" ;;
-            *zstd*)  zstdcat "${VMLINUZ}" > "${KERNEL_FILE}" ;;
-            *LZ4*)   lz4cat "${VMLINUZ}" > "${KERNEL_FILE}" ;;
-            *)       cp "${VMLINUZ}" "${KERNEL_FILE}" ;;
+          FILE_TYPE=$(sudo file -b "${VMLINUZ}")
+          case ${FILE_TYPE} in
+            *gzip*)  sudo sh -c "zcat '${VMLINUZ}' > '${KERNEL_FILE}'" ;;
+            *zstd*)  sudo sh -c "zstdcat '${VMLINUZ}' > '${KERNEL_FILE}'" ;;
+            *LZ4*)   sudo sh -c "lz4cat '${VMLINUZ}' > '${KERNEL_FILE}'" ;;
+            *PE32*|*EFI*) sudo sh -c "cat '${VMLINUZ}' > '${KERNEL_FILE}'" ;;
+            *)       sudo cp "${VMLINUZ}" "${KERNEL_FILE}" ;;
           esac
 
           # Generate initrd for the host kernel (the runner doesn't ship one)
