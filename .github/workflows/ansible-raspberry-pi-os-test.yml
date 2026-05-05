@@ -108,13 +108,22 @@ jobs:
           VMLINUZ=$(find /boot -maxdepth 1 -name "vmlinuz-*" | sort -V | tail -1)
           KERNEL_VERSION=$(basename "${VMLINUZ}" | sed 's/^vmlinuz-//')
 
+          # Decompress kernel for QEMU (aarch64 QEMU only supports uncompressed or gzip kernels)
+          KERNEL_FILE="Image"
+          case $(file -b "${VMLINUZ}") in
+            *gzip*)  zcat "${VMLINUZ}" > "${KERNEL_FILE}" ;;
+            *zstd*)  zstdcat "${VMLINUZ}" > "${KERNEL_FILE}" ;;
+            *LZ4*)   lz4cat "${VMLINUZ}" > "${KERNEL_FILE}" ;;
+            *)       cp "${VMLINUZ}" "${KERNEL_FILE}" ;;
+          esac
+
           # Generate initrd for the host kernel (the runner doesn't ship one)
           sudo update-initramfs -c -k "${KERNEL_VERSION}"
           INITRD="/boot/initrd.img-${KERNEL_VERSION}"
 
           qemu-system-aarch64 \
             -machine virt,gic-version=max -accel tcg -cpu cortex-a72 -m 8192 -smp 4 \
-            -kernel "${VMLINUZ}" \
+            -kernel "${KERNEL_FILE}" \
             -initrd "${INITRD}" \
             -append "root=/dev/vda2 rootfstype=ext4 rootwait rw console=ttyAMA0" \
             -drive if=virtio,file=raspios.qcow2,format=qcow2 \
