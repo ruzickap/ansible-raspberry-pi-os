@@ -140,6 +140,13 @@ jobs:
             "ansible_ssh_common_args=-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
             > ansible/inventory/test-hosts
 
+      - name: Prepare VM for Ansible playbook
+        run: |
+          # Create Raspberry Pi-specific files that the playbook expects
+          sshpass -p raspberry ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 2222 pi@127.0.0.1 "sudo mkdir -p /boot/firmware && echo '' | sudo tee /boot/firmware/config.txt && echo 'console=tty1 root=/dev/vda1' | sudo tee /boot/firmware/cmdline.txt"
+          # Create sshd service alias (Debian uses 'ssh', RPi OS uses 'sshd')
+          sshpass -p raspberry ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 2222 pi@127.0.0.1 "sudo ln -sf /lib/systemd/system/ssh.service /etc/systemd/system/sshd.service && sudo systemctl daemon-reload"
+
       - name: Install Ansible Galaxy dependencies
         working-directory: ansible
         run: ansible-galaxy install -r requirements.yml
