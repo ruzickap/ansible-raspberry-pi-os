@@ -36,7 +36,7 @@ env:
   ZIGBEE2MQTT_NETWORK_KEY: "[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]"
 
 jobs:
-  test-ansible:
+  ansible-raspberry-pi-os-test:
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 60
     defaults:
