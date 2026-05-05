@@ -126,7 +126,7 @@ jobs:
 
           qemu-system-aarch64 \
             -machine virt,gic-version=max -accel tcg -cpu cortex-a72 -m 8192 -smp 4 \
-            -kernel "${KERNEL_FILE}" \
+            -kernel Image \
             -initrd "${INITRD}" \
             -append "root=/dev/vda2 rootfstype=ext4 rootwait rw console=ttyAMA0" \
             -drive if=virtio,file=raspios.qcow2,format=qcow2 \
