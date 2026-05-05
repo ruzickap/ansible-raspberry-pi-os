@@ -162,8 +162,9 @@ jobs:
             "sudo growpart /dev/vda 2 && sudo resize2fs /dev/vda2" || true
 
           # Install passlib on the VM (required by Ansible password_hash filter)
+          # Wait for any running apt processes to finish first
           sshpass -p raspberry ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 2222 pi@localhost \
-            "sudo apt-get update -qq && sudo apt-get install -y -qq python3-passlib"
+            "while sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do sleep 5; done && sudo apt-get update -qq && sudo apt-get install -y -qq python3-passlib"
 
       - name: Generate SSH key
         run: ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -N ""
