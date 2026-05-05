@@ -37,7 +37,7 @@ env:
 
 jobs:
   ansible-raspberry-pi-os-test:
-    runs-on: macos-latest
+    runs-on: ubuntu-24.04-arm
     timeout-minutes: 15
     defaults:
       run:
@@ -48,7 +48,8 @@ jobs:
 
       - name: Install QEMU and dependencies
         run: |
-          brew install --quiet ansible qemu mtools hudochenkov/sshpass/sshpass xz
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ansible mtools qemu-system-arm qemu-efi-aarch64 qemu-utils sshpass xz-utils
 
       - name: Download latest Raspberry Pi OS image
         run: |
@@ -126,15 +127,15 @@ jobs:
 
       - name: Boot Raspberry Pi OS in QEMU
         run: |
-          UEFI_FW="$(brew --prefix qemu)/share/qemu/edk2-aarch64-code.fd"
+          UEFI_FW="/usr/share/qemu-efi-aarch64/QEMU_EFI.fd"
 
           # Create writable copies of UEFI firmware
           cp "${UEFI_FW}" flash0.img
-          dd if=/dev/zero of=flash1.img bs=1m count=64
+          dd if=/dev/zero of=flash1.img bs=1M count=64
 
-          # Start QEMU in background with TCG software emulation
+          # Start QEMU in background with KVM hardware virtualization
           qemu-system-aarch64 \
-            -machine virt,highmem=on -accel tcg -cpu cortex-a72 -m 4096 -smp 3 \
+            -machine virt,highmem=on -accel kvm -cpu host -m 4096 -smp 3 \
             -drive if=pflash,format=raw,file=flash0.img,readonly=on \
             -drive if=pflash,format=raw,file=flash1.img \
             -drive if=virtio,file=raspios.qcow2,format=qcow2 \
