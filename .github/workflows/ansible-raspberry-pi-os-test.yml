@@ -147,7 +147,9 @@ jobs:
           sshpass -p raspberry ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 2222 pi@127.0.0.1 bash -s <<'REMOTE_SCRIPT'
           sudo mkdir -p /boot/firmware
           # Install packages that the playbook expects (present on RPi OS but not Debian cloud)
-          sudo apt-get update -qq && sudo apt-get install -y -qq cron logrotate
+          sudo apt-get update -qq && sudo apt-get install -y -qq cron logrotate rsync
+          # Create restore logs to skip backup restore tasks (backup server is unreachable in CI)
+          sudo touch /var/log/restore-prometheus.log /var/log/restore-hass.log
           # Pre-populate config.txt with the content the playbook would write (blockinfile)
           printf '%s\n' '# BEGIN ANSIBLE MANAGED BLOCK' 'hdmi_ignore_cec_init=1' '# END ANSIBLE MANAGED BLOCK' | sudo tee /boot/firmware/config.txt
           # Pre-populate cmdline.txt with the content the playbook would write (lineinfile)
