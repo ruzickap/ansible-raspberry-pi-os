@@ -96,7 +96,7 @@ jobs:
           touch ssh_marker && mcopy -i "${IMAGE_FILE}@@${BOOT_OFFSET_BYTES}" ssh_marker ::ssh && rm ssh_marker
 
           # Create userconf.txt for pi user with password 'raspberry'
-          ENCRYPTED_PASS=$(python3 -c "import crypt; print(crypt.crypt('raspberry', crypt.mksalt(crypt.METHOD_SHA256)))")
+          ENCRYPTED_PASS=$(openssl passwd -5 raspberry)
           echo "pi:${ENCRYPTED_PASS}" > userconf.txt
           mcopy -i "${IMAGE_FILE}@@${BOOT_OFFSET_BYTES}" userconf.txt ::userconf.txt && rm userconf.txt
 
