@@ -7,4 +7,7 @@
 
 # Byte-compiled files
 __pycache__/
+
+# Ansible temporary files
+ansible/.ansible/
 # keep-sorted end

@@ -13,6 +13,13 @@
         - pi
         - root
 
+    - name: Configure passwordless sudo for pi user
+      ansible.builtin.copy:
+        content: "pi ALL=(ALL) NOPASSWD: ALL\n"
+        dest: /etc/sudoers.d/pi
+        mode: u=r,g=r,o=
+        validate: "visudo -cf %s"
+
     - name: Change pi and root user password
       ansible.builtin.user:
         name: "{{ item }}"
@@ -38,6 +45,7 @@
         alloy_systemd_override: |
           [Service]
           User=root
+      diff: false
     - role: grafana.grafana.grafana
     - role: prometheus.prometheus.prometheus
       vars:

@@ -632,6 +632,8 @@
     enabled: true
   register: result
   until: result.status.SubState == "running"
+  retries: 5
+  delay: 10
 
 - name: Wait for Kodi to be started
   ansible.builtin.wait_for:
