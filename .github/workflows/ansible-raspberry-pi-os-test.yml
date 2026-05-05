@@ -148,7 +148,7 @@ jobs:
 
           # Start QEMU in background with TCG software emulation
           qemu-system-aarch64 \
-            -machine virt,highmem=on -accel tcg -cpu cortex-a72 -m 2048 -smp 2 \
+            -machine virt,highmem=on -accel tcg -cpu cortex-a72 -m 4096 -smp 3 \
             -drive if=pflash,format=raw,file=flash0.img,readonly=on \
             -drive if=pflash,format=raw,file=flash1.img \
             -drive if=virtio,file=raspios.qcow2,format=qcow2 \
