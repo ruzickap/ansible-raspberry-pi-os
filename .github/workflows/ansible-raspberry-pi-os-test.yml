@@ -49,7 +49,7 @@ jobs:
       - name: Install QEMU and dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends cloud-image-utils ipxe-qemu qemu-efi-aarch64 qemu-system-arm sshpass xz-utils
+          sudo apt-get install -y --no-install-recommends cloud-image-utils linux-image-generic qemu-system-arm sshpass xz-utils
 
       - name: Download latest Raspberry Pi OS image
         run: |
@@ -103,16 +103,18 @@ jobs:
       - name: Boot Raspberry Pi OS in QEMU
         run: |
 
-          # Copy UEFI firmware
-          cp /usr/share/AAVMF/AAVMF_CODE.fd flash0.img
-          cp /usr/share/AAVMF/AAVMF_VARS.fd flash1.img
+          # Use the host's Debian kernel and initrd (which include virtio modules)
+          # to boot the Raspberry Pi OS disk image via direct kernel boot
+          VMLINUZ=$(find /boot -name "vmlinuz-*-generic" | sort -V | tail -1)
+          INITRD=$(find /boot -name "initrd.img-*-generic" | sort -V | tail -1)
 
           qemu-system-aarch64 \
             -machine virt,gic-version=max -accel tcg -cpu cortex-a72 -m 8192 -smp 4 \
-            -drive if=pflash,format=raw,file=flash0.img,readonly=on \
-            -drive if=pflash,format=raw,file=flash1.img \
+            -kernel "${VMLINUZ}" \
+            -initrd "${INITRD}" \
+            -append "root=/dev/vda2 rootfstype=ext4 rootwait rw console=ttyAMA0" \
             -drive if=virtio,file=raspios.qcow2,format=qcow2 \
-            -device virtio-net-pci,netdev=net0 \
+            -device virtio-net-pci,netdev=net0,romfile="" \
             -netdev user,id=net0,hostfwd=tcp::2222-:22 \
             -nographic \
             -no-reboot &
