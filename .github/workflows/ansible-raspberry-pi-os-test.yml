@@ -49,7 +49,7 @@ jobs:
       - name: Install QEMU and dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends cloud-image-utils qemu-system-arm sshpass xz-utils
+          sudo apt-get install -y --no-install-recommends cloud-image-utils ipxe-qemu qemu-efi-aarch64 qemu-system-arm sshpass xz-utils
 
       - name: Download latest Raspberry Pi OS image
         run: |
@@ -89,21 +89,6 @@ jobs:
           # Ensure pi user exists with password 'raspberry'
           # The default Raspberry Pi OS image should already have this
 
-          # Copy kernel for QEMU direct kernel boot
-          cp "${MOUNT_DIR}/boot/firmware/kernel8.img" .
-
-          # Rebuild initramfs with virtio modules needed for QEMU
-          # The stock Raspberry Pi initramfs lacks virtio drivers for QEMU's virtio-blk disk
-          KERNEL_VERSION=$(find "${MOUNT_DIR}/lib/modules/" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | head -1)
-          echo "virtio_pci" | sudo tee -a "${MOUNT_DIR}/etc/initramfs-tools/modules"
-          echo "virtio_blk" | sudo tee -a "${MOUNT_DIR}/etc/initramfs-tools/modules"
-          sudo mount --bind /proc "${MOUNT_DIR}/proc"
-          sudo mount --bind /sys "${MOUNT_DIR}/sys"
-          sudo mount --bind /dev "${MOUNT_DIR}/dev"
-          sudo chroot "${MOUNT_DIR}" update-initramfs -u -k "${KERNEL_VERSION}"
-          sudo umount "${MOUNT_DIR}/proc" "${MOUNT_DIR}/sys" "${MOUNT_DIR}/dev"
-          cp "${MOUNT_DIR}/boot/initrd.img-${KERNEL_VERSION}" initramfs8
-
           # Unmount and detach loop devices
           sudo umount "${MOUNT_DIR}/boot/firmware"
           sudo umount "${MOUNT_DIR}"
@@ -118,13 +103,16 @@ jobs:
       - name: Boot Raspberry Pi OS in QEMU
         run: |
 
+          # Copy UEFI firmware
+          cp /usr/share/AAVMF/AAVMF_CODE.fd flash0.img
+          cp /usr/share/AAVMF/AAVMF_VARS.fd flash1.img
+
           qemu-system-aarch64 \
             -machine virt,gic-version=max -accel tcg -cpu cortex-a72 -m 8192 -smp 4 \
-            -kernel kernel8.img \
-            -initrd initramfs8 \
-            -append "root=/dev/vda2 rootfstype=ext4 rootwait rw console=ttyAMA0" \
+            -drive if=pflash,format=raw,file=flash0.img,readonly=on \
+            -drive if=pflash,format=raw,file=flash1.img \
             -drive if=virtio,file=raspios.qcow2,format=qcow2 \
-            -device virtio-net-pci,netdev=net0,romfile="" \
+            -device virtio-net-pci,netdev=net0 \
             -netdev user,id=net0,hostfwd=tcp::2222-:22 \
             -nographic \
             -no-reboot &
