@@ -48,7 +48,7 @@ jobs:
 
       - name: Install QEMU and dependencies
         run: |
-          brew install --quiet qemu e2fsprogs hudochenkov/sshpass/sshpass xz
+          brew install --quiet qemu e2fsprogs mtools hudochenkov/sshpass/sshpass xz
 
       - name: Download latest Raspberry Pi OS image
         run: |
@@ -82,47 +82,46 @@ jobs:
           ")
 
           BOOT_START=$(echo "${PARTITIONS}" | awk 'NR==1{print $3}')
-          BOOT_SIZE=$(echo "${PARTITIONS}" | awk 'NR==1{print $4}')
           ROOT_START=$(echo "${PARTITIONS}" | awk 'NR==2{print $3}')
 
           BOOT_OFFSET_BYTES=$((BOOT_START * 512))
-          BOOT_SIZE_BYTES=$((BOOT_SIZE * 512))
 
-          echo "Boot partition: start=${BOOT_START}, size=${BOOT_SIZE} sectors"
+          echo "Boot partition: start=${BOOT_START} sectors"
           echo "Root partition: start=${ROOT_START} sectors"
 
-          # Mount FAT32 boot partition using hdiutil
-          BOOT_DEV=$(hdiutil attach -nomount -imagekey diskimage-class=CRawDiskImage -section "${BOOT_OFFSET_BYTES},${BOOT_SIZE_BYTES}" "${IMAGE_FILE}" | awk '{print $1}')
-          BOOT_MOUNT=$(mktemp -d)
-          mount -t msdos "${BOOT_DEV}" "${BOOT_MOUNT}"
+          # Configure mtools to access boot partition at correct offset
+          echo "drive x: file=\"${IMAGE_FILE}\" offset=${BOOT_OFFSET_BYTES}" > ~/.mtoolsrc
 
           # Enable SSH by creating the ssh file in boot partition
-          touch "${BOOT_MOUNT}/ssh"
+          touch ssh_marker && mcopy -i "${IMAGE_FILE}@@${BOOT_OFFSET_BYTES}" ssh_marker ::ssh && rm ssh_marker
 
           # Create userconf.txt for pi user with password 'raspberry'
           ENCRYPTED_PASS=$(python3 -c "import crypt; print(crypt.crypt('raspberry', crypt.mksalt(crypt.METHOD_SHA256)))")
-          echo "pi:${ENCRYPTED_PASS}" > "${BOOT_MOUNT}/userconf.txt"
+          echo "pi:${ENCRYPTED_PASS}" > userconf.txt
+          mcopy -i "${IMAGE_FILE}@@${BOOT_OFFSET_BYTES}" userconf.txt ::userconf.txt && rm userconf.txt
 
           # Create firstrun.sh to enable password authentication
-          cat > "${BOOT_MOUNT}/firstrun.sh" <<'FIRSTRUN'
+          cat > firstrun.sh <<'FIRSTRUN'
           #!/bin/bash
           set -e
           sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
           systemctl restart ssh
           rm -f /boot/firmware/firstrun.sh
           FIRSTRUN
-          chmod +x "${BOOT_MOUNT}/firstrun.sh"
+          chmod +x firstrun.sh
+          mcopy -i "${IMAGE_FILE}@@${BOOT_OFFSET_BYTES}" firstrun.sh ::firstrun.sh && rm firstrun.sh
 
-          # Add firstrun.sh to cmdline.txt if not already present
-          if ! grep -q "firstrun.sh" "${BOOT_MOUNT}/cmdline.txt" 2>/dev/null; then
-            CMDLINE=$(cat "${BOOT_MOUNT}/cmdline.txt")
-            echo "${CMDLINE} systemd.run=/boot/firmware/firstrun.sh systemd.run_success_action=none systemd.unit=kernel-command-line.target" > "${BOOT_MOUNT}/cmdline.txt"
+          # Read cmdline.txt, append firstrun.sh reference, and write back
+          mcopy -i "${IMAGE_FILE}@@${BOOT_OFFSET_BYTES}" ::cmdline.txt cmdline.txt
+          if ! grep -q "firstrun.sh" cmdline.txt 2>/dev/null; then
+            # Append systemd.run directive (remove trailing newline first)
+            tr -d '\n' < cmdline.txt > cmdline_tmp.txt
+            echo " systemd.run=/boot/firmware/firstrun.sh systemd.run_success_action=none systemd.unit=kernel-command-line.target" >> cmdline_tmp.txt
+            mcopy -o -i "${IMAGE_FILE}@@${BOOT_OFFSET_BYTES}" cmdline_tmp.txt ::cmdline.txt
+            rm cmdline.txt cmdline_tmp.txt
+          else
+            rm cmdline.txt
           fi
-
-          # Unmount boot partition
-          umount "${BOOT_MOUNT}"
-          hdiutil detach "${BOOT_DEV}"
-          rmdir "${BOOT_MOUNT}"
 
           # Modify sshd_config on root partition (ext4) using debugfs
           E2FSPROGS_PREFIX="$(brew --prefix e2fsprogs)"
