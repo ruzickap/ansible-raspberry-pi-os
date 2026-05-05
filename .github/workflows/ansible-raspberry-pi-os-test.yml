@@ -88,8 +88,16 @@ jobs:
           ENCRYPTED_PASS=$(openssl passwd -6 raspberry)
           echo "pi:${ENCRYPTED_PASS}" | sudo tee "${MOUNT_DIR}/boot/firmware/userconf" > /dev/null
 
+          # Also create pi user directly in the filesystem for immediate SSH access
+          # (userconf first-boot setup can delay SSH availability)
+          sudo chroot "${MOUNT_DIR}" useradd -m -G sudo -s /bin/bash pi || true
+          echo "pi:${ENCRYPTED_PASS}" | sudo chroot "${MOUNT_DIR}" chpasswd -e
+
           # Enable password authentication in SSH
           sudo sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication yes/' "${MOUNT_DIR}/etc/ssh/sshd_config"
+
+          # Enable SSH service
+          sudo chroot "${MOUNT_DIR}" systemctl enable ssh
 
           # Unmount and detach loop devices
           sudo umount "${MOUNT_DIR}/boot/firmware"
