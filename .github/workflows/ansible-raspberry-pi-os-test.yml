@@ -159,6 +159,10 @@ jobs:
           printf '%s\n' '# BEGIN ANSIBLE MANAGED BLOCK' 'hdmi_ignore_cec_init=1' '# END ANSIBLE MANAGED BLOCK' | sudo tee /boot/firmware/config.txt
           # Pre-populate cmdline.txt with the content the playbook would write (lineinfile)
           echo 'console=tty1 root=/dev/vda1 cgroup_enable=cpuset cgroup_enable=memory psi=1' | sudo tee /boot/firmware/cmdline.txt
+          # Create groups that the playbook expects (present on RPi OS but not Debian cloud)
+          sudo groupadd -f bluetooth
+          sudo groupadd -f input
+          sudo groupadd -f plugdev
           # Create sshd service alias (Debian uses 'ssh', RPi OS uses 'sshd')
           sudo ln -sf /lib/systemd/system/ssh.service /etc/systemd/system/sshd.service
           # Create dummy systemd units for RPi OS-specific services that the playbook disables
