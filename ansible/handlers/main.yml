@@ -1,6 +1,7 @@
 # keep-sorted start newline_separated=yes
 - name: Reboot
   ansible.builtin.reboot:
+  when: allow_reboot | default(true)
 
 - name: Reload systemd
   ansible.builtin.systemd_service:
