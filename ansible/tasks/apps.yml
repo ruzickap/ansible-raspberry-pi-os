@@ -27,6 +27,7 @@
     user: root
     job: PROMETHEUS_SNAPSHOT_DIR=$(curl -s -X POST http://127.0.0.1:9090/api/v1/admin/tsdb/snapshot | jq -r '.data.name') && rsync --archive --verbose --delete --log-file=/tmp/backup-prometheus.log -e 'ssh -i /root/.ssh/id_ed25519-backup_raspi.xvx.cz -o StrictHostKeyChecking=no' /var/lib/prometheus/snapshots/${PROMETHEUS_SNAPSHOT_DIR}/ {{ backup_user }}@{{ backup_server }}:{{ backup_directory }}/prometheus/ > /dev/null && rm -rf /var/lib/prometheus/snapshots
     cron_file: backup-prometheus
+  tags: [prometheus]
 
 # - name: Creates Backup HASS file /etc/cron.d/backup-hass
 #   ansible.builtin.cron:
@@ -42,9 +43,11 @@
   ansible.builtin.stat:
     path: /var/log/restore-prometheus.log
   register: prometheus_restore_log
+  tags: [prometheus]
 
 - name: Restore Prometheus from backup
   when: not prometheus_restore_log.stat.exists
+  tags: [prometheus]
   block:
     - name: Stop Prometheus
       ansible.builtin.systemd_service:
