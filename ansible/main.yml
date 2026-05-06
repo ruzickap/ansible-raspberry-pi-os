@@ -38,7 +38,9 @@
 
   roles:
     - role: geerlingguy.firewall
+      tags: [firewall]
     - role: grafana.grafana.alloy
+      tags: [alloy]
       vars:
         alloy_version: "{{ alloy_grafana_version }}"
         alloy_config: "{{ lookup('ansible.builtin.template', 'files/etc/alloy/config.alloy.j2') }}"
@@ -47,7 +49,9 @@
           User=root
       diff: false
     - role: grafana.grafana.grafana
+      tags: [grafana]
     - role: prometheus.prometheus.prometheus
+      tags: [prometheus]
       vars:
         prometheus_storage_retention_size: 5GB
         prometheus_config_flags_extra:
