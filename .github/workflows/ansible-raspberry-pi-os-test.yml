@@ -28,7 +28,7 @@ env:
   PROMETHEUS_HASS_BEARER_TOKEN: dummy-prometheus-hass-token
   RPI_PASSWORD: dummy-rpi-password
   SSH_BACKUP_ED25519_KEY: dummy-ssh-backup-key
-  SSH_HOST_ED25519_KEY: dummy-ssh-host-key
+  SSH_HOST_ED25519_KEY: will-be-generated
   TRANSMISSION_RPC_PASSWORD: dummy-transmission-password
   UPTIMEROBOT_API_KEY: dummy-uptimerobot-key
   WIFI_24GHZ_SSID: dummy-wifi-ssid
@@ -45,6 +45,15 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Generate test SSH host key
+        run: |
+          ssh-keygen -t ed25519 -f /tmp/ssh_host_ed25519_key -N "" -C "root@raspberrypi"
+          {
+            echo "SSH_HOST_ED25519_KEY<<SSHEOF"
+            cat /tmp/ssh_host_ed25519_key
+            echo "SSHEOF"
+          } >> "${GITHUB_ENV}"
 
       - name: Install QEMU and dependencies
         run: |
