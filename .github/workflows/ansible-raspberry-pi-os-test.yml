@@ -4,6 +4,9 @@ name: ansible-raspberry-pi-os-test
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/ansible-raspberry-pi-os-test.yml
 
 permissions: read-all
 
