@@ -28,7 +28,6 @@ env:
   PROMETHEUS_HASS_BEARER_TOKEN: dummy-prometheus-hass-token
   RPI_PASSWORD: dummy-rpi-password
   SSH_BACKUP_ED25519_KEY: dummy-ssh-backup-key
-  SSH_HOST_ED25519_KEY: will-be-generated
   TRANSMISSION_RPC_PASSWORD: dummy-transmission-password
   UPTIMEROBOT_API_KEY: dummy-uptimerobot-key
   WIFI_24GHZ_SSID: dummy-wifi-ssid
@@ -194,7 +193,7 @@ jobs:
 
       - name: Run Ansible playbook
         working-directory: ansible
-        run: ansible-playbook --diff --skip-tags firewall,prometheus -e '{"kernel_modules":[]}' -i inventory/test-hosts main.yml
+        run: ansible-playbook --diff --skip-tags firewall,prometheus -i inventory/test-hosts main.yml
 
       - name: Stop QEMU
         if: always()
