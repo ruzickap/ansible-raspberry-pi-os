@@ -185,7 +185,7 @@ jobs:
 
       - name: Run Ansible playbook
         working-directory: ansible
-        run: ansible-playbook --diff --skip-tags firewall,prometheus -i inventory/test-hosts main.yml
+        run: ansible-playbook --diff --skip-tags firewall,prometheus -e '{"kernel_modules":[]}' -i inventory/test-hosts main.yml
 
       - name: Stop QEMU
         if: always()
