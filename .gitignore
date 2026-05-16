@@ -8,6 +8,6 @@
 # Byte-compiled files
 __pycache__/
 
-# Ansible temporary files
-ansible/.ansible/
+# Ansible vault password file
+vault-*.password
 # keep-sorted end

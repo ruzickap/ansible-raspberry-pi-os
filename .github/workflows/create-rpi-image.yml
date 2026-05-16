@@ -63,7 +63,6 @@ jobs:
           locale: en_US.UTF-8
 
           # Password of the initial user account, locked if empty.
-          # kics-scan ignore-line
           password: raspberry
 
           # Setting this to a value will make that value the contents of the

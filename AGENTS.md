@@ -104,7 +104,6 @@ There are no unit tests. Quality assurance relies on linting and CI scans.
 
 - **Checkov**: IaC scanner (skip `CKV_GHA_7`)
 - **DevSkim**: Ignore DS162092, DS137138; exclude CHANGELOG.md
-- **KICS**: Fail on HIGH severity only
 - **Trivy**: HIGH/CRITICAL only, ignore unfixed vulnerabilities
 - **CodeQL**: Runs on GitHub Actions code
 
