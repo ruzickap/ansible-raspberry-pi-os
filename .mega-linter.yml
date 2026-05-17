@@ -72,6 +72,9 @@ REPOSITORY_DEVSKIM_ARGUMENTS: --ignore-globs CHANGELOG.md --ignore-rule-ids DS16
 # KICS (security scanner) - only fail on high severity issues
 REPOSITORY_KICS_ARGUMENTS: --fail-on high
 
+# Kingfisher (secret scanner) - exclude .git directory (contains false positives)
+REPOSITORY_KINGFISHER_ARGUMENTS: --exclude .git/
+
 # Trivy (vulnerability scanner) - only check HIGH and CRITICAL severity
 REPOSITORY_TRIVY_ARGUMENTS: --severity HIGH,CRITICAL --ignore-unfixed
 
