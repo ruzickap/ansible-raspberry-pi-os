@@ -2,10 +2,9 @@ network:
   version: 2
   renderer: NetworkManager
   wifis:
-    wlan1:
+    wlan0:
       match:
-        macaddress: "a0:f3:c1:1b:de:a6"
-      set-name: wlan1
+        macaddress: "90:de:80:3e:93:fc"
       dhcp4: yes
       dhcp6: yes
       access-points:
