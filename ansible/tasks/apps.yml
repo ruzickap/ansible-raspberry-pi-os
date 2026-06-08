@@ -187,7 +187,6 @@
     group: mosquitto
     backup: true
   no_log: true
-  notify: Restart mosquitto
   changed_when: false
 
 #################################################
