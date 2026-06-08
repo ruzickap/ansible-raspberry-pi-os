@@ -304,6 +304,7 @@
   ansible.builtin.apt:
     name: firewalld
     state: present
+    install_recommends: false
   register: result
   until: result is succeeded
 
