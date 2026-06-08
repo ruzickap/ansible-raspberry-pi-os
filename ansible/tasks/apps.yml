@@ -174,6 +174,9 @@
     backup: true
   notify: Restart mosquitto
 
+# NOTE: mosquitto_passwd filter uses a random salt, so this task reports
+# "changed" on every run and restarts Mosquitto. This is intentional to
+# ensure credential rotations are always picked up.
 - name: Create '/etc/mosquitto/password_file' file
   ansible.builtin.copy:
     dest: /etc/mosquitto/password_file
@@ -187,7 +190,7 @@
     group: mosquitto
     backup: true
   no_log: true
-  changed_when: false
+  notify: Restart mosquitto
 
 #################################################
 # Zigbee2MQTT (zigbee2mqtt-rpi.xvx.cz)
