@@ -13,7 +13,7 @@ description = "Run Ansible playbook"
 dir = "ansible"
 shell = "bash -c"
 run = """
-set -o pipefail
+set -euo pipefail
 ansible-galaxy install -r requirements.yml
 ansible-playbook --diff -i inventory/hosts main.yml 2>&1 | tee /tmp/ansible-raspberry-pi-os.log
 """
