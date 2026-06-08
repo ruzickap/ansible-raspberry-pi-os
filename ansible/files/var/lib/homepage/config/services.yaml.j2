@@ -42,14 +42,14 @@
 
     - Grafana:
         description: The open and composable observability and data visualization platform. Visualize metrics, logs, and traces from multiple sources like Prometheus, Loki, Elasticsearch, InfluxDB, Postgres and many more.
-        href: {{ grafana_url }}
+        href: {{ grafana_ini.server.root_url }}
         icon: grafana.svg
         siteMonitor: http://127.0.0.1:3001/healthz
         widget:
           type: grafana
           url: http://127.0.0.1:3001
-          username: {{ grafana_security.admin_user }}
-          password: {{ grafana_security.admin_password }}
+          username: admin
+          password: {{ grafana_ini.security.admin_password }}
 
     - Home Assistant:
         container: home-assistant

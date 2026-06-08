@@ -27,23 +27,10 @@ esphome_api_encryption_key: "{{ lookup('env', 'ESPHOME_API_ENCRYPTION_KEY') }}"
 esphome_ota_password: "{{ lookup('env', 'ESPHOME_OTA_PASSWORD') }}"
 esphome_web_server_password: "{{ lookup('env', 'ESPHOME_WEB_SERVER_PASSWORD') }}"
 esphome_web_server_username: admin
-firewall_additional_rules:
-  - "iptables -A INPUT -m pkttype --pkt-type multicast -j ACCEPT"
-  - "iptables -t nat -A POSTROUTING -o {{ ansible_facts.default_ipv4.interface }} -j MASQUERADE"
-firewall_allowed_tcp_ports: "{{ fw_allowed_tcp_ports }}"
-firewall_allowed_udp_ports: "{{ fw_allowed_udp_ports }}"
-firewall_forwarded_tcp_ports: "{{ fw_forwarded_tcp_ports }}"
-firewall_log_dropped_packets: false
-fw_allowed_tcp_ports:
-  - 22 # SSH
-  - 22222 # SSH
-  - 1883 # MQTT
-fw_allowed_udp_ports:
-  - 1883 # MQTT
-  - 5353 # mDNS - avahi-daemon
-fw_forwarded_tcp_ports:
-  - src: 22222
-    dest: 22
+firewalld_allowed_services:
+  - ssh
+  - mdns
+  - mqtt
 grafana_dashboards:
   # 1617-systemd-service-dashboard
   - dashboard_id: 1617
@@ -109,16 +96,16 @@ grafana_ini:
     password: "{{ msmtp_auth_password }}"
 # renovate: datasource=github-tags depName=grafana/grafana
 grafana_version: 13.0.1
-# hacs_github_token: "{{ lookup('env', 'HACS_GITHUB_TOKEN') }}"
-# hass_auth_password_hash: "{{ lookup('env', 'HASS_AUTH_PASSWORD_HASH') }}"
-# hass_auth_refresh_token_prometheus: "{{ lookup('env', 'HASS_AUTH_REFRESH_TOKEN_PROMETHEUS') }}"
-# hass_auth_refresh_token_prometheus_jwt_key: "{{ lookup('env', 'HASS_AUTH_REFRESH_TOKEN_PROMETHEUS_JWT_KEY') }}"
-# hass_auth_refresh_token_system: "{{ lookup('env', 'HASS_AUTH_REFRESH_TOKEN_SYSTEM') }}"
-# hass_auth_refresh_token_system_jwt_key: "{{ lookup('env', 'HASS_AUTH_REFRESH_TOKEN_SYSTEM_JWT_KEY') }}"
-# hass_config_directory: /var/lib/hass_config
-# hass_totp_secret: "{{ lookup('env', 'HASS_TOTP_SECRET') }}"
+hacs_github_token: "{{ lookup('env', 'HACS_GITHUB_TOKEN') }}"
+hass_auth_password_hash: "{{ lookup('env', 'HASS_AUTH_PASSWORD_HASH') }}"
+hass_auth_refresh_token_prometheus: "{{ lookup('env', 'HASS_AUTH_REFRESH_TOKEN_PROMETHEUS') }}"
+hass_auth_refresh_token_prometheus_jwt_key: "{{ lookup('env', 'HASS_AUTH_REFRESH_TOKEN_PROMETHEUS_JWT_KEY') }}"
+hass_auth_refresh_token_system: "{{ lookup('env', 'HASS_AUTH_REFRESH_TOKEN_SYSTEM') }}"
+hass_auth_refresh_token_system_jwt_key: "{{ lookup('env', 'HASS_AUTH_REFRESH_TOKEN_SYSTEM_JWT_KEY') }}"
+hass_config_directory: /var/lib/hass_config
+hass_totp_secret: "{{ lookup('env', 'HASS_TOTP_SECRET') }}"
 hass_url: https://hass-rpi.xvx.cz
-# hass_user_password: "{{ lookup('env', 'HASS_USER_PASSWORD') }}"
+hass_user_password: "{{ lookup('env', 'HASS_USER_PASSWORD') }}"
 kernel_modules:
   - nf_conntrack
 kodi_guisettings_services_webserverpassword: "{{ lookup('env', 'KODI_GUISETTINGS_SERVICES_WEBSERVERPASSWORD') }}"
@@ -145,11 +132,6 @@ prometheus_version: 3.11.3
 prometheus_web_external_url: https://prometheus-rpi.xvx.cz
 prometheus_web_listen_address: 127.0.0.1:9090
 rpi_disable_boot_services:
-  - cloud-config.service
-  - cloud-final.service
-  - cloud-init-local.service
-  - cloud-init-main.service
-  - cloud-init-network.service
   - console-setup
   - dnsmasq
   - keyboard-setup
