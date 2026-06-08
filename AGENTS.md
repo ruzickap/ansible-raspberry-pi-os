@@ -1,143 +1,85 @@
-# AI Agent Guidelines
+# Agent Guide
 
-## Project Overview
+Ansible automation that configures a single Raspberry Pi (Raspberry Pi OS /
+Debian Trixie) running Kodi plus a home-automation stack (Docker, Grafana,
+Prometheus, Grafana Alloy, Mosquitto, Zigbee2MQTT, ESPHome, cloudflared). Most
+Home Assistant / Homepage tasks are present but commented out in
+`ansible/tasks/apps.yml`.
 
-Ansible infrastructure-as-code repository that configures a Raspberry Pi
-running Raspberry Pi OS. Provisions Kodi, Docker containers (Zigbee2MQTT,
-ESPHome, Home Assistant), Grafana/Prometheus monitoring, Cloudflared
-tunnels, and more. No traditional build system -- quality is enforced
-through MegaLinter (CI) and ansible-lint.
+## How it runs (two phases)
 
-## Build / Lint / Test Commands
+1. **Build image** — GitHub Action `create-rpi-image.yml` (pi-gen) bakes a
+   custom OS image, injecting the `stage-my/` pi-gen stage (Wi-Fi netplan via
+   `stage-my/00-netplan/files/01-wifi.yaml.template`, rendered from
+   `WIFI_SSID` / `WIFI_PASSWORD` secrets). Flash it, then boot the Pi (initial
+   login `pi` / `raspberry`).
+2. **Configure** — run Ansible against the booted Pi.
 
-```bash
-# Install Ansible Galaxy dependencies (run from repo root)
-cd ansible && ansible-galaxy install -r requirements.yml
+## Commands
 
-# Run the full playbook (requires target host + AWS credentials)
-mise run run
+- `mise run run` — the primary task. Installs Galaxy deps
+  (`ansible/requirements.yml`) then runs `ansible-playbook` against
+  `ansible/inventory/hosts`. Runs from `ansible/` and logs the first run to
+  `/tmp/ansible-raspberry-pi-os.log`. There is no separate test suite.
+- Target host is hard-coded to `raspi.xvx.cz` in `ansible/inventory/hosts`.
+- Limit to one area with tags: `firewall`, `alloy`, `grafana`, `prometheus`.
+  Roles are tagged in `ansible/main.yml`; e.g.
+  `cd ansible && ansible-playbook -i inventory/hosts main.yml --tags grafana`.
 
-# Lint Ansible playbooks and tasks
-ansible-lint -c ansible/.ansible-lint ansible/
+## Secrets and variables (non-obvious)
 
-# Lint a single Ansible file
-ansible-lint -c ansible/.ansible-lint ansible/tasks/apps.yml
+- All secrets live in **AWS SSM Parameter Store**, pulled by
+  [`fnox`](https://github.com/jdx/fnox) and exposed as env vars by `mise` (see
+  `fnox.toml` `[secrets]` and `mise.toml` `_.fnox-env`). Running `mise` needs
+  the `my-aws` profile / `eu-central-1` access.
+- `ansible/group_vars/all.yml` reads those secrets via
+  `lookup('env', 'NAME')` — never hardcode secret values. To add a secret:
+  add it to `fnox.toml`, then reference the env var in `all.yml`.
+- Tasks that touch secrets must set `no_log: true`.
 
-# Markdown linting (exclude CHANGELOG.md)
-rumdl README.md
+## Ansible conventions
 
-# Link checking
-lychee --config lychee.toml .
+- Entry point `ansible/main.yml`: `pre_tasks` (SSH keys, passwords) → external
+  roles → `tasks/system-defaults.yml` → `tasks/apps.yml` → `handlers/main.yml`.
+- Use FQCN modules (`ansible.builtin.*`, `community.docker.*`, etc.). Collection
+  and role versions are pinned in `ansible/requirements.yml`.
+- File permissions use symbolic mode (`mode: u=rw,g=r,o=r`), not octal.
+- Containers are pinned by tag **and** digest (`image: ...@sha256:...`) with
+  `comparisons.image: strict`.
+- Custom Jinja filter `mosquitto_passwd` lives in
+  `ansible/filter_plugins/mosquitto_passwd.py` (needs `passlib`).
+- ansible-lint config is `ansible/.ansible-lint.yml`; suppress one-off findings
+  inline with `# noqa: <rule>` (already used for `command-instead-of-module`).
 
-# GitHub Actions workflow validation
-actionlint
-```
+## Repo automation gotchas
 
-There are no unit tests. Quality assurance relies on linting and CI scans.
+- `# keep-sorted start/end` blocks (`group_vars/all.yml`,
+  `requirements.yml`, `handlers/main.yml`, `.mega-linter.yml`, `stale.yml`)
+  must stay alphabetically sorted.
+- `# renovate: datasource=... depName=...` comments in `all.yml` drive Renovate
+  version bumps — keep the comment immediately above the version it pins.
+- Known mismatch: `.mega-linter.yml` sets
+  `ANSIBLE_ANSIBLE_LINT_CONFIG_FILE: ansible/.ansible-lint` but the file is
+  `ansible/.ansible-lint.yml`.
 
-## Ansible Code Style
+## Linting / CI (MegaLinter, see `.mega-linter.yml`)
 
-- **FQCN required**: Always use fully qualified collection names
-  (e.g., `ansible.builtin.copy`, `community.general.timezone`,
-  `community.docker.docker_container`). Never use short module names.
-- **File permissions**: Use symbolic mode notation
-  (e.g., `mode: u=rw,g=r,o=r`), not octal.
-- **Sensitive data**: Mark tasks exposing secrets with `no_log: true`.
-  Secrets are stored in AWS SSM Parameter Store, fetched via fnox
-  (`fnox.toml`), and referenced as `{{ lookup('env', 'VAR_NAME') }}`
-  in `group_vars/`. Never hardcode secrets in YAML files.
-- **Idempotency**: Use `changed_when: false` on read-only commands.
-  Use `changed_when: true` when a shell task always modifies state.
-- **Retries on apt**: Use `register: result` with
-  `until: result is succeeded` for package installation tasks.
-- **Handlers**: Use `notify:` to trigger service restarts defined
-  in `ansible/handlers/main.yml`.
-- **Task names**: Every task must have a descriptive `name:` field.
-- **Section headers**: Use `#####` comment blocks to separate logical
-  sections in task files (see `ansible/tasks/apps.yml`).
-- **Commented-out code**: Preserved with `#` prefix for reference
-  (disabled features like Home Assistant backup).
-- **Docker images**: Pin with `@sha256:` digests, include `# renovate:`
-  comments for automated version tracking.
-- **Version pinning**: Ansible collections pinned to exact versions in
-  `ansible/requirements.yml`. Use `# keep-sorted` directives.
-- **ansible-lint skips**: `package-latest`, `yaml[comments]`,
-  `yaml[document-start]`, `yaml[line-length]` are skipped.
-- **Inline noqa**: Use `# noqa: <rule>` when suppressing lint rules
-  (e.g., `# noqa: command-instead-of-module`).
+- Markdown: `rumdl` (markdownlint disabled). Wrap prose at 80 cols; code blocks
+  are exempt from line-length.
+- Shell: `shellcheck` (excludes `SC2317`) + `shfmt`
+  (`--case-indent --indent 2 --space-redirects`); bash blocks inside changed
+  `*.md` are extracted and validated.
+- Links: `lychee` (markdown-link-check disabled). Security: `checkov`
+  (skips `CKV_GHA_7`), DevSkim, Trivy (HIGH/CRITICAL, ignore-unfixed), zizmor.
+- `CHANGELOG.md` is excluded from linting (auto-generated by release-please).
+- Validate workflow/action edits with `actionlint`; pin actions to full SHA.
 
-## Shell Script Style
+## Git / PR workflow
 
-- **Shebang**: Always use `#!/usr/bin/env bash`
-- **Strict mode**: Start scripts with `set -eux` or `set -e`
-- **Variables**: Use uppercase with braces: `${MY_VARIABLE}`
-- **Formatting**: `shfmt --case-indent --indent 2 --space-redirects`
-- **Linting**: `shellcheck --exclude=SC2317`
-- Shell code blocks in Markdown (tagged `bash`, `shell`, `sh`) are
-  extracted and validated during CI
-
-## YAML Style
-
-- Two-space indentation, no tabs
-- Use `# keep-sorted` directives to maintain alphabetical ordering
-  in lists (collections, packages, etc.)
-- Jinja2 templates use `.j2` suffix and `{{ variable }}` syntax
-
-## Markdown Style
-
-- Must pass `rumdl` checks (CHANGELOG.md excluded)
-- Wrap lines at 80 characters
-- Use proper heading hierarchy (no skipped levels)
-- Include language identifiers in code fences (e.g., `bash`, `json`)
-- URLs must be reachable (validated by `lychee`)
-
-## GitHub Actions Workflows
-
-- **Permissions**: Always set `permissions: read-all` at top level;
-  elevate per-job only as needed
-- **Pin actions**: Use full SHA commits, not tags
-  (e.g., `actions/checkout@de0fac2...  # v6.0.2`)
-- **Timeouts**: Set `timeout-minutes` on every job
-- **Validate**: Run `actionlint` after modifying any workflow file
-
-## Security Scanning (CI)
-
-- **Checkov**: IaC scanner (skip `CKV_GHA_7`)
-- **DevSkim**: Ignore DS162092, DS137138; exclude CHANGELOG.md
-- **Trivy**: HIGH/CRITICAL only, ignore unfixed vulnerabilities
-- **CodeQL**: Runs on GitHub Actions code
-
-## Version Control
-
-### Commit Messages
-
-Conventional commit format: `<type>: <description>`
-
-- Types: `feat`, `fix`, `docs`, `chore`, `refactor`, `test`, `style`,
-  `perf`, `ci`, `build`, `revert`
-- Subject: imperative mood, lowercase, no period, max 72 characters
-- Body: wrap at 72 characters, explain what and why
-- Reference issues: `Fixes`, `Closes`, `Resolves`
-
-```text
-feat: add automated dependency updates
-
-- Implement Dependabot configuration
-- Configure weekly security updates
-
-Resolves: #123
-```
-
-### Branching
-
-Follow Conventional Branch format: `<type>/<description>`
-
-- `feature/` or `feat/`, `bugfix/` or `fix/`, `hotfix/`,
-  `release/`, `chore/`
-- Lowercase, hyphens, no consecutive/leading/trailing hyphens
-
-### Pull Requests
-
-- Always create as **draft** initially
-- Title must follow conventional commit format
-- Include clear description and link related issues
+- Conventional commits (validated by `commit-check`); subject and body lines
+  ≤ 72 chars.
+- Branches follow Conventional Branch: `feature/`, `bugfix/`, `hotfix/`,
+  `release/`, `chore/`.
+- Open PRs as **draft**; title must be a conventional-commit (validated by
+  `semantic-pull-request`). Releases are automated via `release-please`
+  (`release-type: simple`).
