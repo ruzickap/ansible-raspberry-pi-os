@@ -8,6 +8,7 @@
     dest: /root/.ssh/id_ed25519-backup_raspi.xvx.cz.pub
     mode: u=rw,g=,o=
     owner: root
+    backup: true
   no_log: true
 
 - name: Install ssh private key id_ed25519-backup_raspi.xvx.cz
@@ -16,18 +17,19 @@
     dest: /root/.ssh/id_ed25519-backup_raspi.xvx.cz
     mode: u=rw,g=,o=
     owner: root
+    backup: true
   no_log: true
 
-- name: Creates Backup Prometheus file /etc/cron.d/backup-prometheus
-  ansible.builtin.cron:
-    name: Backup Prometheus
-    weekday: "*"
-    minute: "0"
-    hour: "3"
-    user: root
-    job: PROMETHEUS_SNAPSHOT_DIR=$(curl -s -X POST http://127.0.0.1:9090/api/v1/admin/tsdb/snapshot | jq -r '.data.name') && rsync --archive --verbose --delete --log-file=/tmp/backup-prometheus.log -e 'ssh -i /root/.ssh/id_ed25519-backup_raspi.xvx.cz -o StrictHostKeyChecking=no' /var/lib/prometheus/snapshots/${PROMETHEUS_SNAPSHOT_DIR}/ {{ backup_user }}@{{ backup_server }}:{{ backup_directory }}/prometheus/ > /dev/null && rm -rf /var/lib/prometheus/snapshots
-    cron_file: backup-prometheus
-  tags: [prometheus]
+# - name: Creates Backup Prometheus file /etc/cron.d/backup-prometheus
+#   ansible.builtin.cron:
+#     name: Backup Prometheus
+#     weekday: "*"
+#     minute: "0"
+#     hour: "3"
+#     user: root
+#     job: PROMETHEUS_SNAPSHOT_DIR=$(curl -s -X POST http://127.0.0.1:9090/api/v1/admin/tsdb/snapshot | jq -r '.data.name') && rsync --archive --verbose --delete --log-file=/tmp/backup-prometheus.log -e 'ssh -i /root/.ssh/id_ed25519-backup_raspi.xvx.cz -o StrictHostKeyChecking=no' /var/lib/prometheus/snapshots/${PROMETHEUS_SNAPSHOT_DIR}/ {{ backup_user }}@{{ backup_server }}:{{ backup_directory }}/prometheus/ > /dev/null && rm -rf /var/lib/prometheus/snapshots
+#     cron_file: backup-prometheus
+#   tags: [prometheus]
 
 # - name: Creates Backup HASS file /etc/cron.d/backup-hass
 #   ansible.builtin.cron:
@@ -39,46 +41,46 @@
 #     job: HASS_BACKUP_FILE=$(ls -t {{ hass_config_directory }}/backups/*.tar | head -1) && rsync --archive --verbose --delete --log-file=/tmp/backup-hass.log --rsh='ssh -i /root/.ssh/id_ed25519-backup_raspi.xvx.cz -o StrictHostKeyChecking=no' "${HASS_BACKUP_FILE}" "{{ backup_user }}@{{ backup_server }}:{{ backup_directory }}/hass_config/hass_config_latest_backup.tar" > /dev/null && rm {{ hass_config_directory }}/backups/*.tar
 #     cron_file: backup-hass
 
-- name: Check if /var/log/restore-prometheus.log exists
-  ansible.builtin.stat:
-    path: /var/log/restore-prometheus.log
-  register: prometheus_restore_log
-  tags: [prometheus]
+# - name: Check if /var/log/restore-prometheus.log exists
+#   ansible.builtin.stat:
+#     path: /var/log/restore-prometheus.log
+#   register: prometheus_restore_log
+#   tags: [prometheus]
 
-- name: Restore Prometheus from backup
-  when: not prometheus_restore_log.stat.exists
-  tags: [prometheus]
-  block:
-    - name: Stop Prometheus
-      ansible.builtin.systemd_service:
-        name: prometheus
-        state: stopped
+# - name: Restore Prometheus from backup
+#   when: not prometheus_restore_log.stat.exists
+#   tags: [prometheus]
+#   block:
+#     - name: Stop Prometheus
+#       ansible.builtin.systemd_service:
+#         name: prometheus
+#         state: stopped
 
-    - name: Restore Prometheus from backup # noqa: command-instead-of-module
-      ansible.builtin.shell: |
-        rsync --archive --verbose --chown=prometheus:prometheus --delete --log-file=/var/log/restore-prometheus.log --rsh='ssh -i /root/.ssh/id_ed25519-backup_raspi.xvx.cz -o StrictHostKeyChecking=no' {{ backup_user }}@{{ backup_server }}:{{ backup_directory }}/prometheus/ /var/lib/prometheus/
-      changed_when: true
+#     - name: Restore Prometheus from backup # noqa: command-instead-of-module
+#       ansible.builtin.shell: |
+#         rsync --archive --verbose --chown=prometheus:prometheus --delete --log-file=/var/log/restore-prometheus.log --rsh='ssh -i /root/.ssh/id_ed25519-backup_raspi.xvx.cz -o StrictHostKeyChecking=no' {{ backup_user }}@{{ backup_server }}:{{ backup_directory }}/prometheus/ /var/lib/prometheus/
+#       changed_when: true
 
-    - name: Start Prometheus
-      ansible.builtin.systemd_service:
-        name: prometheus
-        state: started
-  rescue:
-    - name: Print when errors
-      ansible.builtin.fail:
-        msg: Restore from backup failed
+#     - name: Start Prometheus
+#       ansible.builtin.systemd_service:
+#         name: prometheus
+#         state: started
+#   rescue:
+#     - name: Print when errors
+#       ansible.builtin.fail:
+#         msg: Restore from backup failed
 
-- name: Check if /var/log/restore-hass.log exists
-  ansible.builtin.stat:
-    path: /var/log/restore-hass.log
-  register: hass_restore_log
+# - name: Check if /var/log/restore-hass.log exists
+#   ansible.builtin.stat:
+#     path: /var/log/restore-hass.log
+#   register: hass_restore_log
 
-- name: Create HASS directory (/var/lib/hass_config)
-  when: not hass_restore_log.stat.exists
-  ansible.builtin.file:
-    path: /var/lib/hass_config/blueprints/automation/homeassistant
-    state: directory
-    recurse: true
+# - name: Create HASS directory (/var/lib/hass_config)
+#   when: not hass_restore_log.stat.exists
+#   ansible.builtin.file:
+#     path: /var/lib/hass_config/blueprints/automation/homeassistant
+#     state: directory
+#     recurse: true
 
 # - name: Restore HASS from backup # noqa: command-instead-of-module
 #   when: not hass_restore_log.stat.exists
@@ -88,87 +90,6 @@
 #   args:
 #     executable: /bin/bash
 #   changed_when: true
-
-#################################################
-# Docker
-#################################################
-
-- name: Add Docker apt signing keys
-  ansible.builtin.get_url:
-    url: https://download.docker.com/linux/debian/gpg
-    dest: /usr/share/keyrings/docker.gpg
-    mode: u=rw,g=r,o=r
-
-- name: Add Docker repository
-  ansible.builtin.deb822_repository:
-    name: docker
-    uris: https://download.docker.com/linux/debian
-    suites: "{{ ansible_facts.distribution_release }}"
-    components: stable
-    signed_by: /usr/share/keyrings/docker.gpg
-
-- name: Create Docker daemon configuration directory
-  ansible.builtin.file:
-    path: /etc/docker
-    state: directory
-    mode: u=rwx,g=rx,o=rx
-
-- name: Configure Docker daemon
-  ansible.builtin.copy:
-    dest: /etc/docker/daemon.json
-    content: |
-      {{ docker_config | to_nice_json }}
-    mode: u=rw,g=r,o=r
-  notify: Restart docker
-
-- name: Install docker
-  ansible.builtin.apt:
-    name:
-      - docker-ce
-      - docker-ce-cli
-      - containerd.io
-    update_cache: true
-    install_recommends: false
-  register: result
-  until: result is succeeded
-
-- name: Start and enable Docker service
-  ansible.builtin.systemd_service:
-    name: docker
-    state: started
-    enabled: true
-    daemon_reload: true
-
-- name: Add pi and alloy users to the docker group
-  ansible.builtin.user:
-    name: "{{ item }}"
-    groups: docker
-    append: true
-  loop:
-    - pi
-    - alloy
-
-#################################################
-# Prometheus
-#################################################
-
-# - name: Create HASS scape config for Prometheus (/etc/prometheus/scrape_configs/hass.yml)
-#   ansible.builtin.copy:
-#     dest: /etc/prometheus/scrape_configs/hass.yml
-#     content: |
-#       scrape_configs:
-#         - job_name: hass
-#           scrape_interval: 60s
-#           metrics_path: /api/prometheus
-#           bearer_token: "{{ prometheus_hass_bearer_token }}"
-#           static_configs:
-#             - targets:
-#                 - 127.0.0.1:8123
-#     mode: u=rw,g=,o=
-#     owner: prometheus
-#     group: prometheus
-#   no_log: true
-#   notify: Restart prometheus
 
 #################################################
 # Cloudflared
@@ -201,6 +122,7 @@
     src: files/etc/systemd/system/cloudflared.service
     dest: /etc/systemd/system/cloudflared.service
     mode: u=rw,g=r,o=r
+    backup: true
   notify: Reload systemd
 
 - name: Configure cloudflared
@@ -209,6 +131,7 @@
     content: |
       CLOUDFLARED_TOKEN={{ cloudflared_tunnel_token }}
     mode: u=rw,g=,o=
+    backup: true
   no_log: true
   notify: Restart cloudflared
 
@@ -248,21 +171,29 @@
     mode: u=rw,g=,o=
     owner: mosquitto
     group: mosquitto
+    backup: true
   notify: Restart mosquitto
 
+# NOTE: mosquitto_passwd filter uses a random salt, so this task reports
+# "changed" on every run and restarts Mosquitto. This is intentional to
+# ensure credential rotations are always picked up.
 - name: Create '/etc/mosquitto/password_file' file
-  ansible.builtin.template:
+  ansible.builtin.copy:
     dest: /etc/mosquitto/password_file
-    src: files/etc/mosquitto/password_file.j2
+    content: |
+      {% for item in mqtt_clients | dict2items %}
+      # {{ item.key }}
+      {{ item.value.user }}:{{ '%s' | format(item.value.password) | mosquitto_passwd }}
+      {% endfor %}
     mode: u=rw,g=,o=
     owner: mosquitto
     group: mosquitto
+    backup: true
   no_log: true
   notify: Restart mosquitto
-  changed_when: false
 
 #################################################
-# Zigbee2MQTT
+# Zigbee2MQTT (zigbee2mqtt-rpi.xvx.cz)
 #################################################
 
 - name: Create Zigbee2MQTT directory (/var/lib/zigbee2mqtt)
@@ -276,6 +207,7 @@
     dest: /var/lib/zigbee2mqtt/configuration.yaml
     src: files/var/lib/zigbee2mqtt/configuration.yaml.j2
     mode: u=rw,g=r,o=r
+    backup: true
   no_log: true
   notify: Restart zigbee2mqtt
 
@@ -284,12 +216,14 @@
     src: files/var/lib/zigbee2mqtt/database.db
     dest: /var/lib/zigbee2mqtt/database.db
     mode: u=rw,g=r,o=r
+    force: false
+    backup: true
   notify: Restart zigbee2mqtt
 
 - name: Zigbee2MQTT container
   community.docker.docker_container:
     name: zigbee2mqtt
-    image: docker.io/koenkk/zigbee2mqtt:2.10.0@sha256:e9279e580bb25c512cf6e54c36e215a5cbd2881d1f201cf2a8213a97b14be3d2
+    image: ghcr.io/koenkk/zigbee2mqtt:2.10.1@sha256:67c26dcf8346aced02fe1380a6afd1b57268bcef10faae3f6057c13d5d3dfa80
     comparisons:
       image: strict
       labels: allow_more_present
@@ -298,7 +232,7 @@
       - /run/dbus:/run/dbus:ro
       - /var/lib/zigbee2mqtt:/app/data
     ports:
-      - 8082:8080
+      - 8090:8080
     env:
       TZ: "{{ timezone }}"
     labels:
@@ -311,7 +245,7 @@
   notify: Restart zigbee2mqtt
 
 #################################################
-# ESPHome
+# ESPHome (esphome-rpi.xvx.cz)
 #################################################
 
 - name: Create ESPHome directory (/var/lib/esphome/config)
@@ -320,14 +254,12 @@
     state: directory
     recurse: true
 
-- name: Configure ESPHome (/var/lib/esphome/config/apollo-msr-2.yaml)
+- name: Configure ESPHome (/var/lib/esphome/config/apollo-msr-2-f585f4.yaml)
   ansible.builtin.template:
-    src: "{{ item.src }}"
-    dest: "{{ item.dest }}"
+    src: files/var/lib/esphome/config/apollo-msr-2-f585f4.yaml.j2
+    dest: /var/lib/esphome/config/apollo-msr-2-f585f4.yaml
     mode: u=rw,g=r,o=r
-  loop:
-    - dest: /var/lib/esphome/config/apollo-msr-2-f585f4.yaml
-      src: files/var/lib/esphome/config/apollo-msr-2-f585f4.yaml.j2
+    backup: true
   notify: Restart esphome
 
 - name: Create secret file for ESPHome
@@ -335,6 +267,7 @@
     src: "{{ item.src }}"
     dest: "{{ item.dest }}"
     mode: u=rw,g=,o=
+    backup: true
   loop:
     - dest: /var/lib/esphome/config/secrets.yaml
       src: files/var/lib/esphome/config/secrets.yaml.j2
@@ -344,7 +277,7 @@
 - name: ESPHome container
   community.docker.docker_container:
     name: esphome
-    image: ghcr.io/esphome/esphome:2026.4.2@sha256:a2784bc539dcf7529241bfe4425d645f1076031f9bf9ce07f5d59d1c45e9ff22
+    image: ghcr.io/esphome/esphome:2026.4.5@sha256:7419641c7fd8e37d6362f71c458bb17570f1f471cfea3b022b30dfd8117a2361
     comparisons:
       image: strict
       labels: allow_more_present
@@ -370,6 +303,13 @@
 # Home Assistant
 #################################################
 
+- name: Create Home Assistant directory ({{ hass_config_directory }})
+  ansible.builtin.file:
+    path: "{{ hass_config_directory }}/.storage"
+    state: directory
+    recurse: true
+
+# NOT NEEDED ANY MORE - FILES ARE ALREADY IN PLACE
 # - name: Download automation/blueprints files
 #   ansible.builtin.get_url:
 #     url: "{{ item }}"
@@ -380,79 +320,84 @@
 #     - https://raw.githubusercontent.com/home-assistant/core/b07682e43cd2604ef387bae79bcae555b15516b8/homeassistant/components/automation/blueprints/notify_leaving_zone.yaml
 #   notify: Restart hass
 
-# - name: Copy config files for Home Assistant to {{ hass_config_directory }}/
-#   ansible.builtin.copy:
-#     src: "{{ item }}"
-#     dest: "{{ hass_config_directory }}/"
-#     mode: u=rw,g=r,o=r
-#   loop:
-#     - files/{{ hass_config_directory }}/.storage/core.device_registry
-#     - files/{{ hass_config_directory }}/lovelace
-#     - files/{{ hass_config_directory }}/known_devices.yaml
-#     - files/{{ hass_config_directory }}/automations.yaml
-#   notify: Restart hass
+- name: Copy config files for Home Assistant to {{ hass_config_directory }}/
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "{{ hass_config_directory }}/"
+    mode: u=rw,g=r,o=r
+    backup: true
+  loop:
+    - files/{{ hass_config_directory }}/.storage/core.device_registry
+    - files/{{ hass_config_directory }}/lovelace
+    - files/{{ hass_config_directory }}/known_devices.yaml
+    - files/{{ hass_config_directory }}/automations.yaml
+  notify: Restart hass
 
-# - name: Create secret storage files for Home Assistant to {{ hass_config_directory }}/
-#   ansible.builtin.template:
-#     src: "{{ item.src }}"
-#     dest: "{{ item.dest }}"
-#     mode: u=rw,g=,o=
-#   loop:
-#     - dest: "{{ hass_config_directory }}/.storage/core.config_entries"
-#       src: files/{{ hass_config_directory }}/.storage/core.config_entries.j2
-#     - dest: "{{ hass_config_directory }}/.storage/auth_provider.homeassistant"
-#       src: files/{{ hass_config_directory }}/.storage/auth_provider.homeassistant.j2
-#     - dest: "{{ hass_config_directory }}/.storage/auth"
-#       src: files/{{ hass_config_directory }}/.storage/auth.j2
-#     - dest: "{{ hass_config_directory }}/.storage/auth_module.totp"
-#       src: files/{{ hass_config_directory }}/.storage/auth_module.totp.j2
-#   no_log: true
-#   notify: Restart hass
+- name: Create secret storage files for Home Assistant to {{ hass_config_directory }}/
+  ansible.builtin.template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: u=rw,g=,o=
+    backup: true
+    force: false
+  loop:
+    - dest: "{{ hass_config_directory }}/.storage/core.config_entries"
+      src: files/{{ hass_config_directory }}/.storage/core.config_entries.j2
+    - dest: "{{ hass_config_directory }}/.storage/auth_provider.homeassistant"
+      src: files/{{ hass_config_directory }}/.storage/auth_provider.homeassistant.j2
+    - dest: "{{ hass_config_directory }}/.storage/auth"
+      src: files/{{ hass_config_directory }}/.storage/auth.j2
+    - dest: "{{ hass_config_directory }}/.storage/auth_module.totp"
+      src: files/{{ hass_config_directory }}/.storage/auth_module.totp.j2
+  no_log: true
+  notify: Restart hass
 
-# - name: Create config files for Home Assistant to {{ hass_config_directory }}
-#   ansible.builtin.template:
-#     src: "{{ item.src }}"
-#     dest: "{{ item.dest }}"
-#     mode: u=rw,g=r,o=r
-#   loop:
-#     - dest: "{{ hass_config_directory }}/configuration.yaml"
-#       src: files/{{ hass_config_directory }}/configuration.yaml.j2
-#   notify: Restart hass
+- name: Create config files for Home Assistant to {{ hass_config_directory }}
+  ansible.builtin.template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: u=rw,g=r,o=r
+    backup: true
+  loop:
+    - dest: "{{ hass_config_directory }}/configuration.yaml"
+      src: files/{{ hass_config_directory }}/configuration.yaml.j2
+  notify: Restart hass
 
-# - name: Create secret file for Home Assistant to {{ hass_config_directory }}
-#   ansible.builtin.template:
-#     src: "{{ item.src }}"
-#     dest: "{{ item.dest }}"
-#     mode: u=rw,g=,o=
-#   loop:
-#     - dest: "{{ hass_config_directory }}/secrets.yaml"
-#       src: files/{{ hass_config_directory }}/secrets.yaml.j2
-#   no_log: true
-#   notify: Restart hass
+- name: Create secret file for Home Assistant to {{ hass_config_directory }}
+  ansible.builtin.template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: u=rw,g=,o=
+    backup: true
+  loop:
+    - dest: "{{ hass_config_directory }}/secrets.yaml"
+      src: files/{{ hass_config_directory }}/secrets.yaml.j2
+  no_log: true
+  notify: Restart hass
 
-# - name: Home Assistant container
-#   community.docker.docker_container:
-#     name: home-assistant
-#     image: ghcr.io/home-assistant/home-assistant:2026.4.4@sha256:c1e5f0147f4cb51ccb05bb30b62a1269cc1bd48a6274792d3b38a77ab274dfd2
-#     comparisons:
-#       image: strict
-#       labels: allow_more_present
-#       volumes: allow_more_present
-#     volumes:
-#       - /etc/localtime:/etc/localtime:ro
-#       - /run/dbus:/run/dbus:ro
-#       - "{{ hass_config_directory }}:/config"
-#     network_mode: host
-#     privileged: true
-#     labels:
-#       homepage.group: Containers
-#       homepage.name: Home Assistant
-#       homepage.icon: https://upload.wikimedia.org/wikipedia/en/4/49/Home_Assistant_logo_%282023%29.svg
-#       homepage.href: "{{ hass_url }}"
-#       homepage.description: Open source home automation that puts local control and privacy first.
-#     restart_policy: always
-#     timeout: "{{ docker_container_timeout }}"
-#   notify: Restart hass
+- name: Home Assistant container
+  community.docker.docker_container:
+    name: home-assistant
+    image: ghcr.io/home-assistant/home-assistant:2026.5.2@sha256:f0baa7922ecec7790c40c41baf08ab218b6ab8db5f96dc03b03a0ae33d987c3d
+    comparisons:
+      image: strict
+      labels: allow_more_present
+      volumes: allow_more_present
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /run/dbus:/run/dbus:ro
+      - "{{ hass_config_directory }}:/config"
+    network_mode: host
+    privileged: true
+    labels:
+      homepage.group: Containers
+      homepage.name: Home Assistant
+      homepage.icon: https://upload.wikimedia.org/wikipedia/en/4/49/Home_Assistant_logo_%282023%29.svg
+      homepage.href: "{{ hass_url }}"
+      homepage.description: Open source home automation that puts local control and privacy first.
+    restart_policy: always
+    timeout: "{{ docker_container_timeout }}"
+  notify: Restart hass
 
 # - name: Wait for HASS to be started
 #   when: not hass_restore_log.stat.exists
@@ -471,47 +416,48 @@
 # Homepage
 #################################################
 
-# - name: Create homepage directory (/var/lib/homepage/config)
-#   ansible.builtin.file:
-#     path: /var/lib/homepage/config
-#     state: directory
-#     recurse: true
+- name: Create homepage directory (/var/lib/homepage/config)
+  ansible.builtin.file:
+    path: /var/lib/homepage/config
+    state: directory
+    recurse: true
 
-# - name: Copy config files for homepage to /var/lib/homepage/config
-#   ansible.builtin.template:
-#     src: "{{ item }}"
-#     dest: "/var/lib/homepage/config/{{ item | basename | regex_replace('\\.j2$', '') }}"
-#     mode: u=rw,g=r,o=r
-#   with_fileglob:
-#     - files/var/lib/homepage/config/*.j2
-#   no_log: true
-#   notify: Restart homepage
+- name: Copy config files for homepage to /var/lib/homepage/config
+  ansible.builtin.template:
+    src: "{{ item }}"
+    dest: "/var/lib/homepage/config/{{ item | basename | regex_replace('\\.j2$', '') }}"
+    mode: u=rw,g=r,o=r
+    backup: true
+  with_fileglob:
+    - files/var/lib/homepage/config/*.j2
+  no_log: true
+  notify: Restart homepage
 
-# - name: Homepage container
-#   community.docker.docker_container:
-#     name: homepage
-#     image: ghcr.io/gethomepage/homepage:v1.12.3@sha256:cc84f2f5eb3c7734353701ccbaa24ed02dacb0d119114e50e4251e2005f3990a
-#     comparisons:
-#       image: strict
-#       labels: allow_more_present
-#       volumes: allow_more_present
-#     volumes:
-#       - /var/lib/homepage/config:/app/config
-#       - /var/run/docker.sock:/var/run/docker.sock:ro
-#     network_mode: host
-#     privileged: true
-#     env:
-#       LOG_TARGETS: stdout
-#       HOMEPAGE_ALLOWED_HOSTS: "*"
-#     labels:
-#       homepage.group: Containers
-#       homepage.name: Homepage
-#       homepage.icon: https://raw.githubusercontent.com/gethomepage/homepage/47765ee05e633c87fcf8fca8ee1293bf0ef6bb3e/docs/assets/light_squircle%402x.png
-#       homepage.href: https://rpi.xvx.cz/
-#       homepage.description: A modern, fully static, fast, secure fully proxied, highly customizable application dashboard with integrations for over 100 services and translations into multiple languages.
-#     restart_policy: always
-#     timeout: "{{ docker_container_timeout }}"
-#   notify: Restart homepage
+- name: Homepage container
+  community.docker.docker_container:
+    name: homepage
+    image: ghcr.io/gethomepage/homepage:v1.13.1@sha256:d8d784e5090111b6e4c56dfd90e272d2953a2094e87349f647165df0fa6c4401
+    comparisons:
+      image: strict
+      labels: allow_more_present
+      volumes: allow_more_present
+    volumes:
+      - /var/lib/homepage/config:/app/config
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    network_mode: host
+    privileged: true
+    env:
+      LOG_TARGETS: stdout
+      HOMEPAGE_ALLOWED_HOSTS: "*"
+    labels:
+      homepage.group: Containers
+      homepage.name: Homepage
+      homepage.icon: https://raw.githubusercontent.com/gethomepage/homepage/47765ee05e633c87fcf8fca8ee1293bf0ef6bb3e/docs/assets/light_squircle%402x.png
+      homepage.href: https://rpi.xvx.cz/
+      homepage.description: A modern, fully static, fast, secure fully proxied, highly customizable application dashboard with integrations for over 100 services and translations into multiple languages.
+    restart_policy: always
+    timeout: "{{ docker_container_timeout }}"
+  notify: Restart homepage
 
 #################################################
 # Kodi
@@ -541,6 +487,7 @@
     src: files/var/lib/bluetooth/info.j2
     dest: /var/lib/bluetooth/{{ bluetooth_device_address_rpi }}/{{ bluetooth_device_address_headset }}/info
     mode: u=rw,g=,o=
+    backup: true
   no_log: true
 
 - name: Create wireplumber config directory
@@ -566,6 +513,7 @@
     owner: kodi
     group: kodi
     mode: u=rw,g=r,o=r
+    backup: true
 
 - name: Configure WirePlumber default profile
   ansible.builtin.template:
@@ -574,6 +522,7 @@
     owner: kodi
     group: kodi
     mode: u=rw,g=rw,o=r
+    backup: true
 
 - name: Enable and start PipeWire for user kodi # noqa: command-instead-of-module
   become: true
@@ -589,6 +538,7 @@
     src: lib/systemd/system/kodi.service
     dest: /lib/systemd/system/kodi.service
     mode: u=rw,g=r,o=r
+    backup: true
   notify:
     - Restart kodi
 
@@ -611,6 +561,7 @@
     dest: "{{ item.dest }}"
     src: "{{ item.src }}"
     mode: u=rw,g=,o=
+    backup: true
   loop:
     # This file is frequently updated by Kodi
     - dest: /home/kodi/.kodi/userdata/guisettings.xml

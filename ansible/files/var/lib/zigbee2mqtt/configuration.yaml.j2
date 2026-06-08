@@ -1,10 +1,17 @@
-version: 4
+version: 5
 advanced:
   last_seen: ISO_8601
   log_output:
     - console
+  # 128-bit AES encryption key used to encrypt all Zigbee network traffic.
+  # Devices must share this key to communicate. Changing it forces all devices to re-join.
   network_key: {{ zigbee2mqtt_network_key }}
+  # 16-bit Personal Area Network ID (0x0000-0x3FFF) that distinguishes this
+  # Zigbee network from neighboring ones. Similar to a Wi-Fi SSID but numeric.
   pan_id: {{ zigbee2mqtt_pan_id }}
+  # 64-bit Extended PAN ID providing a globally unique network identity.
+  # Used during network formation and device joining to avoid collisions
+  # when multiple networks share the same pan_id.
   ext_pan_id: {{ zigbee2mqtt_ext_pan_id }}
   transmit_power: 20
 devices:

@@ -12,6 +12,7 @@
     regexp: ".*{{ inventory_hostname }}.*"
     line: "{{ ansible_facts.default_ipv4.address }} {{ inventory_hostname }}"
     mode: u=rw,g=r,o=r
+    backup: true
   when: ansible_facts["default_ipv4"]["address"] is defined
 
 - name: Configure NTP
@@ -22,12 +23,14 @@
     option: NTP
     value: "{{ ntp_server }}"
     mode: u=rw,g=r,o=r
+    backup: true
 
 - name: Copy sshd Ed25519 private key to /etc/ssh/
   ansible.builtin.copy:
     content: "{{ ssh_host_ed25519_key }}\n"
     dest: /etc/ssh/ssh_host_ed25519_key
     mode: u=rw,g=,o=
+    backup: true
   no_log: true
   notify: Restart sshd
 
@@ -36,6 +39,7 @@
     content: "{{ ssh_host_ed25519_key_pub }}\n"
     dest: /etc/ssh/ssh_host_ed25519_key.pub
     mode: u=rw,g=r,o=r
+    backup: true
   no_log: true
   notify: Restart sshd
 
@@ -45,6 +49,7 @@
     regexp: "^#?HostKey /etc/ssh/ssh_host_ed25519_key"
     line: HostKey /etc/ssh/ssh_host_ed25519_key
     mode: u=rw,g=r,o=r
+    backup: true
   notify: Restart sshd
 
 - name: Create /etc/systemd/journald.conf.d directory
@@ -88,10 +93,12 @@
     option: ExecStartPre
     value: /usr/sbin/rfkill unblock bluetooth
     mode: u=rw,g=r,o=r
+    backup: true
 
 - name: Configure .bashrc for root
   ansible.builtin.blockinfile:
     dest: /root/.bashrc
+    backup: true
     block: |
       PS1='\[\033[01;31m\]\h\[\033[01;34m\] \w #\[\033[00m\] '
       source /usr/share/doc/fzf/examples/key-bindings.bash
@@ -182,6 +189,7 @@
     dest: /root/
     remote_src: true
     mode: u=rw,g=r,o=r
+    backup: true
 
 - name: Copy mc configuration to pi home directory
   ansible.builtin.copy:
@@ -191,6 +199,7 @@
     group: pi
     remote_src: true
     mode: u=rw,g=r,o=r
+    backup: true
 
 - name: Put "mc" alias into /etc/profile.d/my-mc.sh
   ansible.builtin.copy:
@@ -199,6 +208,7 @@
       [ -n "${BASH_VERSION}${KSH_VERSION}${ZSH_VERSION}" ] || return 0
       alias mc='. /usr/lib/mc/mc-wrapper.sh --nomouse'
     mode: u=rw,g=r,o=r
+    backup: true
 
 - name: Tweak vim
   ansible.builtin.copy:
@@ -209,11 +219,13 @@
       set ttymouse=
       source /usr/share/doc/fzf/examples/fzf.vim
     mode: u=rw,g=r,o=r
+    backup: true
 
 - name: Tweak logrotate (/etc/logrotate.conf)
   ansible.builtin.blockinfile:
     dest: /etc/logrotate.conf
     insertafter: "^create"
+    backup: true
     block: |
       compress
       compresscmd /usr/bin/xz
@@ -226,6 +238,7 @@
     dest: /etc/msmtprc
     src: files/etc/msmtprc.j2
     mode: u=rw,g=,o=
+    backup: true
   no_log: true
 
 - name: Configure /etc/aliases
@@ -234,12 +247,14 @@
     content: |
       root:           {{ notification_email }}
     mode: u=rw,g=r,o=r
+    backup: true
 
 - name: Configure email notification after reboot
   ansible.builtin.template:
     dest: /etc/rc.local
     src: files/etc/rc.local.j2
     mode: u=rwx,g=rx,o=rx
+    backup: true
 
 - name: Modify Unattended upgrade settings
   ansible.builtin.replace:
@@ -266,6 +281,7 @@
     path: /etc/apt/apt.conf.d/50unattended-upgrades
     marker: "// {mark} ANSIBLE MANAGED BLOCK"
     insertafter: "^Unattended-Upgrade::Origins-Pattern"
+    backup: true
     block: |2
               "origin=*";
 
@@ -279,6 +295,92 @@
     value: "1"
     sysctl_set: true
     reload: true
+
+##############################
+# Firewalld
+##############################
+
+- name: Install firewalld
+  ansible.builtin.apt:
+    name: firewalld
+    state: present
+    install_recommends: false
+  register: result
+  until: result is succeeded
+
+- name: Ensure firewalld is started and enabled
+  ansible.builtin.systemd:
+    name: firewalld
+    state: started
+    enabled: true
+
+- name: Allow services
+  ansible.posix.firewalld:
+    service: "{{ item }}"
+    permanent: true
+    immediate: true
+    state: enabled
+  loop: "{{ firewalld_allowed_services }}"
+
+#################################################
+# Docker
+#################################################
+
+- name: Add Docker apt signing keys
+  ansible.builtin.get_url:
+    url: https://download.docker.com/linux/debian/gpg
+    dest: /usr/share/keyrings/docker.gpg
+    mode: u=rw,g=r,o=r
+
+- name: Add Docker repository
+  ansible.builtin.deb822_repository:
+    name: docker
+    uris: https://download.docker.com/linux/debian
+    suites: "{{ ansible_facts.distribution_release }}"
+    components: stable
+    signed_by: /usr/share/keyrings/docker.gpg
+
+- name: Create Docker daemon configuration directory
+  ansible.builtin.file:
+    path: /etc/docker
+    state: directory
+    mode: u=rwx,g=rx,o=rx
+
+- name: Configure Docker daemon
+  ansible.builtin.copy:
+    dest: /etc/docker/daemon.json
+    content: |
+      {{ docker_config | to_nice_json }}
+    mode: u=rw,g=r,o=r
+    backup: true
+  notify: Restart docker
+
+- name: Install docker
+  ansible.builtin.apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+    update_cache: true
+    install_recommends: false
+  register: result
+  until: result is succeeded
+
+- name: Start and enable Docker service
+  ansible.builtin.systemd_service:
+    name: docker
+    state: started
+    enabled: true
+    daemon_reload: true
+
+- name: Add pi and alloy users to the docker group
+  ansible.builtin.user:
+    name: "{{ item }}"
+    groups: docker
+    append: true
+  loop:
+    - pi
+    - alloy
 
 - name: Run all handlers
   ansible.builtin.meta: flush_handlers

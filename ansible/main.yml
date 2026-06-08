@@ -19,6 +19,7 @@
         dest: /etc/sudoers.d/pi
         mode: u=r,g=r,o=
         validate: "visudo -cf %s"
+        backup: true
 
     - name: Change pi and root user password
       ansible.builtin.user:
@@ -37,8 +38,6 @@
       until: result is succeeded
 
   roles:
-    - role: geerlingguy.firewall
-      tags: [firewall]
     - role: grafana.grafana.alloy
       tags: [alloy]
       vars:
@@ -54,6 +53,7 @@
       tags: [prometheus]
       vars:
         prometheus_storage_retention_size: 5GB
+        prometheus_scrape_configs: []
         prometheus_config_flags_extra:
           web.enable-admin-api:
           web.enable-remote-write-receiver:
