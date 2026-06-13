@@ -95,7 +95,7 @@ grafana_ini:
     user: "{{ msmtp_auth_user }}"
     password: "{{ msmtp_auth_password }}"
 # renovate: datasource=github-tags depName=grafana/grafana
-grafana_version: 13.0.1
+grafana_version: 13.0.2
 hacs_github_token: "{{ lookup('env', 'HACS_GITHUB_TOKEN') }}"
 hass_auth_password_hash: "{{ lookup('env', 'HASS_AUTH_PASSWORD_HASH') }}"
 hass_auth_refresh_token_prometheus: "{{ lookup('env', 'HASS_AUTH_REFRESH_TOKEN_PROMETHEUS') }}"
