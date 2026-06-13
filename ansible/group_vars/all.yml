@@ -5,7 +5,7 @@ alloy_grafana_cloud_password: "{{ lookup('env', 'ALLOY_GRAFANA_CLOUD_PASSWORD') 
 alloy_grafana_cloud_prometheus_url: "https://prometheus-prod-24-prod-eu-west-2.grafana.net/api/prom/push"
 alloy_grafana_cloud_prometheus_username: 1623667
 # renovate: datasource=github-tags depName=grafana/alloy
-alloy_grafana_version: 1.16.2
+alloy_grafana_version: 1.16.3
 backup_directory: /mnt/backups/raspi
 backup_server: 192.168.1.1
 backup_user: root
