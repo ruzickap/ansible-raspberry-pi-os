@@ -1,6 +1,6 @@
 [tools]
 ansible = "14.2.0"
-fnox = "1.30.0"
+fnox = "1.31.0"
 
 [plugins]
 fnox-env = "https://github.com/jdx/mise-env-fnox"
