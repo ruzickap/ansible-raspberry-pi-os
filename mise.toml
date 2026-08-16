@@ -1,5 +1,5 @@
 [tools]
-ansible = "14.2.0"
+ansible = "14.3.0"
 fnox = "1.33.0"
 
 [plugins]
