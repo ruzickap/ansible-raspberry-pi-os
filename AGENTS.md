@@ -23,15 +23,17 @@ Home Assistant / Homepage tasks are present but commented out in
   `/tmp/ansible-raspberry-pi-os.log`. There is no separate test suite.
 - Target host is hard-coded to `raspi.xvx.cz` in `ansible/inventory/hosts`.
 - Limit to one area with tags: `firewall`, `alloy`, `grafana`, `prometheus`.
-  Roles are tagged in `ansible/main.yml`; e.g.
-  `cd ansible && ansible-playbook -i inventory/hosts main.yml --tags grafana`.
+  Roles are tagged in `ansible/main.yml`; e.g. `cd ansible &&`
+  `fnox exec -- ansible-playbook -i inventory/hosts main.yml --tags grafana`.
 
 ## Secrets and variables (non-obvious)
 
 - All secrets live in **AWS SSM Parameter Store**, pulled by
-  [`fnox`](https://github.com/jdx/fnox) and exposed as env vars by `mise` (see
-  `fnox.toml` `[secrets]` and `mise.toml` `_.fnox-env`). Running `mise` needs
-  the `my-aws` profile / `eu-central-1` access.
+  [`fnox`](https://github.com/jdx/fnox) and exposed as env vars only to the
+  `mise run run` task, which wraps `ansible-playbook` in `fnox exec --` (see
+  `fnox.toml` `[secrets]` and `mise.toml`). Running the playbook needs the
+  `my-aws` profile / `eu-central-1` access. For ad-hoc runs use
+  `fnox exec -- ansible-playbook ...`.
 - `ansible/group_vars/all.yml` reads those secrets via
   `lookup('env', 'NAME')` — never hardcode secret values. To add a secret:
   add it to `fnox.toml`, then reference the env var in `all.yml`.

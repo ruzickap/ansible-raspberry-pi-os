@@ -2,12 +2,6 @@
 ansible = "14.5.0"
 fnox = "1.39.0"
 
-[plugins]
-fnox-env = "https://github.com/jdx/mise-env-fnox"
-
-[env]
-_.fnox-env = { tools = true }
-
 [tasks.run]
 description = "Run Ansible playbook"
 dir = "ansible"
@@ -15,5 +9,5 @@ shell = "bash -c"
 run = """
 set -euo pipefail
 ansible-galaxy install -r requirements.yml
-ansible-playbook --diff -i inventory/hosts main.yml 2>&1 | tee /tmp/ansible-raspberry-pi-os.log
+fnox exec -- ansible-playbook --diff -i inventory/hosts main.yml 2>&1 | tee /tmp/ansible-raspberry-pi-os.log
 """

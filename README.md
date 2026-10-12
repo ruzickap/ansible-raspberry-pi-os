@@ -13,8 +13,8 @@ Configure Raspbian (RPi) using Ansible
 ## Notes
 
 Variables are stored in AWS SSM Parameter Store and injected via
-[fnox](https://github.com/jdx/fnox) +
-[mise](https://mise.jdx.dev/). See `fnox.toml` and `mise.toml`.
+[fnox](https://github.com/jdx/fnox) (`fnox exec` in the
+[mise](https://mise.jdx.dev/) task). See `fnox.toml` and `mise.toml`.
 
 Bluetooth - To connect a headset in pairing mode:
 
