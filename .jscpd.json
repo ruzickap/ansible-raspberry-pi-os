@@ -1,0 +1,11 @@
+{
+  "threshold": 0,
+  "reporters": ["console"],
+  "ignore": [
+    "**/.git/**",
+    "**/.github/**",
+    "**/CHANGELOG.md",
+    "**/config.alloy.j2"
+  ],
+  "absolute": true
+}
