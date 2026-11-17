@@ -1,4 +1,4 @@
-# Based on https://github.com/shantanoo-desai/komponist/blob/main/filter_plugins/mosquitto_passwd.py
+# https://github.com/shantanoo-desai/komponist/blob/main/filter_plugins/mosquitto_passwd.py
 import base64
 import hashlib
 
@@ -28,6 +28,8 @@ if __name__ == "__main__":
     # Self-check: python3 mosquitto_passwd.py
     h = mosquitto_passwd("pw", "user")
     _, ver, rounds, salt, digest = h.split("$")
-    assert (ver, rounds) == ("7", "101") and len(salt) == 16
-    assert len(digest) == 88 and digest.endswith("==")
-    assert h == mosquitto_passwd("pw", "user") != mosquitto_passwd("pw", "other")
+    ok = (ver, rounds) == ("7", "101") and len(salt) == 16
+    ok = ok and len(digest) == 88 and digest.endswith("==")
+    ok = ok and h == mosquitto_passwd("pw", "user") != mosquitto_passwd("pw", "other")
+    if not ok:
+        raise SystemExit("mosquitto_passwd self-check failed: " + h)
