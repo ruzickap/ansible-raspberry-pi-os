@@ -24,8 +24,7 @@
     - name: Change pi and root user password
       ansible.builtin.user:
         name: "{{ item }}"
-        password: "{{ rpi_password | string | password_hash('sha512') }}"
-      changed_when: false
+        password: "{{ rpi_password | string | password_hash('sha512', 'rpisalt') }}"
       loop:
         - pi
         - root

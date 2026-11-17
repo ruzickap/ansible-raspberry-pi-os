@@ -142,16 +142,16 @@
 - name: Add Mosquitto apt signing keys
   ansible.builtin.get_url:
     url: https://repo.mosquitto.org/debian/mosquitto-repo.gpg
-    dest: /etc/apt/trusted.gpg.d/mosquitto-repo.asc
+    dest: /usr/share/keyrings/mosquitto-repo.gpg
     mode: u=rw,g=r,o=r
 
-- name: Add Mosquitto apt signing keys
+- name: Add Mosquitto repository
   ansible.builtin.deb822_repository:
     name: mosquitto
     uris: https://repo.mosquitto.org/debian
     suites: "{{ ansible_facts.distribution_release }}"
     components: [main]
-    signed_by: /etc/apt/trusted.gpg.d/mosquitto-repo.asc
+    signed_by: /usr/share/keyrings/mosquitto-repo.gpg
 
 - name: Install mosquitto
   ansible.builtin.apt:
@@ -174,16 +174,13 @@
     backup: true
   notify: Restart mosquitto
 
-# NOTE: mosquitto_passwd filter uses a random salt, so this task reports
-# "changed" on every run and restarts Mosquitto. This is intentional to
-# ensure credential rotations are always picked up.
 - name: Create '/etc/mosquitto/password_file' file
   ansible.builtin.copy:
     dest: /etc/mosquitto/password_file
     content: |
       {% for item in mqtt_clients | dict2items %}
       # {{ item.key }}
-      {{ item.value.user }}:{{ '%s' | format(item.value.password) | mosquitto_passwd }}
+      {{ item.value.user }}:{{ '%s' | format(item.value.password) | mosquitto_passwd(item.value.user) }}
       {% endfor %}
     mode: u=rw,g=,o=
     owner: mosquitto
@@ -333,6 +330,8 @@
     - files/{{ hass_config_directory }}/automations.yaml
   notify: Restart hass
 
+# force: false - Home Assistant rewrites these files. To apply a rotated
+# secret, delete the file on the Pi first.
 - name: Create secret storage files for Home Assistant to {{ hass_config_directory }}/
   ansible.builtin.template:
     src: "{{ item.src }}"
@@ -593,15 +592,6 @@
   ansible.builtin.wait_for:
     port: 8080
 
-- name: Enable Kodi Visualization addon spectrum
-  ansible.builtin.command: sqlite3 /home/kodi/.kodi/userdata/Database/Addons33.db "UPDATE installed SET enabled = 1 WHERE addonID = '{{ item }}'"
-  loop:
-    - visualization.spectrum
-  register: result
-  until: result is succeeded
-  delay: 10
-  changed_when: false
-
 - name: Flush handlers
   ansible.builtin.meta: flush_handlers
 
@@ -620,3 +610,20 @@
     body: '{ "jsonrpc": "2.0", "method": "AudioLibrary.Scan", "id": "ansible" }'
     force_basic_auth: true
     body_format: json
+
+- name: Enable Kodi Visualization addon spectrum
+  no_log: true
+  # checkov:skip=CKV2_ANSIBLE_1
+  ansible.builtin.uri:
+    url: http://{{ ansible_host }}:8080/jsonrpc
+    user: kodi
+    password: "{{ kodi_guisettings_services_webserverpassword }}"
+    method: POST
+    body: '{ "jsonrpc": "2.0", "method": "Addons.SetAddonEnabled", "params": { "addonid": "visualization.spectrum", "enabled": true }, "id": "ansible" }'
+    force_basic_auth: true
+    body_format: json
+  register: result
+  until: result.json.result | default('') == 'OK'
+  retries: 5
+  delay: 10
+  changed_when: false

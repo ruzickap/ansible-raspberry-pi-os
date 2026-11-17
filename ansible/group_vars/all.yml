@@ -30,7 +30,10 @@ esphome_web_server_username: admin
 firewalld_allowed_services:
   - ssh
   - mdns
-  - mqtt
+# LAN and Docker bridge networks
+firewalld_mqtt_sources:
+  - 192.168.1.0/24
+  - 172.16.0.0/12
 grafana_dashboards:
   # 1617-systemd-service-dashboard
   - dashboard_id: 1617
@@ -150,7 +153,6 @@ rpi_packages:
   - msmtp-mta
   - pipewire-audio
   - smartmontools
-  - sqlite3
   - telnet
   - unattended-upgrades
   - vim

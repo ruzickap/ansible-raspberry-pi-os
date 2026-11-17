@@ -49,13 +49,13 @@ Home Assistant / Homepage tasks are present but commented out in
 - Containers are pinned by tag **and** digest (`image: ...@sha256:...`) with
   `comparisons.image: strict`.
 - Custom Jinja filter `mosquitto_passwd` lives in
-  `ansible/filter_plugins/mosquitto_passwd.py` (needs `passlib`).
+  `ansible/filter_plugins/mosquitto_passwd.py`.
 - ansible-lint config is `ansible/.ansible-lint.yml`; suppress one-off findings
   inline with `# noqa: <rule>` (already used for `command-instead-of-module`).
 
 ## Repo automation gotchas
 
-- `# keep-sorted start/end` blocks (`group_vars/all.yml`,
+- `keep-sorted` blocks (`group_vars/all.yml`,
   `requirements.yml`, `handlers/main.yml`, `.mega-linter.yml`, `stale.yml`)
   must stay alphabetically sorted.
 - `# renovate: datasource=... depName=...` comments in `all.yml` drive Renovate
