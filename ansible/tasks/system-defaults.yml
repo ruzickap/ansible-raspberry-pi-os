@@ -322,6 +322,14 @@
     state: enabled
   loop: "{{ firewalld_allowed_services }}"
 
+- name: Allow MQTT only from the LAN and Docker
+  ansible.posix.firewalld:
+    rich_rule: rule family="ipv4" source address="{{ item }}" service name="mqtt" accept
+    permanent: true
+    immediate: true
+    state: enabled
+  loop: "{{ firewalld_mqtt_sources }}"
+
 #################################################
 # Docker
 #################################################

@@ -8,7 +8,16 @@ Configure Raspbian (RPi) using Ansible
 1. Flash the image to the SD card
 1. Boot the RPi with the SD card
    1. Initial user is `pi` with password `raspberry`
-1. Run the ansible playbook: `mise run run`
+1. Run the ansible playbook. The first run needs the initial password
+   (`raspberry`), so Ansible asks for it:
+
+   ```bash
+   cd ansible
+   fnox exec -- ansible-playbook --diff -i inventory/hosts main.yml \
+     --ask-pass --ask-become-pass
+   ```
+
+   Later runs use the SSH key: `mise run run`
 
 ## Notes
 
