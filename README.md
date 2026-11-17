@@ -12,7 +12,8 @@ Configure Raspbian (RPi) using Ansible
    (`raspberry`), so Ansible asks for it:
 
    ```bash
-   cd ansible
+   cd ansible || exit
+   ansible-galaxy install -r requirements.yml
    fnox exec -- ansible-playbook --diff -i inventory/hosts main.yml \
      --ask-pass --ask-become-pass
    ```

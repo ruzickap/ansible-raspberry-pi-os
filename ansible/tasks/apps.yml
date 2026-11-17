@@ -623,8 +623,7 @@
     force_basic_auth: true
     body_format: json
   register: result
-  until: result.json.error is not defined
+  until: result.json.result | default('') == 'OK'
   retries: 5
   delay: 10
-  failed_when: result.json.error is defined
   changed_when: false
