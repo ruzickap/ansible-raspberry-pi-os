@@ -14,7 +14,7 @@ permissions: read-all
 
 jobs:
   create-rpi-image:
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-26.04-arm
     timeout-minutes: 30
     steps:
       - name: Checkout Code
@@ -30,7 +30,7 @@ jobs:
           envsubst < stage-my/00-netplan/files/01-wifi.yaml.template > stage-my/00-netplan/files/01-wifi.yaml
 
       - name: Generate Raspberry Pi OS
-        uses: usimd/pi-gen-action@cec66cba86bdcd23984e6a79ea4e9251d90bc798 # v1.11.0
+        uses: usimd/pi-gen-action@9d85658bf0f4598a560b8286a5f9154afc69b154 # v2.0.0
         id: build
         with:
           # Compression to apply on final image (either "none", "zip", "xz" or "gz").
