@@ -1,6 +1,6 @@
 [tools]
 ansible = "15.0.0"
-fnox = "1.48.0"
+fnox = "1.50.0"
 
 [tasks.run]
 description = "Run Ansible playbook"
