@@ -328,6 +328,8 @@
       - /var/lib/homepage/config:/app/config
       - /var/run/docker.sock:/var/run/docker.sock:ro
     network_mode: host
+    # Explicit false recreates a container started with privileged: true
+    privileged: false
     env:
       LOG_TARGETS: stdout
       HOMEPAGE_ALLOWED_HOSTS: "*"
