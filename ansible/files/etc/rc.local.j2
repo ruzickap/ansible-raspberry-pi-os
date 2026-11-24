@@ -31,9 +31,9 @@ Content-Type: text/html; charset=UTF-8
 <html>
 <body>
     <h4>🔄 {{ ansible_facts["fqdn"] }} rebooted: $(date)</h4>
-    <summary>📋 5min before boot logs:</summary>
+    <summary>📋 Last 200 log lines before the reboot:</summary>
     <pre style="font-size: 10px;">
-$(journalctl -b -1 --since "-5min")
+$(journalctl -b -1 -n 200)
     </pre>
     </details>
 </body>
