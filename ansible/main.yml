@@ -54,7 +54,6 @@
         prometheus_storage_retention_size: 5GB
         prometheus_scrape_configs: []
         prometheus_config_flags_extra:
-          web.enable-admin-api:
           web.enable-remote-write-receiver:
   tasks:
     - name: Install and configure system-defaults

@@ -446,7 +446,6 @@
       - /var/lib/homepage/config:/app/config
       - /var/run/docker.sock:/var/run/docker.sock:ro
     network_mode: host
-    privileged: true
     env:
       LOG_TARGETS: stdout
       HOMEPAGE_ALLOWED_HOSTS: "*"
