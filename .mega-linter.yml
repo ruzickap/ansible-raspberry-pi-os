@@ -10,7 +10,7 @@
 ACTION_ZIZMOR_UNSECURED_ENV_VARIABLES:
   - GITHUB_TOKEN
 
-ANSIBLE_ANSIBLE_LINT_CONFIG_FILE: ansible/.ansible-lint
+ANSIBLE_ANSIBLE_LINT_CONFIG_FILE: ansible/.ansible-lint.yml
 
 ANSIBLE_ANSIBLE_LINT_PRE_COMMANDS:
   - command: ansible-galaxy install -r ansible/requirements.yml

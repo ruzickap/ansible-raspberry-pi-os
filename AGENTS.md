@@ -65,9 +65,6 @@ Home Assistant / Homepage tasks are present but commented out in
   must stay alphabetically sorted.
 - `# renovate: datasource=... depName=...` comments in `all.yml` drive Renovate
   version bumps — keep the comment immediately above the version it pins.
-- Known mismatch: `.mega-linter.yml` sets
-  `ANSIBLE_ANSIBLE_LINT_CONFIG_FILE: ansible/.ansible-lint` but the file is
-  `ansible/.ansible-lint.yml`.
 
 ## Linting / CI (MegaLinter, see `.mega-linter.yml`)
 
