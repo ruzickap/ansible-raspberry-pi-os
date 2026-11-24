@@ -6,9 +6,6 @@ alloy_grafana_cloud_prometheus_url: "https://prometheus-prod-24-prod-eu-west-2.g
 alloy_grafana_cloud_prometheus_username: 1623667
 # renovate: datasource=github-tags depName=grafana/alloy
 alloy_grafana_version: 1.22.0
-backup_directory: /mnt/backups/raspi
-backup_server: 192.168.1.1
-backup_user: root
 bluetooth_device_address_headset: 08:C8:C2:85:EF:57 # Device 08:C8:C2:85:EF:57 PetrR Jabra Evolve2 55
 bluetooth_device_address_rpi: DC:A6:32:0E:BD:15
 bluetooth_identity_resolving_key: "{{ lookup('env', 'BLUETOOTH_IDENTITY_RESOLVING_KEY') }}"
@@ -158,7 +155,6 @@ rpi_packages:
   - vim
   - wireplumber
 rpi_password: "{{ lookup('env', 'RPI_PASSWORD') }}"
-ssh_backup_ed25519_key: "{{ lookup('env', 'SSH_BACKUP_ED25519_KEY') }}"
 ssh_host_ed25519_key: "{{ lookup('env', 'SSH_HOST_ED25519_KEY') }}"
 # Same key as in ansible/known_hosts, change both together
 ssh_host_ed25519_key_pub: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINtl48odZdS8Gs3TxXWzZoFck9BpE6q2GtxNPCSBrJVp root@raspberrypi"

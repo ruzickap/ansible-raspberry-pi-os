@@ -1,97 +1,4 @@
 #################################################
-# Backup / Restore
-#################################################
-
-- name: Install ssh key id_ed25519-backup_raspi.xvx.cz.pub
-  ansible.builtin.copy:
-    src: files/root/.ssh/id_ed25519-backup_raspi.xvx.cz.pub
-    dest: /root/.ssh/id_ed25519-backup_raspi.xvx.cz.pub
-    mode: u=rw,g=,o=
-    owner: root
-    backup: true
-  no_log: true
-
-- name: Install ssh private key id_ed25519-backup_raspi.xvx.cz
-  ansible.builtin.copy:
-    content: "{{ ssh_backup_ed25519_key }}\n"
-    dest: /root/.ssh/id_ed25519-backup_raspi.xvx.cz
-    mode: u=rw,g=,o=
-    owner: root
-    backup: true
-  no_log: true
-
-# - name: Creates Backup Prometheus file /etc/cron.d/backup-prometheus
-#   ansible.builtin.cron:
-#     name: Backup Prometheus
-#     weekday: "*"
-#     minute: "0"
-#     hour: "3"
-#     user: root
-#     job: PROMETHEUS_SNAPSHOT_DIR=$(curl -s -X POST http://127.0.0.1:9090/api/v1/admin/tsdb/snapshot | jq -r '.data.name') && rsync --archive --verbose --delete --log-file=/tmp/backup-prometheus.log -e 'ssh -i /root/.ssh/id_ed25519-backup_raspi.xvx.cz -o StrictHostKeyChecking=no' /var/lib/prometheus/snapshots/${PROMETHEUS_SNAPSHOT_DIR}/ {{ backup_user }}@{{ backup_server }}:{{ backup_directory }}/prometheus/ > /dev/null && rm -rf /var/lib/prometheus/snapshots
-#     cron_file: backup-prometheus
-#   tags: [prometheus]
-
-# - name: Creates Backup HASS file /etc/cron.d/backup-hass
-#   ansible.builtin.cron:
-#     name: Backup Home Assistant
-#     weekday: "*"
-#     minute: "0"
-#     hour: "3"
-#     user: root
-#     job: HASS_BACKUP_FILE=$(ls -t {{ hass_config_directory }}/backups/*.tar | head -1) && rsync --archive --verbose --delete --log-file=/tmp/backup-hass.log --rsh='ssh -i /root/.ssh/id_ed25519-backup_raspi.xvx.cz -o StrictHostKeyChecking=no' "${HASS_BACKUP_FILE}" "{{ backup_user }}@{{ backup_server }}:{{ backup_directory }}/hass_config/hass_config_latest_backup.tar" > /dev/null && rm {{ hass_config_directory }}/backups/*.tar
-#     cron_file: backup-hass
-
-# - name: Check if /var/log/restore-prometheus.log exists
-#   ansible.builtin.stat:
-#     path: /var/log/restore-prometheus.log
-#   register: prometheus_restore_log
-#   tags: [prometheus]
-
-# - name: Restore Prometheus from backup
-#   when: not prometheus_restore_log.stat.exists
-#   tags: [prometheus]
-#   block:
-#     - name: Stop Prometheus
-#       ansible.builtin.systemd_service:
-#         name: prometheus
-#         state: stopped
-
-#     - name: Restore Prometheus from backup # noqa: command-instead-of-module
-#       ansible.builtin.shell: |
-#         rsync --archive --verbose --chown=prometheus:prometheus --delete --log-file=/var/log/restore-prometheus.log --rsh='ssh -i /root/.ssh/id_ed25519-backup_raspi.xvx.cz -o StrictHostKeyChecking=no' {{ backup_user }}@{{ backup_server }}:{{ backup_directory }}/prometheus/ /var/lib/prometheus/
-#       changed_when: true
-
-#     - name: Start Prometheus
-#       ansible.builtin.systemd_service:
-#         name: prometheus
-#         state: started
-#   rescue:
-#     - name: Print when errors
-#       ansible.builtin.fail:
-#         msg: Restore from backup failed
-
-# - name: Check if /var/log/restore-hass.log exists
-#   ansible.builtin.stat:
-#     path: /var/log/restore-hass.log
-#   register: hass_restore_log
-
-# - name: Create HASS directory (/var/lib/hass_config)
-#   when: not hass_restore_log.stat.exists
-#   ansible.builtin.file:
-#     path: /var/lib/hass_config/blueprints/automation/homeassistant
-#     state: directory
-#     recurse: true
-
-# - name: Restore HASS from backup # noqa: command-instead-of-module
-#   when: not hass_restore_log.stat.exists
-#   ansible.builtin.shell: |
-#     set -o pipefail
-#     ssh -i /root/.ssh/id_ed25519-backup_raspi.xvx.cz -o StrictHostKeyChecking=no {{ backup_user }}@{{ backup_server }} 'cat {{ backup_directory }}/hass_config/hass_config_latest_backup.tar' | tar -xf - homeassistant.tar.gz --to-stdout | tar xvzf - -C "{{ hass_config_directory }}" --wildcards "data/home-assistant*" --strip-components=1 > /var/log/restore-hass.log
-#   args:
-#     executable: /bin/bash
-#   changed_when: true
-
-#################################################
 # Cloudflared
 #################################################
 
@@ -308,17 +215,6 @@
     state: directory
     recurse: true
 
-# NOT NEEDED ANY MORE - FILES ARE ALREADY IN PLACE
-# - name: Download automation/blueprints files
-#   ansible.builtin.get_url:
-#     url: "{{ item }}"
-#     dest: "{{ hass_config_directory }}/blueprints/automation/homeassistant/{{ item | basename }}"
-#     mode: u=rw,g=r,o=r
-#   loop:
-#     - https://raw.githubusercontent.com/home-assistant/core/b07682e43cd2604ef387bae79bcae555b15516b8/homeassistant/components/automation/blueprints/motion_light.yaml
-#     - https://raw.githubusercontent.com/home-assistant/core/b07682e43cd2604ef387bae79bcae555b15516b8/homeassistant/components/automation/blueprints/notify_leaving_zone.yaml
-#   notify: Restart hass
-
 - name: Copy config files for Home Assistant to {{ hass_config_directory }}/
   ansible.builtin.copy:
     src: "{{ item }}"
@@ -399,19 +295,6 @@
     restart_policy: always
     timeout: "{{ docker_container_timeout }}"
   notify: Restart hass
-
-# - name: Wait for HASS to be started
-#   when: not hass_restore_log.stat.exists
-#   ansible.builtin.wait_for:
-#     port: 8123
-
-# - name: Install HACS
-#   when: not hass_restore_log.stat.exists
-#   community.docker.docker_container_exec:
-#     container: home-assistant
-#     command: bash -c "wget -O - https://get.hacs.xyz | bash -"
-#     chdir: /config
-#   notify: Restart hass
 
 #################################################
 # Homepage

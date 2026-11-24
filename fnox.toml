@@ -30,7 +30,6 @@ OPENWRT_HOMEPAGE_PASSWORD = { provider = "ps", value = "/github/ruzickap/ansible
 OPENWRT_LUCI_PASSWORD = { provider = "ps", value = "/github/ruzickap/ansible-raspberry-pi-os/ansible/OPENWRT_LUCI_PASSWORD", if_missing = "error" }
 PROMETHEUS_HASS_BEARER_TOKEN = { provider = "ps", value = "/github/ruzickap/ansible-raspberry-pi-os/ansible/PROMETHEUS_HASS_BEARER_TOKEN", if_missing = "error" }
 RPI_PASSWORD = { provider = "ps", value = "/github/ruzickap/ansible-raspberry-pi-os/ansible/RPI_PASSWORD", if_missing = "error" }
-SSH_BACKUP_ED25519_KEY = { provider = "ps", value = "/github/ruzickap/ansible-raspberry-pi-os/ansible/SSH_BACKUP_ED25519_KEY", if_missing = "error" }
 SSH_HOST_ED25519_KEY = { provider = "ps", value = "/github/ruzickap/ansible-raspberry-pi-os/ansible/SSH_HOST_ED25519_KEY", if_missing = "error" }
 TRANSMISSION_RPC_PASSWORD = { provider = "ps", value = "/github/ruzickap/ansible-raspberry-pi-os/ansible/TRANSMISSION_RPC_PASSWORD", if_missing = "error" }
 UPTIMEROBOT_API_KEY = { provider = "ps", value = "/github/ruzickap/ansible-raspberry-pi-os/ansible/UPTIMEROBOT_API_KEY", if_missing = "error" }
