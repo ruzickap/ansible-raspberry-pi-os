@@ -6,7 +6,8 @@ Configure Raspbian (RPi) using Ansible
 
 1. Build the Raspberry Pi OS image using [create-rpi-image GitHub Action](.github/workflows/create-rpi-image.yml)
 
-1. Flash the image to the SD card
+1. Unpack the image with `7z x` (AES-encrypted zip, the password is the Wi-Fi
+   password) and flash it to the SD card
 
 1. Boot the RPi with the SD card
    1. Initial user is `pi` with password `raspberry`
