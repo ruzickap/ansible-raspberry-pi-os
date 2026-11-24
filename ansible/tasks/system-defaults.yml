@@ -24,6 +24,7 @@
     value: "{{ ntp_server }}"
     mode: u=rw,g=r,o=r
     backup: true
+  notify: Reboot
 
 - name: Copy sshd Ed25519 private key to /etc/ssh/
   ansible.builtin.copy:
@@ -77,7 +78,7 @@
       value: persistent
     - option: SystemMaxUse
       value: 10M
-  notify: Reload systemd
+  notify: Reboot
 
 - name: Create /etc/systemd/system/bluetooth.service.d directory
   ansible.builtin.file:
@@ -94,6 +95,7 @@
     value: /usr/sbin/rfkill unblock bluetooth
     mode: u=rw,g=r,o=r
     backup: true
+  notify: Reboot
 
 - name: Configure .bashrc for root
   ansible.builtin.blockinfile:
