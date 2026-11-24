@@ -180,7 +180,7 @@
     src: /etc/skel/.config
     dest: /root/
     remote_src: true
-    mode: u=rw,g=r,o=r
+    mode: u=rwX,g=rX,o=rX
     backup: true
 
 - name: Copy mc configuration to pi home directory
@@ -190,7 +190,7 @@
     owner: pi
     group: pi
     remote_src: true
-    mode: u=rw,g=r,o=r
+    mode: u=rwX,g=rX,o=rX
     backup: true
 
 - name: Put "mc" alias into /etc/profile.d/my-mc.sh
