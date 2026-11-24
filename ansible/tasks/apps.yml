@@ -433,6 +433,7 @@
     mode: u=rw,g=r,o=r
     backup: true
   notify:
+    - Reload systemd
     - Restart kodi
 
 - name: Change default target to graphical.target
@@ -441,13 +442,20 @@
     dest: /etc/systemd/system/default.target
     state: link
 
+# Kodi writes its settings back on exit, so it must not run while they change
+- name: Stop Kodi
+  ansible.builtin.systemd_service:
+    name: kodi
+    state: stopped
+
 - name: Copy Kodi configuration files
   ansible.posix.synchronize:
     src: home/kodi/.kodi
     dest: /home/kodi/
+    rsync_opts:
+      - --exclude=*.j2
   # These files are frequently updated by Kodi
   changed_when: false
-  notify: Restart kodi
 
 - name: Additional Kodi configuration
   ansible.builtin.template:
@@ -481,10 +489,6 @@
   until: result.status.SubState == "running"
   retries: 5
   delay: 10
-
-- name: Wait for Kodi to be started
-  ansible.builtin.wait_for:
-    port: 8080
 
 - name: Flush handlers
   ansible.builtin.meta: flush_handlers
