@@ -124,14 +124,6 @@
     line: '\1 {{ boot_cmdline_parameters }}'
   notify: Reboot
 
-- name: Update all packages
-  ansible.builtin.apt:
-    name: "*"
-    install_recommends: false
-    update_cache: true
-  register: result
-  until: result is succeeded
-
 - name: Install packages
   ansible.builtin.apt:
     name: "{{ rpi_packages }}"
@@ -284,6 +276,15 @@
     backup: true
     block: |2
               "origin=*";
+
+# The pins in group_vars/all.yml decide the Grafana and Alloy versions
+- name: Keep unattended-upgrades away from Grafana and Alloy
+  ansible.builtin.copy:
+    dest: /etc/apt/apt.conf.d/52unattended-upgrades-local
+    content: |
+      Unattended-Upgrade::Package-Blacklist { "alloy$"; "grafana$"; };
+    mode: u=rw,g=r,o=r
+    backup: true
 
 - name: Autoremove unused packages
   ansible.builtin.apt:

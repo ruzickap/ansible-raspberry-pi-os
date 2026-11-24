@@ -50,6 +50,9 @@ Home Assistant / Homepage tasks are present but commented out in
 - File permissions use symbolic mode (`mode: u=rw,g=r,o=r`), not octal.
 - Containers are pinned by tag **and** digest (`image: ...@sha256:...`) with
   `comparisons.image: strict`.
+- Grafana and Alloy are pinned in `all.yml`; the nightly unattended-upgrades
+  skip them (`/etc/apt/apt.conf.d/52unattended-upgrades-local`), so the pins
+  hold.
 - Custom Jinja filter `mosquitto_passwd` lives in
   `ansible/filter_plugins/mosquitto_passwd.py`.
 - ansible-lint config is `ansible/.ansible-lint.yml`; suppress one-off findings
