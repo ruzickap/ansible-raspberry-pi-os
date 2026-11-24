@@ -222,7 +222,6 @@
     mode: u=rw,g=r,o=r
     backup: true
   loop:
-    - files/{{ hass_config_directory }}/.storage/core.device_registry
     - files/{{ hass_config_directory }}/lovelace
     - files/{{ hass_config_directory }}/known_devices.yaml
     - files/{{ hass_config_directory }}/automations.yaml
@@ -230,7 +229,7 @@
 
 # force: false - Home Assistant rewrites these files. To apply a rotated
 # secret, delete the file on the Pi first.
-- name: Create secret storage files for Home Assistant to {{ hass_config_directory }}/
+- name: Create storage files for Home Assistant to {{ hass_config_directory }}/
   ansible.builtin.template:
     src: "{{ item.src }}"
     dest: "{{ item.dest }}"
@@ -240,6 +239,8 @@
   loop:
     - dest: "{{ hass_config_directory }}/.storage/core.config_entries"
       src: files/{{ hass_config_directory }}/.storage/core.config_entries.j2
+    - dest: "{{ hass_config_directory }}/.storage/core.device_registry"
+      src: files/{{ hass_config_directory }}/.storage/core.device_registry
     - dest: "{{ hass_config_directory }}/.storage/auth_provider.homeassistant"
       src: files/{{ hass_config_directory }}/.storage/auth_provider.homeassistant.j2
     - dest: "{{ hass_config_directory }}/.storage/auth"
