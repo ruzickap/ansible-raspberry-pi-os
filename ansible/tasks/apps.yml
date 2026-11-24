@@ -123,13 +123,15 @@
     dest: /etc/systemd/system/cloudflared.service
     mode: u=rw,g=r,o=r
     backup: true
-  notify: Reload systemd
+  notify:
+    - Reload systemd
+    - Restart cloudflared
 
 - name: Configure cloudflared
   ansible.builtin.copy:
     dest: /etc/default/cloudflared
     content: |
-      CLOUDFLARED_TOKEN={{ cloudflared_tunnel_token }}
+      TUNNEL_TOKEN={{ cloudflared_tunnel_token }}
     mode: u=rw,g=,o=
     backup: true
   no_log: true
@@ -229,7 +231,7 @@
       - /run/dbus:/run/dbus:ro
       - /var/lib/zigbee2mqtt:/app/data
     ports:
-      - 8090:8080
+      - 127.0.0.1:8090:8080
     env:
       TZ: "{{ timezone }}"
     labels:
