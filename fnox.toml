@@ -21,7 +21,6 @@ HASS_AUTH_REFRESH_TOKEN_PROMETHEUS_JWT_KEY = { provider = "ps", value = "/github
 HASS_AUTH_REFRESH_TOKEN_SYSTEM = { provider = "ps", value = "/github/ruzickap/ansible-raspberry-pi-os/ansible/HASS_AUTH_REFRESH_TOKEN_SYSTEM", if_missing = "error" }
 HASS_AUTH_REFRESH_TOKEN_SYSTEM_JWT_KEY = { provider = "ps", value = "/github/ruzickap/ansible-raspberry-pi-os/ansible/HASS_AUTH_REFRESH_TOKEN_SYSTEM_JWT_KEY", if_missing = "error" }
 HASS_TOTP_SECRET = { provider = "ps", value = "/github/ruzickap/ansible-raspberry-pi-os/ansible/HASS_TOTP_SECRET", if_missing = "error" }
-HASS_USER_PASSWORD = { provider = "ps", value = "/github/ruzickap/ansible-raspberry-pi-os/ansible/HASS_USER_PASSWORD", if_missing = "error" }
 KODI_GUISETTINGS_SERVICES_WEBSERVERPASSWORD = { provider = "ps", value = "/github/ruzickap/ansible-raspberry-pi-os/ansible/KODI_GUISETTINGS_SERVICES_WEBSERVERPASSWORD", if_missing = "error" }
 MQTT_UZG01_PASSWORD = { provider = "ps", value = "/github/ruzickap/ansible-raspberry-pi-os/ansible/MQTT_UZG01_PASSWORD", if_missing = "error" }
 MQTT_ZIGBEE2MQTT_PASSWORD = { provider = "ps", value = "/github/ruzickap/ansible-raspberry-pi-os/ansible/MQTT_ZIGBEE2MQTT_PASSWORD", if_missing = "error" }

@@ -384,14 +384,11 @@
     enabled: true
     daemon_reload: true
 
-- name: Add pi and alloy users to the docker group
+- name: Add pi user to the docker group
   ansible.builtin.user:
-    name: "{{ item }}"
+    name: pi
     groups: docker
     append: true
-  loop:
-    - pi
-    - alloy
 
 - name: Run all handlers
   ansible.builtin.meta: flush_handlers

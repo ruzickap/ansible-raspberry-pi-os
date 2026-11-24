@@ -105,7 +105,6 @@ hass_auth_refresh_token_system_jwt_key: "{{ lookup('env', 'HASS_AUTH_REFRESH_TOK
 hass_config_directory: /var/lib/hass_config
 hass_totp_secret: "{{ lookup('env', 'HASS_TOTP_SECRET') }}"
 hass_url: https://hass-rpi.xvx.cz
-hass_user_password: "{{ lookup('env', 'HASS_USER_PASSWORD') }}"
 kernel_modules:
   - nf_conntrack
 kodi_guisettings_services_webserverpassword: "{{ lookup('env', 'KODI_GUISETTINGS_SERVICES_WEBSERVERPASSWORD') }}"
@@ -133,14 +132,12 @@ prometheus_web_external_url: https://prometheus-rpi.xvx.cz
 prometheus_web_listen_address: 127.0.0.1:9090
 rpi_disable_boot_services:
   - console-setup
-  - dnsmasq
   - keyboard-setup
   - regenerate_ssh_host_keys
   - sshd-keygen
   - sshswitch
 rpi_packages:
   - bsd-mailx
-  - dnsmasq
   - fzf
   - htop
   - jq

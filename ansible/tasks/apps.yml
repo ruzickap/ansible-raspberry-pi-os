@@ -89,7 +89,7 @@
     content: |
       {% for item in mqtt_clients | dict2items %}
       # {{ item.key }}
-      {{ item.value.user }}:{{ '%s' | format(item.value.password) | mosquitto_passwd(item.value.user) }}
+      {{ item.value.user }}:{{ item.value.password | mosquitto_passwd(item.value.user) }}
       {% endfor %}
     mode: u=rw,g=,o=
     owner: mosquitto
@@ -148,7 +148,6 @@
       homepage.description: Zigbee to MQTT bridge
     restart_policy: always
     timeout: "{{ docker_container_timeout }}"
-  notify: Restart zigbee2mqtt
 
 #################################################
 # ESPHome (esphome-rpi.xvx.cz)
@@ -170,13 +169,10 @@
 
 - name: Create secret file for ESPHome
   ansible.builtin.template:
-    src: "{{ item.src }}"
-    dest: "{{ item.dest }}"
+    src: files/var/lib/esphome/config/secrets.yaml.j2
+    dest: /var/lib/esphome/config/secrets.yaml
     mode: u=rw,g=,o=
     backup: true
-  loop:
-    - dest: /var/lib/esphome/config/secrets.yaml
-      src: files/var/lib/esphome/config/secrets.yaml.j2
   no_log: true
   notify: Restart esphome
 
@@ -203,7 +199,6 @@
       homepage.description: ESPHome is a system to control your ESP8266/ESP32 by simple yet powerful configuration files and control them remotely through Home Automation systems.
     restart_policy: always
     timeout: "{{ docker_container_timeout }}"
-  notify: Restart esphome
 
 #################################################
 # Home Assistant
@@ -252,24 +247,18 @@
 
 - name: Create config files for Home Assistant to {{ hass_config_directory }}
   ansible.builtin.template:
-    src: "{{ item.src }}"
-    dest: "{{ item.dest }}"
+    src: files/{{ hass_config_directory }}/configuration.yaml.j2
+    dest: "{{ hass_config_directory }}/configuration.yaml"
     mode: u=rw,g=r,o=r
     backup: true
-  loop:
-    - dest: "{{ hass_config_directory }}/configuration.yaml"
-      src: files/{{ hass_config_directory }}/configuration.yaml.j2
   notify: Restart hass
 
 - name: Create secret file for Home Assistant to {{ hass_config_directory }}
   ansible.builtin.template:
-    src: "{{ item.src }}"
-    dest: "{{ item.dest }}"
+    src: files/{{ hass_config_directory }}/secrets.yaml.j2
+    dest: "{{ hass_config_directory }}/secrets.yaml"
     mode: u=rw,g=,o=
     backup: true
-  loop:
-    - dest: "{{ hass_config_directory }}/secrets.yaml"
-      src: files/{{ hass_config_directory }}/secrets.yaml.j2
   no_log: true
   notify: Restart hass
 
@@ -295,7 +284,6 @@
       homepage.description: Open source home automation that puts local control and privacy first.
     restart_policy: always
     timeout: "{{ docker_container_timeout }}"
-  notify: Restart hass
 
 # The nightly backup.create automation never deletes old backups
 - name: Delete Home Assistant backups older than 7 days
@@ -351,7 +339,6 @@
       homepage.description: A modern, fully static, fast, secure fully proxied, highly customizable application dashboard with integrations for over 100 services and translations into multiple languages.
     restart_policy: always
     timeout: "{{ docker_container_timeout }}"
-  notify: Restart homepage
 
 #################################################
 # Kodi
@@ -368,7 +355,6 @@
     shell: /usr/bin/sh
     groups: audio,bluetooth,input,uucp,video,plugdev
     group: kodi
-  register: created_user_kodi
 
 - name: Create bluetooth device directory for headset pairing
   ansible.builtin.file:
@@ -417,15 +403,6 @@
     group: kodi
     mode: u=rw,g=rw,o=r
     backup: true
-
-- name: Enable and start PipeWire for user kodi # noqa: command-instead-of-module
-  become: true
-  become_user: kodi
-  ansible.builtin.command:
-    cmd: systemctl --user --now enable pipewire pipewire-pulse
-    creates: /usr/lib/systemd/user/pipewire.service
-  environment:
-    XDG_RUNTIME_DIR: "/run/user/{{ created_user_kodi.uid }}"
 
 - name: Create startup script for Kodi
   ansible.builtin.copy:
