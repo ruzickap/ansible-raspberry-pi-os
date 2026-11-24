@@ -5,20 +5,25 @@ Configure Raspbian (RPi) using Ansible
 ## Preparation
 
 1. Build the Raspberry Pi OS image using [create-rpi-image GitHub Action](.github/workflows/create-rpi-image.yml)
+
 1. Flash the image to the SD card
+
 1. Boot the RPi with the SD card
    1. Initial user is `pi` with password `raspberry`
+
 1. Run the ansible playbook. The first run needs the initial password
-   (`raspberry`), so Ansible asks for it:
+   (`raspberry`), so Ansible asks for it. The fresh image also has a new SSH
+   host key, so the first run skips the check against `ansible/known_hosts`:
 
    ```bash
    cd ansible || exit
    ansible-galaxy install -r requirements.yml
-   fnox exec -- ansible-playbook --diff -i inventory/hosts main.yml \
+   ANSIBLE_SSH_ARGS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
+     fnox exec -- ansible-playbook --diff -i inventory/hosts main.yml \
      --ask-pass --ask-become-pass
    ```
 
-   Later runs use the SSH key: `mise run run`
+   Later runs use the SSH key and check the pinned host key: `mise run run`
 
 ## Notes
 

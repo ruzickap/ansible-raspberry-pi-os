@@ -160,6 +160,7 @@ rpi_packages:
 rpi_password: "{{ lookup('env', 'RPI_PASSWORD') }}"
 ssh_backup_ed25519_key: "{{ lookup('env', 'SSH_BACKUP_ED25519_KEY') }}"
 ssh_host_ed25519_key: "{{ lookup('env', 'SSH_HOST_ED25519_KEY') }}"
+# Same key as in ansible/known_hosts, change both together
 ssh_host_ed25519_key_pub: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINtl48odZdS8Gs3TxXWzZoFck9BpE6q2GtxNPCSBrJVp root@raspberrypi"
 timezone: Europe/Prague
 transmission_ip: 192.168.1.1

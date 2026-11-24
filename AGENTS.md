@@ -13,7 +13,9 @@ Home Assistant / Homepage tasks are present but commented out in
    `stage-my/00-netplan/files/01-wifi.yaml.template`, rendered from
    `WIFI_SSID` / `WIFI_PASSWORD` secrets). Flash it, then boot the Pi (initial
    login `pi` / `raspberry`).
-2. **Configure** — run Ansible against the booted Pi.
+2. **Configure** — run Ansible against the booted Pi. SSH checks the host key
+   pinned in `ansible/known_hosts`; only the first run on a fresh image skips
+   it (see `README.md`). Never turn host key checking off for later runs.
 
 ## Commands
 
