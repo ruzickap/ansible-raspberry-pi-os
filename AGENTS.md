@@ -2,9 +2,8 @@
 
 Ansible automation that configures a single Raspberry Pi (Raspberry Pi OS /
 Debian Trixie) running Kodi plus a home-automation stack (Docker, Grafana,
-Prometheus, Grafana Alloy, Mosquitto, Zigbee2MQTT, ESPHome, cloudflared). Most
-Home Assistant / Homepage tasks are present but commented out in
-`ansible/tasks/apps.yml`.
+Prometheus, Grafana Alloy, Mosquitto, Zigbee2MQTT, ESPHome, Home Assistant,
+Homepage, cloudflared).
 
 ## How it runs (two phases)
 
@@ -24,7 +23,7 @@ Home Assistant / Homepage tasks are present but commented out in
   `ansible/inventory/hosts`. Runs from `ansible/` and logs the first run to
   `/tmp/ansible-raspberry-pi-os.log`. There is no separate test suite.
 - Target host is hard-coded to `raspi.xvx.cz` in `ansible/inventory/hosts`.
-- Limit to one area with tags: `firewall`, `alloy`, `grafana`, `prometheus`.
+- Limit to one area with tags: `alloy`, `grafana`, `prometheus`.
   Roles are tagged in `ansible/main.yml`; e.g. `cd ansible &&`
   `fnox exec -- ansible-playbook -i inventory/hosts main.yml --tags grafana`.
 
