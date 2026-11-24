@@ -296,6 +296,16 @@
     timeout: "{{ docker_container_timeout }}"
   notify: Restart hass
 
+# The nightly backup.create automation never deletes old backups
+- name: Delete Home Assistant backups older than 7 days
+  ansible.builtin.cron:
+    name: Delete old Home Assistant backups
+    minute: "0"
+    hour: "4"
+    user: root
+    job: find {{ hass_config_directory }}/backups -name '*.tar' -mtime +7 -delete
+    cron_file: hass-backup-cleanup
+
 #################################################
 # Homepage
 #################################################
