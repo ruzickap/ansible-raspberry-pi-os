@@ -479,56 +479,6 @@ prometheus.scrape "peru_laptop" {
 // # Logging Configuration
 // #########################################################
 
-loki.relabel "integrations_node_exporter" {
-  forward_to = [loki.write.grafana_cloud_loki.receiver]
-  rule {
-    target_label = "job"
-    replacement  = "integrations/node_exporter"
-  }
-  rule {
-    target_label = "instance"
-    replacement  = constants.hostname
-  }
-}
-
-journal_module "integrations_node_exporter" {
-  forward_to = [loki.relabel.integrations_node_exporter.receiver]
-}
-
-//JOURNAL
-declare "journal_module" {
-  argument "forward_to" {
-    optional = false
-  }
-  loki.source.journal "default"  {
-    max_age       = "12h"
-    forward_to    = [loki.process.default.receiver]
-    relabel_rules = loki.relabel.default.rules
-  }
-  loki.relabel "default" {
-    rule {
-      source_labels = ["__journal__systemd_unit"]
-      target_label  = "unit"
-    }
-    rule {
-      source_labels = ["__journal__boot_id"]
-      target_label  = "boot_id"
-    }
-    rule {
-      source_labels = ["__journal__transport"]
-      target_label  = "transport"
-    }
-    rule {
-      source_labels = ["__journal_priority_keyword"]
-      target_label  = "level"
-    }
-    forward_to    = []
-  }
-  loki.process "default" {
-    forward_to    = argument.forward_to.value
-  }
-}
-
 discovery.relabel "logs_integrations_integrations_node_exporter_journal_scrape" {
   targets = []
   rule {
